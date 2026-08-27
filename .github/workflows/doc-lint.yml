@@ -1,0 +1,16 @@
+name: doc-lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  doc-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert every path referenced by the governance docs resolves
+        shell: pwsh
+        # Adopting projects: add -FailOnSlots once the constitution is ratified,
+        # so no unfilled {{SLOT}} or TODO(...) survives on main.
+        run: ./scripts/doc-lint.ps1

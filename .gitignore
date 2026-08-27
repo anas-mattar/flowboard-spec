@@ -1,0 +1,20 @@
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.vs/
+.idea/
+
+# Stray screenshots dropped at repo root — canonical ones live under specs/**/screenshots/
+/*.png
+
+# Sibling code repositories cloned inside this specs/governance repo (uncomment + rename)
+# /{{BACKEND_REPO}}
+# /{{FRONTEND_REPO}}
+
+# Local environment files
+.env
+.env*.local
+
+# Add your stack's build-output ignores in the code repositories themselves,
+# not here — this repository holds governance and specs only.
