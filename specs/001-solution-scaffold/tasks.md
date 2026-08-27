@@ -107,7 +107,7 @@ notes. Commit Phase B.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T018 Walk quickstart.md end-to-end (both apps running; all four verification rows) and fix any doc drift in specs/001-solution-scaffold/quickstart.md
+- [X] T018 Walk quickstart.md end-to-end (both apps running; all four verification rows) and fix any doc drift in specs/001-solution-scaffold/quickstart.md
 - [ ] T019 Write the phase review notes (backend + frontend compliance checklist results, gate evidence) in specs/001-solution-scaffold/review-notes.md per docs/sdlc/review-process.md, then hand to human PR review; on merge, set roadmap row 001 → shipped in docs/roadmap.md
 
 ---

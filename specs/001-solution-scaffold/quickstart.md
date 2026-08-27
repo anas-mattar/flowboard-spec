@@ -37,7 +37,7 @@ Open `http://localhost:3000`.
 |---|---|
 | US1 — alive end-to-end | Page shows **FlowBoard** and backend status **ok** within 5 s |
 | US2 — theme | Toggle theme → whole page switches instantly; reload → same theme, no flash |
-| US3 — backend down | Stop the backend (Ctrl+C), reload → shell still renders; status shows the explicit error state (distinct from the loading spinner) |
+| US3 — backend down | Stop the backend (Ctrl+C), reload → shell still renders; status shows the explicit error state (✕ message — distinct from the "…" loading state) |
 | Edge — first visit | Clear site data → theme follows OS preference |
 
 ## 4. Gates (run by the feature owner; agent runs are feedback only)
