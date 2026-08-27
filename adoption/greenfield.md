@@ -43,7 +43,7 @@ the file thin; rules live in rulebooks, CLAUDE.md holds pointers.
 
 Machine assist: `pwsh -File scripts/init-kit.ps1` does the mechanical part of steps 1–2 —
 instantiates the selected tier rulebooks, wires the Task-Scoped Reading rows, fills
-`{{PROJECT_NAME}}` and the repository slots — then prints the judgment slots that remain
+`FlowBoard` and the repository slots — then prints the judgment slots that remain
 yours. It never writes rulebook content or ratifies the constitution.
 
 ## 3. Define and PROVE the gate

@@ -8,9 +8,9 @@ Thumbs.db
 # Stray screenshots dropped at repo root — canonical ones live under specs/**/screenshots/
 /*.png
 
-# Sibling code repositories cloned inside this specs/governance repo (uncomment + rename)
-# /{{BACKEND_REPO}}
-# /{{FRONTEND_REPO}}
+# Sibling code repositories cloned inside this specs/governance repo
+/flowboard-api/
+/flowboard-web/
 
 # Local environment files
 .env

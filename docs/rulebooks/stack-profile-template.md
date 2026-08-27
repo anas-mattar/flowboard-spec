@@ -1,4 +1,4 @@
-# Stack Profile — {{PROJECT_NAME}}
+# Stack Profile — FlowBoard
 
 > This template produces the content of CLAUDE.md's **Stack Profile** section — the few
 > lines every agent session loads before touching anything. Fill it per tier your project

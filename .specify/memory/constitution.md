@@ -36,12 +36,12 @@ Templates requiring updates when this file changes:
   - CLAUDE.md (strict rules must not contradict this file)
 
 Follow-up TODOs (resolve before ratification):
-  - TODO(PROJECT_NAME): replace every {{PROJECT_NAME}} occurrence
+  - TODO(PROJECT_NAME): replace every FlowBoard occurrence
   - TODO(RATIFICATION_DATE): set on first adoption
   - TODO(SLOTS): fill every {{...}} slot; delete principles marked optional if unused
 -->
 
-# {{PROJECT_NAME}} Constitution
+# FlowBoard Constitution
 
 ## Core Principles
 
@@ -82,8 +82,8 @@ artifacts from silently overriding higher-fidelity intent.
 
 <!-- OPTIONAL: delete this principle (and renumber) for single-repository projects. -->
 
-{{PROJECT_NAME}} uses separate repositories. The backend repository is `{{BACKEND_REPO}}`. The
-frontend repository is `{{FRONTEND_REPO}}`. Backend and frontend code MUST NOT be mixed in the
+FlowBoard uses separate repositories. The backend repository is `flowboard-api`. The
+frontend repository is `flowboard-web`. Backend and frontend code MUST NOT be mixed in the
 same repository unless explicitly approved in the technical plan.
 
 **Rationale**: Separation keeps deployment, security boundaries, and ownership clean across

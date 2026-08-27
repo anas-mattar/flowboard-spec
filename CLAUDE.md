@@ -12,8 +12,8 @@ SDLC workflow with Spec Kit documents. Do not implement everything at once.
 {{STACK_PROFILE}}
 <!-- Author from docs/rulebooks/stack-profile-template.md — one short block per tier
      (runtime, source roots, build/test, gate slice, dependency policy, failure modes). e.g.:
-Backend: .NET 10 / ASP.NET Core Web API, EF Core, SQL Server  → repo {{BACKEND_REPO}}
-Frontend: Next.js App Router, TypeScript strict, tRPC        → repo {{FRONTEND_REPO}}
+Backend: .NET 10 / ASP.NET Core Web API, EF Core, SQL Server  → repo flowboard-api
+Frontend: Next.js App Router, TypeScript strict, tRPC        → repo flowboard-web
 Package manager: yarn 4.x (corepack)
 -->
 
@@ -88,12 +88,11 @@ Read the pack that matches what you are about to touch — not everything, every
 | Any phase (always) | This file + `docs/sdlc/definition-of-done.md` |
 | Branching / starting a feature | `docs/sdlc/branch-strategy.md`, `docs/sdlc/repository-strategy.md` |
 | Project with more than one developer | `docs/sdlc/team-workflow.md` |
-| Backend / service logic | {{BACKEND_RULES_PATH}} |
-| A schema / migration | {{DATABASE_RULES_PATH}} + `docs/sdlc/rollback-process.md` |
+| Backend / service logic | `docs/rulebooks/backend-rules.md` |
+| A schema / migration | `docs/rulebooks/database-rules.md` + `docs/sdlc/rollback-process.md` |
 | Domain-critical logic | `{{DOMAIN_INVARIANTS_PATH}}` |
 | A feature declared Critical (regulated / high-risk) | `docs/sdlc/critical-delivery.md` |
-| An external integration | {{INTEGRATION_RULES_PATH}} (contract before implementation — constitution IX) |
-| Frontend UI | {{FRONTEND_RULES_PATH}} + `docs/rulebooks/` compliance checklist for that tier |
+| Frontend UI | `docs/rulebooks/frontend-rules.md` + `docs/rulebooks/` compliance checklist for that tier |
 | Reviewing / finishing a phase | `docs/sdlc/review-process.md` + the templates in `specs/_templates/` |
 
 <!-- Tier rows are a MENU, not a requirement: keep only the tiers this project has, and add
@@ -105,8 +104,10 @@ Read the pack that matches what you are about to touch — not everything, every
 
 ## Repositories
 
-{{REPOSITORY_LIST}}
-<!-- e.g. {{BACKEND_REPO}} / {{FRONTEND_REPO}}, per docs/sdlc/repository-strategy.md.
+- Backend: `flowboard-api`
+- Frontend/app: `flowboard-web`
+- Per `docs/sdlc/repository-strategy.md`; always confirm the active repository.
+<!-- e.g. flowboard-api / flowboard-web, per docs/sdlc/repository-strategy.md.
      Single-repo projects: "This repository is the only repository." -->
 
 When implementing a feature, always confirm which repository is active before changing files.

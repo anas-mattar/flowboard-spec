@@ -14,8 +14,8 @@ sections below are examples of the shape; a mobile or worker repository gets the
 treatment.
 
 ```text
-{{BACKEND_REPO}}     # Backend repository
-{{FRONTEND_REPO}}    # Frontend repository (and/or {{MOBILE_REPO}}, {{WORKER_REPO}}, …)
+flowboard-api     # Backend repository
+flowboard-web    # Frontend repository (and/or {{MOBILE_REPO}}, {{WORKER_REPO}}, …)
 ```
 
 Optional shared documentation/spec repository, when specs and governance need a home that is
@@ -25,7 +25,7 @@ neither tier:
 {{SPECS_REPO}}       # Optional shared specs/documentation repository
 ```
 
-## {{BACKEND_REPO}}
+## flowboard-api
 
 Contains:
 
@@ -39,7 +39,7 @@ Does not contain:
 - UI assets
 - Frontend build tooling
 
-## {{FRONTEND_REPO}}
+## flowboard-web
 
 Contains:
 
@@ -72,8 +72,8 @@ HEADs are chronic friction, especially for AI agents).
 ```text
 {{SPECS_REPO}}/                # governance repo
 ├── CLAUDE.md  .specify/  docs/  specs/  scripts/
-├── {{BACKEND_REPO}}/          # independent code repo (ignored by parent)
-└── {{FRONTEND_REPO}}/         # independent code repo (ignored by parent)
+├── flowboard-api/          # independent code repo (ignored by parent)
+└── flowboard-web/         # independent code repo (ignored by parent)
                                # …one nested repo per tier: mobile, worker, etc.
 ```
 
