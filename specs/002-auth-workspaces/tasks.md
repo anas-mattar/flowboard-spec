@@ -169,11 +169,11 @@ human review each include the domain-invariant item-by-item pass. Commit Phase B
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T054 [P] Update flowboard-web/.env.example with `NEXTAUTH_SECRET` and `NEXTAUTH_URL` placeholders (no real secrets committed)
-- [ ] T055 [P] Document JWT signing key (flowboard-api user-secrets) and `NEXTAUTH_SECRET` (flowboard-web `.env.local`) provisioning in specs/002-auth-workspaces/quickstart.md
-- [ ] T056 Walk quickstart.md end-to-end (all US1–US5 rows, both edge-case rows) and fix any doc drift in specs/002-auth-workspaces/quickstart.md
-- [ ] T057 Write phase review notes (backend + frontend compliance checklists, gate evidence, the Critical addendum's domain-invariant review pass, audit evidence retained) in specs/002-auth-workspaces/review-notes.md; write specs/002-auth-workspaces/human-pr-review.md; on merge, set roadmap row 002 → shipped in docs/roadmap.md
-- [ ] T058 Independent approval: second-model adversarial review + cooling-off period (Critical Delivery Addendum item 5) before merge
+- [x] T054 [P] Update flowboard-web/.env.example with `NEXTAUTH_SECRET` and `NEXTAUTH_URL` placeholders (no real secrets committed)
+- [x] T055 [P] Document JWT signing key (flowboard-api user-secrets) and `NEXTAUTH_SECRET` (flowboard-web `.env.local`) provisioning in specs/002-auth-workspaces/quickstart.md
+- [x] T056 Walk quickstart.md end-to-end (all US1–US5 rows, both edge-case rows) and fix any doc drift in specs/002-auth-workspaces/quickstart.md
+- [x] T057 Write phase review notes (backend + frontend compliance checklists, gate evidence, the Critical addendum's domain-invariant review pass, audit evidence retained) in specs/002-auth-workspaces/review-notes.md; write specs/002-auth-workspaces/human-pr-review.md; on merge, set roadmap row 002 → shipped in docs/roadmap.md
+- [x] T058 Independent approval: second-model adversarial review + cooling-off period (Critical Delivery Addendum item 5) before merge
 
 ---
 

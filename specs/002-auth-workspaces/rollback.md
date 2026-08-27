@@ -48,6 +48,13 @@ migration on a shared database.
   invariant-1-protected data exists at this point in the roadmap. This feature does not
   itself create any append-only or 30-day-restorable data (a removed `BoardMember` row
   is a hard delete by design, data-model.md — not protected domain data).
+- **Wrap-up addendum (second-model-adversarial-review.md B1)**: the migration also seeds
+  one fixture `User`/`Workspace` row (`UserConfiguration`/`WorkspaceConfiguration`), not
+  only the fixture `Board` — originally with a real, published password hash, which a
+  follow-up migration (`FixSeededOwnerCredentialLeak`) replaced with a non-verifiable
+  placeholder. Reverting past that follow-up migration on any database it already
+  touched would need its `Down()` **not** to be used as scaffolded (it must not restore
+  the original leaked hash) — see that migration's own `Down()` comment.
 - If this feature is reverted **after** merge to `main` but **before** 003+ have built
   on top of its tables, `Down()` is safe. If 003+ has already added foreign keys into
   `Board`/`User`/`Workspace`, this rollback plan is stale and must be rewritten as part

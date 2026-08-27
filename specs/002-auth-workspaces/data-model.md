@@ -70,7 +70,12 @@ with their own migrations (color, starred, etc.); this feature only adds what
 **Seed data**: one deterministic `HasData` row (fixed `Id`/`PublicId`/timestamps,
 `CreatedBy = 'MIGRATION'`) — a fixture board this feature's own integration tests invite
 members to and check authorization against. Not the prototype's three seeded boards
-(that seed belongs to 003, per ADR-11).
+(that seed belongs to 003, per ADR-11). This board's `Workspace` and owning `User` are
+seeded alongside it (`WorkspaceConfiguration`/`UserConfiguration`); per second-model
+adversarial review B1, the seeded `User.PasswordHash` MUST be a non-verifiable
+placeholder in this production migration model — never a real, working credential. The
+real test-only hash is set separately by the test host, only in the disposable test
+database.
 
 **Indexes**: `UNIQUE INDEX IX_Board_PublicId`, `INDEX IX_Board_WorkspaceId`.
 

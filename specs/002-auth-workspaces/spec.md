@@ -197,8 +197,12 @@ require signing in again.
 - **FR-017**: System MUST record which role each board member holds so later features
   (card CRUD, board management) can key their own permission checks off it without
   re-deriving membership.
-- **FR-018**: System MUST prevent a pending invitation from being claimed by anyone
-  other than the exact invited email address.
+- **FR-018**: System MUST claim a pending invitation only for a signup whose email
+  address exactly matches the invited address. This is an exact-match check on a
+  self-asserted signup field, **not** proof that the signer-upper owns that mailbox —
+  email verification is out of scope for v1.0 (see Assumptions and the accepted
+  residual risk below); FR-018 does not by itself prevent one account from claiming an
+  invitation intended for a different, not-yet-registered person at that address.
 
 ### Key Entities
 
@@ -252,3 +256,17 @@ require signing in again.
   scope for this feature.
 - Session lifetime: a signed-in session survives page reloads and normal return visits;
   exact expiry policy is a `plan.md` decision, not fixed here.
+
+## Accepted Residual Risk
+
+- **Unverified invitation claiming (H2, `second-model-adversarial-review.md`)**: because
+  email verification is out of scope for v1.0 (see Assumptions) and invitation claiming
+  (FR-018) matches on a self-asserted email string, two attacks are accepted as
+  known, unmitigated risk for this release: (1) an attacker who learns that an email
+  address has a pending invitation can sign up with that exact address first and inherit
+  its board access; (2) any user can pre-create a pending invitation for an email they
+  don't own, silently enrolling that person in their board (with no accept step) the
+  next time that person signs up for any reason. Mitigation is deferred to a future
+  feature — most directly, a per-invitation claim token required at signup, which closes
+  attack (1) without needing to send email. Until then, this is a known trade-off of
+  shipping v1.0 without email verification, not an oversight.

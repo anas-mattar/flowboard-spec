@@ -255,8 +255,11 @@ ones a database/auth slice requires.
 - [x] **Security (VIII)**: Authentication (JWT) required for every protected endpoint;
   authorization enforced per the §6 matrix via `BoardAccessService` on every
   board-scoped request; BCrypt password hashing; JWT signing key from user-secrets/env,
-  never source; no passwords/tokens logged (backend-security.md §7); rate limiting
-  planned for `/v1/auth/login` (§12).
+  never source; no passwords/tokens logged (backend-security.md §7); rate limiting on
+  both `/v1/auth/login` and `/v1/auth/signup` (§12) — the latter added at wrap-up
+  (second-model-adversarial-review.md H1) after `contracts/auth-api.md`'s own signup
+  contract was found to already require it; this doc previously omitted it, a drift the
+  addendum's independent review caught.
 - [x] **External Integration Governance (IX)**: No external integrations in this
   feature (no email delivery, no SSO) — explicitly deferred, documented above.
 - [x] **Performance Responsibility (X)**: One indexed lookup per board-scoped
