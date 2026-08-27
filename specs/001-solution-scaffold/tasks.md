@@ -42,9 +42,9 @@ contract payload; backend integration test passes.
 
 ### Backend (delivery Phase A)
 
-- [ ] T001 [US1] Implement `HealthService` returning status/service/version/timestampUtc in flowboard-api/src/Flowboard.Api/Services/HealthService.cs (cite contracts/health-api.md in a top comment)
-- [ ] T002 [US1] Implement `HealthEndpoints` static class (`MapHealthEndpoints`, `MapGroup("/v1/health")`, thin handler → HealthService, `.WithTags("Health")`, anonymous access) in flowboard-api/src/Flowboard.Api/Endpoints/HealthEndpoints.cs; register in flowboard-api/src/Flowboard.Api/Program.cs and delete the template's weatherforecast sample; expose `public partial class Program` for test hosting
-- [ ] T003 [US1] Add `Microsoft.AspNetCore.Mvc.Testing` to flowboard-api/tests/Flowboard.Api.Tests/Flowboard.Api.Tests.csproj (plan-approved) and write `WebApplicationFactory` integration test asserting 200 + contract payload shape in flowboard-api/tests/Flowboard.Api.Tests/HealthEndpointTests.cs; remove the placeholder UnitTest1.cs
+- [X] T001 [US1] Implement `HealthService` returning status/service/version/timestampUtc in flowboard-api/src/Flowboard.Api/Services/HealthService.cs (cite contracts/health-api.md in a top comment)
+- [X] T002 [US1] Implement `HealthEndpoints` static class (`MapHealthEndpoints`, `MapGroup("/v1/health")`, thin handler → HealthService, `.WithTags("Health")`, anonymous access) in flowboard-api/src/Flowboard.Api/Endpoints/HealthEndpoints.cs; register in flowboard-api/src/Flowboard.Api/Program.cs and delete the template's weatherforecast sample; expose `public partial class Program` for test hosting
+- [X] T003 [US1] Add `Microsoft.AspNetCore.Mvc.Testing` to flowboard-api/tests/Flowboard.Api.Tests/Flowboard.Api.Tests.csproj (plan-approved) and write `WebApplicationFactory` integration test asserting 200 + contract payload shape in flowboard-api/tests/Flowboard.Api.Tests/HealthEndpointTests.cs; remove the placeholder UnitTest1.cs
 
 **Checkpoint — Phase A gate**: STOP. User runs
 `dotnet build --warnaserror && dotnet test` in flowboard-api and confirms EXIT 0.
@@ -53,15 +53,15 @@ the phase review notes. Commit Phase A. Only then start T004.
 
 ### Frontend (delivery Phase B)
 
-- [ ] T004 [US1] Install plan-approved packages in flowboard-web: `@trpc/server@^11 @trpc/client@^11 @trpc/react-query@^11 @tanstack/react-query@^5 zod` (updates package.json + package-lock.json)
-- [ ] T005 [P] [US1] Move flowboard-web/src/app/globals.css → flowboard-web/src/styles/globals.css and update the import in flowboard-web/src/app/layout.tsx (rulebook project shape)
-- [ ] T006 [P] [US1] Create flowboard-web/.env.example with `FLOWBOARD_API_URL=http://localhost:5111` and a comment that developers copy it to .env.local (research R-4)
-- [ ] T007 [US1] Create tRPC foundation: init + `publicProcedure` in flowboard-web/src/server/api/trpc.ts, `appRouter` in flowboard-web/src/server/api/root.ts, fetch-adapter route handler in flowboard-web/src/app/api/trpc/[trpc]/route.ts (ADR-2; publicProcedure only until 002)
-- [ ] T008 [US1] Create tRPC React client + QueryClient provider in flowboard-web/src/lib/trpc/client.tsx and wrap the app in flowboard-web/src/app/layout.tsx
-- [ ] T009 [P] [US1] Create server-only health client (reads `FLOWBOARD_API_URL`, 5 s timeout, cite contracts/health-api.md) in flowboard-web/src/lib/api/health-client.ts
-- [ ] T010 [US1] Create `health.status` query procedure validating the upstream payload with a Zod schema mirroring the contract in flowboard-web/src/server/api/routers/health.ts; register in root.ts
-- [ ] T011 [US1] Create `BackendStatus` client component with loading / healthy / unavailable states (visually + programmatically distinct, FR-004) using `trpc.health.status` in flowboard-web/src/components/shell/backend-status.tsx
-- [ ] T012 [US1] Create top bar (FlowBoard product name + slot for theme toggle) in flowboard-web/src/components/layout/top-bar.tsx and compose the home page (top bar + BackendStatus) in flowboard-web/src/app/page.tsx, replacing the create-next-app placeholder
+- [X] T004 [US1] Install plan-approved packages in flowboard-web: `@trpc/server@^11 @trpc/client@^11 @trpc/react-query@^11 @tanstack/react-query@^5 zod` (updates package.json + package-lock.json)
+- [X] T005 [P] [US1] Move flowboard-web/src/app/globals.css → flowboard-web/src/styles/globals.css and update the import in flowboard-web/src/app/layout.tsx (rulebook project shape)
+- [X] T006 [P] [US1] Create flowboard-web/.env.example with `FLOWBOARD_API_URL=http://localhost:5111` and a comment that developers copy it to .env.local (research R-4)
+- [X] T007 [US1] Create tRPC foundation: init + `publicProcedure` in flowboard-web/src/server/api/trpc.ts, `appRouter` in flowboard-web/src/server/api/root.ts, fetch-adapter route handler in flowboard-web/src/app/api/trpc/[trpc]/route.ts (ADR-2; publicProcedure only until 002)
+- [X] T008 [US1] Create tRPC React client + QueryClient provider in flowboard-web/src/lib/trpc/client.tsx and wrap the app in flowboard-web/src/app/layout.tsx
+- [X] T009 [P] [US1] Create server-only health client (reads `FLOWBOARD_API_URL`, 5 s timeout, cite contracts/health-api.md) in flowboard-web/src/lib/api/health-client.ts
+- [X] T010 [US1] Create `health.status` query procedure validating the upstream payload with a Zod schema mirroring the contract in flowboard-web/src/server/api/routers/health.ts; register in root.ts
+- [X] T011 [US1] Create `BackendStatus` client component with loading / healthy / unavailable states (visually + programmatically distinct, FR-004) using `trpc.health.status` in flowboard-web/src/components/shell/backend-status.tsx
+- [X] T012 [US1] Create top bar (FlowBoard product name + slot for theme toggle) in flowboard-web/src/components/layout/top-bar.tsx and compose the home page (top bar + BackendStatus) in flowboard-web/src/app/page.tsx, replacing the create-next-app placeholder
 
 **Checkpoint**: US1 verifiable end-to-end per quickstart §3 row US1.
 
@@ -77,9 +77,9 @@ and no wrong-theme flash; first visit follows OS preference.
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] Add Tailwind v4 dark variant keyed to the `dark` class (`@custom-variant dark`) and base light/dark theme variables in flowboard-web/src/styles/globals.css (research R-3)
-- [ ] T014 [US2] Create theme context (reads localStorage, toggles `dark` class on `<html>`, persists choice, defaults to `matchMedia` system preference) in flowboard-web/src/lib/theme/theme-context.tsx
-- [ ] T015 [US2] Add the fixed-literal theme bootstrap inline script + `suppressHydrationWarning` to flowboard-web/src/app/layout.tsx (ADR-3 / security rulebook §5.1 — script body MUST stay a fixed string literal) and create the toggle button wired into the top bar in flowboard-web/src/components/shell/theme-toggle.tsx
+- [X] T013 [US2] Add Tailwind v4 dark variant keyed to the `dark` class (`@custom-variant dark`) and base light/dark theme variables in flowboard-web/src/styles/globals.css (research R-3)
+- [X] T014 [US2] Create theme context (reads localStorage, toggles `dark` class on `<html>`, persists choice, defaults to `matchMedia` system preference) in flowboard-web/src/lib/theme/theme-context.tsx
+- [X] T015 [US2] Add the fixed-literal theme bootstrap inline script + `suppressHydrationWarning` to flowboard-web/src/app/layout.tsx (ADR-3 / security rulebook §5.1 — script body MUST stay a fixed string literal) and create the toggle button wired into the top bar in flowboard-web/src/components/shell/theme-toggle.tsx
 
 **Checkpoint**: US1 and US2 both work; page styled correctly in both themes.
 
@@ -95,8 +95,8 @@ distinct unavailable state while name + toggle still render.
 
 ### Implementation for User Story 3
 
-- [ ] T016 [US3] Harden the unavailable path: health client maps network failure/timeout/non-200/bad payload to a typed failure (never throws raw provider errors to the page) in flowboard-web/src/lib/api/health-client.ts and flowboard-web/src/server/api/routers/health.ts (edge cases: slow response stays loading until the 5 s timeout; unexpected payload → error, never healthy)
-- [ ] T017 [US3] Verify shell isolation: page.tsx renders top bar and theme toggle regardless of query outcome; error state carries a distinguishing role/test-id and non-color cue in flowboard-web/src/components/shell/backend-status.tsx
+- [X] T016 [US3] Harden the unavailable path: health client maps network failure/timeout/non-200/bad payload to a typed failure (never throws raw provider errors to the page) in flowboard-web/src/lib/api/health-client.ts and flowboard-web/src/server/api/routers/health.ts (edge cases: slow response stays loading until the 5 s timeout; unexpected payload → error, never healthy)
+- [X] T017 [US3] Verify shell isolation: page.tsx renders top bar and theme toggle regardless of query outcome; error state carries a distinguishing role/test-id and non-color cue in flowboard-web/src/components/shell/backend-status.tsx
 
 **Checkpoint — Phase B gate**: STOP. User runs `npm run lint && npm run build` in
 flowboard-web and confirms EXIT 0. AI review against
