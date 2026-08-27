@@ -44,7 +44,7 @@ Status flow: `idea → specified → in progress → shipped → dropped`
 
 | Feature | Covers (Inv #) | Priority | Status | Owner | Spec |
 |---|---|---|---|---|---|
-| 001-solution-scaffold (architecture ADR, gate green end-to-end) | — (foundation) | P1 | specified | anas.m | `specs/001-solution-scaffold/` |
+| 001-solution-scaffold (architecture ADR, gate green end-to-end) | — (foundation) | P1 | shipped | anas.m | `specs/001-solution-scaffold/` |
 | 002-auth-workspaces (auth, users, board membership, roles) | INV-014; B-05 | P1 | idea | anas.m | — |
 | 003-board-view-readonly (render seeded boards; theme; keyboard; Visual Compliance Loop vs prototype) | INV-001…006 render-only; B-01; X-02…X-04 | P1 | idea | anas.m | — |
 | 004-card-crud (composer, detail modal, labels, members, due date, checklist, comments) | INV-007; C-01, C-03…C-10, C-12, C-13; X-01 | P2 | idea | anas.m | — |
