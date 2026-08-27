@@ -14,10 +14,14 @@ Backend: .NET 10 / ASP.NET Core Web API, EF Core 10, SignalR, SQL Server → rep
   Known failure modes: run dotnet-ef via the repo-local tool manifest (dotnet tool restore),
     never a global install; verify the target DB is empty/owned before the first `database update`
 
-Frontend: Next.js 16 App Router, TypeScript strict → repo `flowboard-web/`
+Frontend: Next.js 16 App Router, TypeScript strict, tRPC BFF, Tailwind v4 + shadcn/ui
+  → repo `flowboard-web/`
   Runtime / package manager: node 22 / npm (package-lock.json committed)
   Build: npm run build (includes type check)     Lint: npm run lint
   Gate slice: npm run lint && npm run build      (npm test joins once the first test exists)
+  Data flow: browser → tRPC procedure → server-only client in lib/api/ → .NET API
+    (browser never holds the backend token; SignalR direct connection is the one
+    exception, wired in feature 008)
   Dependency policy: packages require plan.md approval (constitution IV)
   Known failure modes: create-next-app's default .gitignore excludes `.env*` — commit
     `.env.example`, keep real env files ignored
