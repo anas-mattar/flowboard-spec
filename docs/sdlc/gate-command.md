@@ -9,15 +9,16 @@ agent (`docs/sdlc/team-workflow.md`).
 Fill these two slots when adopting the kit; everything else in this document is generic.
 
 ```text
-{{FRONTEND_GATE}}   # e.g. yarn build && yarn typecheck && yarn lint && yarn test
-{{BACKEND_GATE}}    # e.g. dotnet build && dotnet test
-                    # single-repo projects: define one {{GATE}} and delete the other
+Frontend (run in flowboard-web/): npm run lint && npm run build
+Backend  (run in flowboard-api/): dotnet build --warnaserror && dotnet test
 ```
 
-Worked examples from the reference deployment: frontend `yarn build && yarn typecheck &&
-yarn lint && yarn test` (Next.js/Yarn 4 — run `corepack enable` first so `yarn` resolves to the
-pinned version, or invoke `corepack yarn <args>` directly); backend `dotnet build && dotnet test`
-(.NET). For npm projects: `npm run build && npm run typecheck && npm run lint && npm test`.
+`npm run build` (Next.js) includes the TypeScript type check. `npm test` joins the frontend
+gate once the first test exists. Run each gate from its own repository root.
+
+> **Status: defined but NOT YET PROVEN.** Per `adoption/greenfield.md` step 3, these gates
+> must run green on the empty scaffolds before the first feature — a gate that has never
+> been green is not a gate. Delete this note once both gates have exited 0.
 
 ## Shell Syntax (reading the exit code)
 
@@ -40,20 +41,21 @@ bash form below does **not** work as-is on Windows:
 bash / Git Bash:
 
 ```bash
-{{GATE_CHAIN}}; echo "EXIT: $?"
+dotnet build --warnaserror && dotnet test; echo "EXIT: $?"   # backend, in flowboard-api/
+npm run lint && npm run build; echo "EXIT: $?"               # frontend, in flowboard-web/
 ```
 
 PowerShell:
 
 ```powershell
-{{GATE_CHAIN}}
+dotnet build --warnaserror && dotnet test   # backend, in flowboard-api/  (frontend: npm run lint && npm run build)
 "EXIT: $LASTEXITCODE"
 ```
 
 cmd.exe:
 
 ```bat
-{{GATE_CHAIN}}
+dotnet build --warnaserror && dotnet test   # backend, in flowboard-api/  (frontend: npm run lint && npm run build)
 echo EXIT: %ERRORLEVEL%
 ```
 

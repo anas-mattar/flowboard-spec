@@ -9,13 +9,30 @@ SDLC workflow with Spec Kit documents. Do not implement everything at once.
 
 ## Stack Profile
 
-{{STACK_PROFILE}}
-<!-- Author from docs/rulebooks/stack-profile-template.md — one short block per tier
-     (runtime, source roots, build/test, gate slice, dependency policy, failure modes). e.g.:
-Backend: .NET 10 / ASP.NET Core Web API, EF Core, SQL Server  → repo flowboard-api
-Frontend: Next.js App Router, TypeScript strict, tRPC        → repo flowboard-web
-Package manager: yarn 4.x (corepack)
--->
+```text
+Backend: .NET 10 / ASP.NET Core Web API, EF Core 10, SignalR, SQL Server → repo `flowboard-api/`
+  Runtime / package manager: .NET 10 SDK / NuGet
+  Build: dotnet build --warnaserror     Test: dotnet test
+  Gate slice: dotnet build --warnaserror && dotnet test
+  Dependency policy: NuGet packages require plan.md approval (constitution IV)
+  Known failure modes: run dotnet-ef via the repo-local tool manifest (dotnet tool restore),
+    never a global install; verify the target DB is empty/owned before the first `database update`
+
+Frontend: Next.js 16 App Router, TypeScript strict → repo `flowboard-web/`
+  Runtime / package manager: node 22 / npm (package-lock.json committed)
+  Build: npm run build (includes type check)     Lint: npm run lint
+  Gate slice: npm run lint && npm run build      (npm test joins once the first test exists)
+  Dependency policy: packages require plan.md approval (constitution IV)
+  Known failure modes: create-next-app's default .gitignore excludes `.env*` — commit
+    `.env.example`, keep real env files ignored
+
+Database: SQL Server — dev `(localdb)\MSSQLLocalDB`, db `flowboard-db`; tests use a
+  disposable `flowboard-db-test`. Migrations: EF Core, generated from flowboard-api with
+  the API project as startup project.
+
+Source roots per repo are fixed by 001-solution-scaffold's approved plan.md (constitution IV
+bootstrap clause) and recorded here once the scaffold merges.
+```
 
 ## The Law
 
