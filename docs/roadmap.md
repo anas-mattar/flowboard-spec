@@ -72,8 +72,9 @@ Status flow: `idea → specified → in progress → shipped → dropped`
 - 2026-08-27 Deferred as business (not engineering) questions: observer billing (§11 Q3),
   EU-only data residency at launch (§11 Q4). Revisit before 002-auth-workspaces ships billing-
   or hosting-relevant schema.
-- 2026-08-27 Tier rulebooks + two compliance checklists authored, seeded from the team's
-  existing engineering standards (the source documents came from a previous project and
-  were removed after distillation — the rulebooks stand alone). Adopted with them: the tRPC
-  BFF pattern (browser → tRPC → server-only client → .NET API) as the frontend data flow —
-  001's plan.md ratifies it ADR-style per constitution IV.
+- 2026-08-27 Tier rulebooks + two compliance checklists authored from the team's existing
+  engineering standards; the detailed rule packs live at `docs/rulebooks/backend/` and
+  `docs/rulebooks/frontend/`, rewritten FlowBoard-specific (previous-project domain content
+  removed). Adopted with them: the tRPC BFF pattern (browser → tRPC → server-only client →
+  .NET API) as the frontend data flow — 001's plan.md ratifies it ADR-style per
+  constitution IV.

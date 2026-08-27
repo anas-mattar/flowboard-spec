@@ -4,7 +4,8 @@
 > (`docs/rulebooks/backend-compliance-checklist.md`, Definition of Done item 5): the
 > checklist asserts, this rulebook explains. Domain invariants
 > (`docs/domain/flowboard-invariants.md`) carry constitutional force and always outrank
-> this file.
+> this file. Detailed rule packs: `docs/rulebooks/backend/` (security, performance,
+> database standards, examples, external-API rules, integration patterns).
 
 ## Layering & Placement
 
@@ -90,7 +91,8 @@
 - Secrets MUST NOT be committed; configuration and secrets come from .NET user-secrets
   (dev) / environment variables or the deployment secret store (never `appsettings.json`
   with credentials).
-- Non-negotiables (asserted by this tier's compliance checklist): EF Core parameterized
+- Full security pack: `docs/rulebooks/backend/backend-security.md` (its §15 checklist is
+  folded into this tier's compliance checklist). Non-negotiables: EF Core parameterized
   queries only — never SQL built by string concatenation; no secrets, tokens, or sensitive
   data in logs (structured logging, masked fields); safe error responses (ProblemDetails,
   never stack traces); external HTTP via `IHttpClientFactory` with timeout — never

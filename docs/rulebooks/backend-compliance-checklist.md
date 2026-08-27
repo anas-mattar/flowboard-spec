@@ -36,7 +36,7 @@
 - [ ] Every state-changing card action writes its `ActivityEvent`; no UPDATE/DELETE path
       touches activity rows (invariant 1).
 
-## Data Access & Performance (`docs/rulebooks/backend-rules.md`)
+## Data Access & Performance (`docs/rulebooks/backend/backend-performance.md`)
 
 - [ ] Read queries use `AsNoTracking()` and `.Select()` DTO projection; filtering,
       sorting, and paging happen in SQL — no `.ToList()` before filters.
@@ -48,7 +48,7 @@
 - [ ] SignalR events published only after `SaveChangesAsync()` succeeds, broadcasting the
       same event objects the activity feed stores.
 
-## Security (`docs/rulebooks/backend-rules.md`)
+## Security (`docs/rulebooks/backend/backend-security.md`)
 
 - [ ] Auth required on protected endpoints (`.RequireAuthorization()` on the group);
       writes carry the applicable permission policy.

@@ -4,7 +4,9 @@
 > (`docs/rulebooks/frontend-compliance-checklist.md`, Definition of Done item 5): the
 > checklist asserts, this rulebook explains. Visual references (rung 1 of Source of Truth)
 > outrank it: never invent a layout when screenshots exist, and UI phases with visual
-> references run the Visual Compliance Loop (`docs/sdlc/review-process.md`).
+> references run the Visual Compliance Loop (`docs/sdlc/review-process.md`). Detailed
+> rule packs: `docs/rulebooks/frontend/` (forms, tables, tRPC, state/auth/style,
+> security, performance).
 
 ## Structure
 
@@ -71,6 +73,15 @@
   interaction contract exactly: Enter commits, Escape cancels, blur commits titles, the
   card composer stays open after Enter (C-01). **Why**: the prototype is rung-1 truth for
   interaction, not just pixels.
+- Detail pack: `docs/rulebooks/frontend/frontend-forms.md`.
+
+## Tables
+
+- Tabular list screens (members, archived items, admin lists — not the board canvas)
+  MUST compose the shared two-layer base table system; hand-rolled `<table>` markup and
+  duplicated pagination/search/sort/URL-state logic are prohibited. Columns live in
+  `columns.tsx`, actions column last.
+- Detail pack: `docs/rulebooks/frontend/frontend-tables.md`.
 
 ## Accessibility (spec §8 — WCAG 2.2 AA)
 
@@ -108,3 +119,4 @@
 - Error messages shown to users MUST be safe (no raw backend errors or stack traces);
   external links open with `rel="noopener noreferrer"`; sensitive data MUST NOT linger in
   console logs, browser storage, or cached query state longer than needed.
+- Detail pack: `docs/rulebooks/frontend/frontend-security.md`.

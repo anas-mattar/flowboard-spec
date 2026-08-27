@@ -3,7 +3,8 @@
 > **Binding**: this rulebook is enforced through the compliance checklist of whichever
 > tier owns the migration (Definition of Done item 5, `docs/sdlc/definition-of-done.md`).
 > Schema changes are the least reversible thing an agent ships — this file is always read
-> together with `docs/sdlc/rollback-process.md`, never alone.
+> together with `docs/sdlc/rollback-process.md`, never alone. Detailed rule pack:
+> `docs/rulebooks/backend/database-standards.md`.
 
 ## Schema Standards
 
