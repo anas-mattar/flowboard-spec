@@ -35,24 +35,24 @@ keyboard). See "Delivery Mapping" below.
 every endpoint depends on this schema and seed data. No new packages this feature
 (plan.md Technical Context) — nothing to add in a separate Setup phase.
 
-- [ ] T001 [P] Create `List` entity in flowboard-api/src/Flowboard.Api/Domain/Entities/List.cs (data-model.md List)
-- [ ] T002 [P] Create `Card` entity (incl. `RowVersion`) in flowboard-api/src/Flowboard.Api/Domain/Entities/Card.cs (data-model.md Card)
-- [ ] T003 [P] Create `Label` entity in flowboard-api/src/Flowboard.Api/Domain/Entities/Label.cs (data-model.md Label)
-- [ ] T004 [P] Create `CardLabel` entity (join, no `PublicId`) in flowboard-api/src/Flowboard.Api/Domain/Entities/CardLabel.cs (data-model.md CardLabel)
-- [ ] T005 [P] Create `CardMember` entity (join, no `PublicId`) in flowboard-api/src/Flowboard.Api/Domain/Entities/CardMember.cs (data-model.md CardMember)
-- [ ] T006 [P] Create `ChecklistItem` entity (no `PublicId` yet) in flowboard-api/src/Flowboard.Api/Domain/Entities/ChecklistItem.cs (data-model.md ChecklistItem)
-- [ ] T007 [P] Create `Comment` entity (no `PublicId` yet) in flowboard-api/src/Flowboard.Api/Domain/Entities/Comment.cs (data-model.md Comment)
-- [ ] T008 Register the 7 new entities as `DbSet`s in flowboard-api/src/Flowboard.Api/Data/FlowboardDbContext.cs (depends on T001–T007)
-- [ ] T009 [P] Create `ListConfiguration` (soft-delete query filter, `IX_List_BoardId_Position`) in flowboard-api/src/Flowboard.Api/Data/Configurations/ListConfiguration.cs (depends on T001)
-- [ ] T010 [P] Create `CardConfiguration` (soft-delete query filter, `.IsRowVersion()`, `IX_Card_ListId_Position`, `IX_Card_DueAt`) in flowboard-api/src/Flowboard.Api/Data/Configurations/CardConfiguration.cs (depends on T002)
-- [ ] T011 [P] Create `LabelConfiguration` (`IX_Label_BoardId`) in flowboard-api/src/Flowboard.Api/Data/Configurations/LabelConfiguration.cs (depends on T003)
-- [ ] T012 [P] Create `CardLabelConfiguration` (`UNIQUE(CardId,LabelId)`) in flowboard-api/src/Flowboard.Api/Data/Configurations/CardLabelConfiguration.cs (depends on T004)
-- [ ] T013 [P] Create `CardMemberConfiguration` (`UNIQUE(CardId,UserId)`) in flowboard-api/src/Flowboard.Api/Data/Configurations/CardMemberConfiguration.cs (depends on T005)
-- [ ] T014 [P] Create `ChecklistItemConfiguration` (`IX_ChecklistItem_CardId`) in flowboard-api/src/Flowboard.Api/Data/Configurations/ChecklistItemConfiguration.cs (depends on T006)
-- [ ] T015 [P] Create `CommentConfiguration` (`IX_Comment_CardId`) in flowboard-api/src/Flowboard.Api/Data/Configurations/CommentConfiguration.cs (depends on T007)
-- [ ] T016 Edit `BoardConfiguration` to add `Color`/`Starred` columns with defaults (data-model.md Board) in flowboard-api/src/Flowboard.Api/Data/Configurations/BoardConfiguration.cs
-- [ ] T017 [P] Create `CursorPage<T>` shared pagination DTO (ADR-12) in flowboard-api/src/Flowboard.Api/Domain/CursorPage.cs
-- [ ] T018 Generate the `AddBoardContent` migration (`dotnet ef migrations add`, repo-local tool) and author its `HasData` seed — three boards under the existing fixture workspace reproducing `screenshots/board-canvas.png` exactly where shown (research R-4, data-model.md Seed data) — in flowboard-api/src/Flowboard.Api/Migrations/ (depends on T008–T016)
+- [x] T001 [P] Create `List` entity in flowboard-api/src/Flowboard.Api/Domain/Entities/List.cs (data-model.md List)
+- [x] T002 [P] Create `Card` entity (incl. `RowVersion`) in flowboard-api/src/Flowboard.Api/Domain/Entities/Card.cs (data-model.md Card)
+- [x] T003 [P] Create `Label` entity in flowboard-api/src/Flowboard.Api/Domain/Entities/Label.cs (data-model.md Label)
+- [x] T004 [P] Create `CardLabel` entity (join, no `PublicId`) in flowboard-api/src/Flowboard.Api/Domain/Entities/CardLabel.cs (data-model.md CardLabel)
+- [x] T005 [P] Create `CardMember` entity (join, no `PublicId`) in flowboard-api/src/Flowboard.Api/Domain/Entities/CardMember.cs (data-model.md CardMember)
+- [x] T006 [P] Create `ChecklistItem` entity (no `PublicId` yet) in flowboard-api/src/Flowboard.Api/Domain/Entities/ChecklistItem.cs (data-model.md ChecklistItem)
+- [x] T007 [P] Create `Comment` entity (no `PublicId` yet) in flowboard-api/src/Flowboard.Api/Domain/Entities/Comment.cs (data-model.md Comment)
+- [x] T008 Register the 7 new entities as `DbSet`s in flowboard-api/src/Flowboard.Api/Data/FlowboardDbContext.cs (depends on T001–T007)
+- [x] T009 [P] Create `ListConfiguration` (soft-delete query filter, `IX_List_BoardId_Position`) in flowboard-api/src/Flowboard.Api/Data/Configurations/ListConfiguration.cs (depends on T001)
+- [x] T010 [P] Create `CardConfiguration` (soft-delete query filter, `.IsRowVersion()`, `IX_Card_ListId_Position`, `IX_Card_DueAt`) in flowboard-api/src/Flowboard.Api/Data/Configurations/CardConfiguration.cs (depends on T002)
+- [x] T011 [P] Create `LabelConfiguration` (`IX_Label_BoardId`) in flowboard-api/src/Flowboard.Api/Data/Configurations/LabelConfiguration.cs (depends on T003)
+- [x] T012 [P] Create `CardLabelConfiguration` (`UNIQUE(CardId,LabelId)`) in flowboard-api/src/Flowboard.Api/Data/Configurations/CardLabelConfiguration.cs (depends on T004)
+- [x] T013 [P] Create `CardMemberConfiguration` (`UNIQUE(CardId,UserId)`) in flowboard-api/src/Flowboard.Api/Data/Configurations/CardMemberConfiguration.cs (depends on T005)
+- [x] T014 [P] Create `ChecklistItemConfiguration` (`IX_ChecklistItem_CardId`) in flowboard-api/src/Flowboard.Api/Data/Configurations/ChecklistItemConfiguration.cs (depends on T006)
+- [x] T015 [P] Create `CommentConfiguration` (`IX_Comment_CardId`) in flowboard-api/src/Flowboard.Api/Data/Configurations/CommentConfiguration.cs (depends on T007)
+- [x] T016 Edit `BoardConfiguration` to add `Color`/`Starred` columns with defaults (data-model.md Board) in flowboard-api/src/Flowboard.Api/Data/Configurations/BoardConfiguration.cs
+- [x] T017 [P] Create `CursorPage<T>` shared pagination DTO (ADR-12) in flowboard-api/src/Flowboard.Api/Domain/CursorPage.cs
+- [x] T018 Generate the `AddBoardContent` migration (`dotnet ef migrations add`, repo-local tool) and author its `HasData` seed — three boards under the existing fixture workspace reproducing `screenshots/board-canvas.png` exactly where shown (research R-4, data-model.md Seed data) — in flowboard-api/src/Flowboard.Api/Migrations/ (depends on T008–T016)
 
 **Checkpoint**: Foundation ready — schema and seed data exist. Backend endpoint work
 (Phase 2) can now begin.
@@ -68,20 +68,20 @@ reusing 002's `BoardAccessService` unchanged (US1).
 confirm lists/cards render in stored order with correct per-card indicators; a
 non-member gets 404.
 
-- [ ] T019 [US1] Create `BoardContentService` (list boards visible to caller,
+- [x] T019 [US1] Create `BoardContentService` (list boards visible to caller,
   cursor-paginated per R-3; hydrate one board's lists/cards, computing `dueStatus`
   server-side per the contract) in flowboard-api/src/Flowboard.Api/Services/BoardContentService.cs (cite contracts/board-content-api.md)
-- [ ] T020 [US1] Create `BoardsEndpoints` (`GET /v1/boards`, `GET /v1/boards/{boardPublicId}`)
+- [x] T020 [US1] Create `BoardsEndpoints` (`GET /v1/boards`, `GET /v1/boards/{boardPublicId}`)
   in flowboard-api/src/Flowboard.Api/Endpoints/BoardsEndpoints.cs (cite contracts/board-content-api.md); register in Program.cs
-- [ ] T021 [P] [US1] Integration test: `GET /v1/boards` returns exactly the boards the
+- [x] T021 [P] [US1] Integration test: `GET /v1/boards` returns exactly the boards the
   caller has access to (owner + explicit membership, none else), correct pagination
   shape, empty list for a user with no access (SC-002, SC-005) in flowboard-api/tests/Flowboard.Api.Tests/BoardsEndpointTests.cs
-- [ ] T022 [P] [US1] Integration test: `GET /v1/boards/{id}` returns lists/cards in
+- [x] T022 [P] [US1] Integration test: `GET /v1/boards/{id}` returns lists/cards in
   stored `Position` order; a card with no indicators shows none, a card with all of
   them shows all (VI-009, VI-011) in flowboard-api/tests/Flowboard.Api.Tests/BoardsEndpointTests.cs
-- [ ] T023 [P] [US1] Integration test: `GET /v1/boards/{id}` for a board the caller has
+- [x] T023 [P] [US1] Integration test: `GET /v1/boards/{id}` for a board the caller has
   no access to → 404 (FR-006, matches board-membership-api.md's existing pattern) in flowboard-api/tests/Flowboard.Api.Tests/BoardsEndpointTests.cs
-- [ ] T024 [US1] Golden-fixture integration test: the seeded "Product Roadmap Q3" board's
+- [x] T024 [US1] Golden-fixture integration test: the seeded "Product Roadmap Q3" board's
   exact rendered shape (list count/order, card count/order, `dueStatus` values, the
   WIP-exceeded flag on "In Progress") matches `screenshots/board-canvas.png` field by
   field — so a future change can't silently break what the Visual Compliance Loop
