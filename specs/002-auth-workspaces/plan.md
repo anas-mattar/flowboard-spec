@@ -199,6 +199,20 @@ ones a database/auth slice requires.
 - Frontend NEW: `next-auth@beta` (Auth.js v5, `5.0.0-beta.32` — still on npm's `beta`
   tag, no GA exists; accepted deliberately for this Critical feature, user-confirmed —
   research R-4).
+- Frontend NEW (Phase B amendment, user-confirmed): `react-hook-form`, `@hookform/resolvers`,
+  `sonner`, and shadcn/ui's base (`components.json`, `class-variance-authority`, `clsx`,
+  `tailwind-merge`, `lucide-react`, `radix-ui`, `tw-animate-css`) plus the generated
+  `components/ui/{button,input,label,card,select,sonner}.tsx` and a hand-authored
+  `components/ui/form.tsx`. Not originally listed above — 001's scaffold had no forms, so
+  frontend-forms.md's mandatory stack (React Hook Form + `zodResolver` + shadcn/ui `Form` +
+  Sonner, F8a) was never installed; this feature's signup/login/invite forms are the first
+  to need it. `npx shadcn@latest add form` resolved to an empty registry-item stub in the
+  installed CLI generation (`shadcn@4.19.0`, `radix-nova` preset) — `components/ui/form.tsx`
+  is therefore the standard shadcn/ui Form source (`Form`/`FormField`/`FormItem`/
+  `FormLabel`/`FormControl`/`FormMessage`), hand-authored to match F8a's exact API,
+  adapted to this project's unified `radix-ui` import and local `Label`. The generated
+  `components/ui/sonner.tsx` template assumed `next-themes`; adapted to this project's own
+  `ThemeProvider` (ADR-3) instead, and `next-themes` was removed as an unused dependency.
 - Explicitly deferred (not this feature): any email-delivery provider (invitations take
   effect by matching email at signup/login — no email is sent, so no External
   Integration Governance (IX) contract is needed yet); refresh-token rotation /

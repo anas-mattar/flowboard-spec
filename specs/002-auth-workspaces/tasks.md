@@ -131,14 +131,14 @@ in the shell, sign-out (US1, US2, US5).
 the UI; workspace name appears in the shell with no extra step; sign out ends the
 session and protected pages require signing in again.
 
-- [ ] T040 [US1] Configure NextAuth (`Credentials` provider calling the backend login endpoint server-side, JWT session strategy per research R-5, 14-day `maxAge`) in flowboard-web/src/lib/auth/auth-config.ts (ADR-8); create the route handler in flowboard-web/src/app/api/auth/[...nextauth]/route.ts
-- [ ] T041 [P] [US1] Create server-only auth client (`signup`, `login` fetch wrappers to `/v1/auth/*`) in flowboard-web/src/lib/api/auth-client.ts (cite contracts/auth-api.md)
-- [ ] T042 [US1] Add `protectedProcedure` to flowboard-web/src/server/api/trpc.ts (frontend-trpc.md's named trigger for this feature); create `auth.signup` (`publicProcedure` mutation — login stays NextAuth's job) in flowboard-web/src/server/api/routers/auth.ts; register in root.ts
-- [ ] T043 [P] [US1] Create signup form + page (React Hook Form + `zodResolver`, minimum-10-char password validated client-side mirroring research R-10) in flowboard-web/src/components/auth/signup-form.tsx and flowboard-web/src/app/(auth)/signup/page.tsx
-- [ ] T044 [P] [US1] Create login form + page (calls `next-auth`'s `signIn()`) in flowboard-web/src/components/auth/login-form.tsx and flowboard-web/src/app/(auth)/login/page.tsx
-- [ ] T045 [US1] Wrap the app with NextAuth's `SessionProvider` in flowboard-web/src/app/layout.tsx
-- [ ] T046 [US2] Surface the workspace name and the caller's role from the session in the existing top bar in flowboard-web/src/components/layout/top-bar.tsx — no separate workspace-management UI (ADR-10)
-- [ ] T047 [US5] Add a sign-out action (`next-auth`'s `signOut()`) to flowboard-web/src/components/layout/top-bar.tsx
+- [x] T040 [US1] Configure NextAuth (`Credentials` provider calling the backend login endpoint server-side, JWT session strategy per research R-5, 14-day `maxAge`) in flowboard-web/src/lib/auth/auth-config.ts (ADR-8); create the route handler in flowboard-web/src/app/api/auth/[...nextauth]/route.ts
+- [x] T041 [P] [US1] Create server-only auth client (`signup`, `login` fetch wrappers to `/v1/auth/*`) in flowboard-web/src/lib/api/auth-client.ts (cite contracts/auth-api.md)
+- [x] T042 [US1] Add `protectedProcedure` to flowboard-web/src/server/api/trpc.ts (frontend-trpc.md's named trigger for this feature); create `auth.signup` (`publicProcedure` mutation — login stays NextAuth's job) in flowboard-web/src/server/api/routers/auth.ts; register in root.ts
+- [x] T043 [P] [US1] Create signup form + page (React Hook Form + `zodResolver`, minimum-10-char password validated client-side mirroring research R-10) in flowboard-web/src/components/auth/signup-form.tsx and flowboard-web/src/app/(auth)/signup/page.tsx
+- [x] T044 [P] [US1] Create login form + page (calls `next-auth`'s `signIn()`) in flowboard-web/src/components/auth/login-form.tsx and flowboard-web/src/app/(auth)/login/page.tsx
+- [x] T045 [US1] Wrap the app with NextAuth's `SessionProvider` in flowboard-web/src/app/layout.tsx
+- [x] T046 [US2] Surface the workspace name and the caller's role from the session in the existing top bar in flowboard-web/src/components/layout/top-bar.tsx — no separate workspace-management UI (ADR-10)
+- [x] T047 [US5] Add a sign-out action (`next-auth`'s `signOut()`) to flowboard-web/src/components/layout/top-bar.tsx
 
 **Checkpoint**: US1, US2, and US5 verifiable end-to-end through the browser.
 
@@ -154,12 +154,12 @@ with a chosen role; confirm an `Observer`/`BoardMember` sees the list but not th
 invite/remove controls; confirm a non-member visiting the board URL directly sees an
 access-denied state, not the panel.
 
-- [ ] T048 [P] [US3] Create server-only board-members client (invite, list, revoke invitation, remove member) in flowboard-web/src/lib/api/board-members-client.ts (cite contracts/board-membership-api.md)
-- [ ] T049 [US3] Create the invite-input Zod schema in flowboard-web/src/lib/board-members/schemas.ts (mirrors contracts/board-membership-api.md)
-- [ ] T050 [US3] Create the `board-members` router (`protectedProcedure`: `list`, `invite`, `revokeInvitation`, `removeMember`, validated with T049's schema) in flowboard-web/src/server/api/routers/board-members.ts; register in root.ts
-- [ ] T051 [P] [US3] Create `BoardMembersPanel` (member list + pending invitations + invite form, React Hook Form + `zodResolver`) in flowboard-web/src/components/board-members/board-members-panel.tsx
-- [ ] T052 [US4] Gate the invite/remove controls in `BoardMembersPanel` to the caller's `BoardAdmin`/workspace-owner role only — `BoardMember`/`Observer` see the list with no admin controls (frontend-security.md §3; backend remains authoritative regardless of what the UI hides)
-- [ ] T053 [US3] Create a minimal board page — server component, redirects unauthenticated visitors to `/login` (frontend-state-auth-style.md), shows an access-denied state (not the panel) when the backend returns 404 for a non-member, otherwise renders `BoardMembersPanel` — in flowboard-web/src/app/boards/[boardPublicId]/page.tsx (the seam 003 extends into the full board canvas; not a throwaway page)
+- [x] T048 [P] [US3] Create server-only board-members client (invite, list, revoke invitation, remove member) in flowboard-web/src/lib/api/board-members-client.ts (cite contracts/board-membership-api.md)
+- [x] T049 [US3] Create the invite-input Zod schema in flowboard-web/src/lib/board-members/schemas.ts (mirrors contracts/board-membership-api.md)
+- [x] T050 [US3] Create the `board-members` router (`protectedProcedure`: `list`, `invite`, `revokeInvitation`, `removeMember`, validated with T049's schema) in flowboard-web/src/server/api/routers/board-members.ts; register in root.ts
+- [x] T051 [P] [US3] Create `BoardMembersPanel` (member list + pending invitations + invite form, React Hook Form + `zodResolver`) in flowboard-web/src/components/board-members/board-members-panel.tsx
+- [x] T052 [US4] Gate the invite/remove controls in `BoardMembersPanel` to the caller's `BoardAdmin`/workspace-owner role only — `BoardMember`/`Observer` see the list with no admin controls (frontend-security.md §3; backend remains authoritative regardless of what the UI hides)
+- [x] T053 [US3] Create a minimal board page — server component, redirects unauthenticated visitors to `/login` (frontend-state-auth-style.md), shows an access-denied state (not the panel) when the backend returns 404 for a non-member, otherwise renders `BoardMembersPanel` — in flowboard-web/src/app/boards/[boardPublicId]/page.tsx (the seam 003 extends into the full board canvas; not a throwaway page)
 
 **Checkpoint — Phase B gate**: STOP. User runs `npm run lint && npm run build` in
 flowboard-web and confirms EXIT 0 (Critical addendum: human-executed). AI review AND
