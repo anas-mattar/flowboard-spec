@@ -4,12 +4,11 @@
 > (`docs/rulebooks/frontend-compliance-checklist.md`, Definition of Done item 5): the
 > checklist asserts, this rulebook explains. Visual references (rung 1 of Source of Truth)
 > outrank it: never invent a layout when screenshots exist, and UI phases with visual
-> references run the Visual Compliance Loop (`docs/sdlc/review-process.md`). Detailed shop
-> guidance: `reference/frontend/` (read its README first).
+> references run the Visual Compliance Loop (`docs/sdlc/review-process.md`).
 
 ## Structure
 
-- Code layout (shop project shape, confirmed in **specs/001-solution-scaffold/plan.md**):
+- Code layout (confirmed in **specs/001-solution-scaffold/plan.md**):
 
   ```text
   flowboard-web/src/
@@ -72,7 +71,6 @@
   interaction contract exactly: Enter commits, Escape cancels, blur commits titles, the
   card composer stays open after Enter (C-01). **Why**: the prototype is rung-1 truth for
   interaction, not just pixels.
-- Detail pack: `reference/frontend/frontend-forms.md`.
 
 ## Accessibility (spec §8 — WCAG 2.2 AA)
 
@@ -95,8 +93,8 @@
 ## State
 
 - Server state lives in tRPC/React Query ONLY — never duplicated into context or a store.
-  Session/theme use React Context. Redux MUST NOT be introduced (shop precedent:
-  `fms-frontend` runs without it). Form state lives in React Hook Form.
+  Session/theme use React Context. Redux MUST NOT be introduced. Form state lives in
+  React Hook Form.
 
 ## Security
 
@@ -107,4 +105,6 @@
   sanitization; card descriptions (C-05 rich text) render through a sanitizing renderer
   decided in 004's `plan.md`. Frontend permission gating (spec §6 — hide/disable what the
   role cannot do) is UX only; the backend remains authoritative (invariant 5).
-- Detail pack: `reference/frontend/frontend-security.md`.
+- Error messages shown to users MUST be safe (no raw backend errors or stack traces);
+  external links open with `rel="noopener noreferrer"`; sensitive data MUST NOT linger in
+  console logs, browser storage, or cached query state longer than needed.

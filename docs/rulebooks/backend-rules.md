@@ -4,8 +4,7 @@
 > (`docs/rulebooks/backend-compliance-checklist.md`, Definition of Done item 5): the
 > checklist asserts, this rulebook explains. Domain invariants
 > (`docs/domain/flowboard-invariants.md`) carry constitutional force and always outrank
-> this file. Detailed shop guidance: `reference/backend/` (read its README
-> first — FMS domain content there does not apply).
+> this file.
 
 ## Layering & Placement
 
@@ -20,7 +19,8 @@
   **Why**: architecture changes ride in on "just one helper folder" — this is where drift starts.
 - MVC `[ApiController]` controllers, CQRS, MediatR, and generic repositories MUST NOT be
   introduced unless a feature `plan.md` explicitly approves them.
-  **Why**: the shop's FMS deployment proved endpoint groups sufficient through 007 features.
+  **Why**: one uniform endpoint style keeps the surface reviewable; heavier patterns must
+  earn their way in through a plan, not arrive as habit.
 
 ## API Surface
 
@@ -90,8 +90,9 @@
 - Secrets MUST NOT be committed; configuration and secrets come from .NET user-secrets
   (dev) / environment variables or the deployment secret store (never `appsettings.json`
   with credentials).
-- Full security pack: `reference/backend/backend-security.md` (its §15
-  checklist is folded into this tier's compliance checklist). Non-negotiables: EF Core
-  parameterized queries only; no secrets/tokens/sensitive data in logs; safe error
-  responses (ProblemDetails, no stack traces); `HttpClient` via `IHttpClientFactory`;
-  rate limiting considered for login/search/export endpoints.
+- Non-negotiables (asserted by this tier's compliance checklist): EF Core parameterized
+  queries only — never SQL built by string concatenation; no secrets, tokens, or sensitive
+  data in logs (structured logging, masked fields); safe error responses (ProblemDetails,
+  never stack traces); external HTTP via `IHttpClientFactory` with timeout — never
+  `new HttpClient()`; rate limiting considered for login/search/export endpoints; database
+  and service accounts run least-privilege.

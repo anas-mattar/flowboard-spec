@@ -3,8 +3,7 @@
 > **Binding**: this rulebook is enforced through the compliance checklist of whichever
 > tier owns the migration (Definition of Done item 5, `docs/sdlc/definition-of-done.md`).
 > Schema changes are the least reversible thing an agent ships — this file is always read
-> together with `docs/sdlc/rollback-process.md`, never alone. Detailed shop guidance:
-> `reference/backend/database-standards.md`.
+> together with `docs/sdlc/rollback-process.md`, never alone.
 
 ## Schema Standards
 
@@ -17,9 +16,10 @@
   `CreatedBy NVARCHAR(100) NOT NULL`, `UpdatedDate/UpdatedBy` nullable. Soft-delete
   entities add `IsDeleted BIT NOT NULL DEFAULT(0)`, `DeletedDate`, `DeletedBy`.
   System-generated rows stamp `SYSTEM` / `MIGRATION` as the actor.
-- Entities inherit the shop `BaseEntity` shape (see reference §2). `RowVersion` is
-  REQUIRED on `Card` (and any entity with `If-Match` edits) — it implements invariant 6's
-  optimistic concurrency; `.IsRowVersion()` in the mapping.
+- Entities inherit one abstract `BaseEntity`: `Id`, audit fields, soft-delete fields, and
+  nullable `RowVersion` (`byte[]`). `RowVersion` is REQUIRED on `Card` (and any entity
+  with `If-Match` edits) — it implements invariant 6's optimistic concurrency;
+  `.IsRowVersion()` in the mapping.
 - Naming: singular table names (`Board`, `List`, `Card`); PascalCase columns; explicit
   column types; `HasMaxLength` on every string; timestamps `datetime2` in UTC; `decimal`
   for any money-like value (never float/double).
@@ -52,11 +52,11 @@
   is guesswork.
 - Destructive operations (dropping columns/tables, truncating, rewriting data) are
   prohibited unless explicitly approved in the feature's `plan.md`, with documented
-  backup + rollback plan (reference §13).
+  backup + rollback plan.
 - A migration already applied beyond the author's machine MUST NOT be edited — write a
   new one. **Why**: edited history diverges environments silently.
-- Migration review checklist (reference §12): PK type, FKs, nullability, precision,
-  soft-delete + audit fields, indexes, destructive ops, rollback safety.
+- Migration review checklist: PK type, FKs, nullability, precision, soft-delete + audit
+  fields, indexes, destructive ops, rollback safety.
 
 ## Data Safety
 

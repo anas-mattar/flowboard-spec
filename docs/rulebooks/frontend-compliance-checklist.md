@@ -27,7 +27,7 @@
 - [ ] No client-side re-computation of backend-owned values for storage; optimistic
       updates reconcile with the server response.
 
-## Forms (`reference/frontend/frontend-forms.md`)
+## Forms (`docs/rulebooks/frontend-rules.md`)
 
 - [ ] Every data-entry form uses React Hook Form + `zodResolver` — no `useState` field
       state, no manual validation guards.
@@ -54,7 +54,7 @@
 - [ ] Layout matches `specs/[feature]/screenshots/` when they exist; deviations are in
       the Visual Compliance Loop table, not silent.
 
-## Security & Performance (`reference/frontend/frontend-security.md`, `-performance.md`)
+## Security & Performance (`docs/rulebooks/frontend-rules.md`)
 
 - [ ] No secrets or backend tokens reach the client bundle; no auth data in
       `localStorage`.
