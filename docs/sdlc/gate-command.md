@@ -16,9 +16,8 @@ Backend  (run in flowboard-api/): dotnet build --warnaserror && dotnet test
 `npm run build` (Next.js) includes the TypeScript type check. `npm test` joins the frontend
 gate once the first test exists. Run each gate from its own repository root.
 
-> **Status: defined but NOT YET PROVEN.** Per `adoption/greenfield.md` step 3, these gates
-> must run green on the empty scaffolds before the first feature — a gate that has never
-> been green is not a gate. Delete this note once both gates have exited 0.
+Proven green on the empty scaffolds 2026-08-27, both exit codes confirmed by the user
+(adoption step 3).
 
 ## Shell Syntax (reading the exit code)
 
