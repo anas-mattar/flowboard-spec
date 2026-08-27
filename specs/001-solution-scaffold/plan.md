@@ -98,8 +98,10 @@ BFF via server-only env var (never `NEXT_PUBLIC*`)
 ### Package approvals (constitution IV)
 
 - Backend: `Microsoft.OpenApi` 2.12.2 pin — ratifies the scaffold-time fix for the
-  template's vulnerable transitive 2.0.0 (NU1903 vs the `--warnaserror` gate). No other
-  backend packages.
+  template's vulnerable transitive 2.0.0 (NU1903 vs the `--warnaserror` gate).
+  `Microsoft.AspNetCore.Mvc.Testing` (test project only) — required for the
+  `WebApplicationFactory` integration test (FR-006, testing standard in
+  `docs/rulebooks/backend-rules.md`). No other backend packages.
 - Frontend NEW: `@trpc/server`, `@trpc/client`, `@trpc/react-query` (v11),
   `@tanstack/react-query` (v5), `zod` — the BFF foundation (ADR-2).
 - Explicitly deferred: shadcn/ui and its dependencies — the theme toggle is a plain
