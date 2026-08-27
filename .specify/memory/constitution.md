@@ -1,25 +1,26 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 0.1.0 → 0.2.0 (kit template — not yet ratified by a project)
-Bump rationale: MINOR — Principle IV (Architecture Consistency) materially expanded with a
-  bootstrap clause: at project creation there is no existing architecture to follow, so during
-  the initial scaffold feature the approved plan.md IS the architecture source of truth, and
-  becomes "the existing architecture" once merged. Closes the greenfield gap where "follow the
-  existing architecture" was undefined at t=0. Dependent guidance updated:
-  adoption/greenfield.md step 4 (scaffold plan.md must record the architecture decision).
+Version change: 0.2.0 → 1.0.0 (RATIFIED as the FlowBoard constitution, 2026-08-27)
+Bump rationale: MAJOR — ratification. All slots filled and TODOs resolved:
+  II  rung 2 → docs/product/prototype/flowboard-prototype.html (project-wide UI reference)
+  V   PK = Id INT IDENTITY(1,1); API-exposed entities MUST carry an opaque public identifier
+  VI  audit = CreatedDate/CreatedBy/UpdatedDate/UpdatedBy; soft delete = IsDeleted/DeletedDate/DeletedBy
+  VII invariants pack = docs/domain/flowboard-invariants.md (8 invariants; carries force)
+  III retained — multi-repo (flowboard-api / flowboard-web)
+  Ratification decisions (also in docs/roadmap.md decisions log): board-scoped labels,
+  30-day minimum archive restorability, opaque public IDs. Deferred as business questions:
+  observer billing (spec §11 Q3), data residency at launch (§11 Q4).
 
 Prior version history:
-  (template / unversioned) → 0.1.0: Initial extraction of the portable constitution from a
-  production deployment of this framework (17 principles, 68 shipped features). Domain-specific
-  principles were moved to an optional domain module; parameterizable principles
-  received {{SLOT}} placeholders. A project ratifies this as ITS constitution v1.0.0
-  after filling every slot and resolving every TODO.
+  0.1.0 → 0.2.0: kit template — principle IV bootstrap clause added.
+  (template / unversioned) → 0.1.0: initial extraction of the portable constitution from a
+  production deployment of this framework.
 
 Principles defined (13):
   I.    Specification First
   II.   Source of Truth Hierarchy
-  III.  Repository Separation            (optional — remove for single-repo projects)
+  III.  Repository Separation            (retained — multi-repo)
   IV.   Architecture Consistency
   V.    Data Standards                   (parameterized)
   VI.   Auditability                     (parameterized)
@@ -34,11 +35,6 @@ Principles defined (13):
 Templates requiring updates when this file changes:
   - .specify/templates/plan-template.md (Constitution Check gate must mirror the principles 1:1)
   - CLAUDE.md (strict rules must not contradict this file)
-
-Follow-up TODOs (resolve before ratification):
-  - TODO(PROJECT_NAME): replace every FlowBoard occurrence
-  - TODO(RATIFICATION_DATE): set on first adoption
-  - TODO(SLOTS): fill every {{...}} slot; delete principles marked optional if unused
 -->
 
 # FlowBoard Constitution
@@ -60,9 +56,9 @@ change to an approved requirement.
 
 The following order of precedence MUST always be respected:
 
-1. Feature visual references (screenshots / prototype captures) — *include this rung only if
-   the project has an authoritative visual reference; otherwise delete it*
-2. {{UI_GUIDELINES_PATH}} — *project-wide UI guidelines, if any*
+1. Feature visual references (screenshots / prototype captures in `specs/[feature]/screenshots/`)
+2. `docs/product/prototype/flowboard-prototype.html` — the project-wide UI reference; per-feature
+   captures in rung 1 are taken from it
 3. `spec.md`
 4. `plan.md`
 5. API contracts
@@ -79,8 +75,6 @@ visual references exist, new UI layouts MUST NOT be invented.
 artifacts from silently overriding higher-fidelity intent.
 
 ### III. Repository Separation
-
-<!-- OPTIONAL: delete this principle (and renumber) for single-repository projects. -->
 
 FlowBoard uses separate repositories. The backend repository is `flowboard-api`. The
 frontend repository is `flowboard-web`. Backend and frontend code MUST NOT be mixed in the
@@ -109,22 +103,24 @@ improvise one.
 
 ### V. Data Standards
 
-The default primary key MUST be {{PK_STANDARD}}. <!-- e.g. `Id INT IDENTITY(1,1) PRIMARY KEY`
-(SQL Server), `BIGSERIAL` (PostgreSQL), or your ORM's convention. --> Deviations are prohibited
-unless explicitly approved in the technical plan. Externally-exposed identifiers
-(public IDs, correlation IDs, integration references, idempotency keys) MAY use opaque values
-such as GUIDs, but these are not primary keys.
+The default primary key MUST be `Id INT IDENTITY(1,1) PRIMARY KEY` (SQL Server). Deviations
+are prohibited unless explicitly approved in the technical plan. Every API-exposed entity
+MUST additionally carry an opaque public identifier (unique, indexed, non-sequential); the
+API addresses entities by it, and internal primary keys MUST NOT be exposed
+(domain invariant 8). Other externally-exposed identifiers (correlation IDs, integration
+references, idempotency keys) MAY use opaque values such as GUIDs, but these are not
+primary keys.
 
 **Rationale**: A uniform key strategy keeps indexes compact and joins predictable while still
 allowing opaque identifiers where external exposure genuinely requires them.
 
 ### VI. Auditability
 
-Business entities MUST support auditing with the fields {{AUDIT_FIELDS}}. <!-- e.g.
-`CreatedDate`, `CreatedBy`, `UpdatedDate`, `UpdatedBy`. --> Soft-delete entities MUST
-additionally include {{SOFT_DELETE_FIELDS}}. <!-- e.g. `IsDeleted`, `DeletedDate`,
-`DeletedBy`. --> Business master data MUST use soft delete; physical deletion is prohibited
-unless explicitly approved.
+Business entities MUST support auditing with the fields `CreatedDate`, `CreatedBy`,
+`UpdatedDate`, `UpdatedBy`. Soft-delete entities MUST additionally include `IsDeleted`,
+`DeletedDate`, `DeletedBy`. Business master data MUST use soft delete; physical deletion is
+prohibited unless explicitly approved. Activity events are append-only and are the audit
+trail for card history (domain invariant 1).
 
 **Rationale**: Systems of record require a verifiable trail of who changed what and when, and
 master data referenced by history must never disappear from under it.
@@ -132,8 +128,7 @@ master data referenced by history must never disappear from under it.
 ### VII. Domain Invariants
 
 The non-negotiable rules of this project's domain are defined in
-`{{DOMAIN_INVARIANTS_PATH}}` <!-- e.g. docs/domain/invariants.md; see modules/finance/ in the
-kit for a worked example from a financial system. --> and carry constitutional force. Agents
+`docs/domain/flowboard-invariants.md` and carry constitutional force. Agents
 and reviewers MUST treat a domain-invariant violation exactly like a violation of this file.
 
 **Rationale**: Every serious domain has rules that must survive any refactor (immutability of
@@ -216,4 +211,4 @@ evaluated before Phase 0 research and re-evaluated after Phase 1 design. Any vio
 justified in the plan's Complexity Tracking section or the work MUST stop and be reported. Use
 `CLAUDE.md` and the `docs/` guidance files for runtime development guidance.
 
-**Version**: 0.2.0 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: TODO(RATIFICATION_DATE)
+**Version**: 1.0.0 | **Ratified**: 2026-08-27 | **Last Amended**: 2026-08-27

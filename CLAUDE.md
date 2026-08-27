@@ -3,10 +3,6 @@
 Guidance for AI coding agents working in this repository. This project uses a controlled
 SDLC workflow with Spec Kit documents. Do not implement everything at once.
 
-<!-- KIT NOTE (delete after adoption): this file is deliberately thin. It is the always-loaded
-     core; everything else loads per task via the pointers below. Keep it under ~150 lines —
-     when a rule wants to live here, ask whether it belongs in a task-scoped rulebook instead. -->
-
 ## Stack Profile
 
 ```text
@@ -44,7 +40,7 @@ bootstrap clause) and recorded here once the scaffold merges.
 
 ## Source of Truth Priority
 
-1. `specs/[feature]/screenshots/` *(only if this project keeps visual references — else delete)*
+1. `specs/[feature]/screenshots/` (captured from `docs/product/prototype/flowboard-prototype.html`)
 2. `specs/[feature]/spec.md`
 3. `specs/[feature]/plan.md`
 4. `specs/[feature]/contracts/`
@@ -94,7 +90,7 @@ install so the user can finish it (see `adoption/`, step 0).
 - Do not add packages unless approved in `plan.md`.
 - Do not change architecture unless approved in `plan.md`.
 - Do not claim success until the user runs the gate and confirms the exit code.
-- Domain invariants (`{{DOMAIN_INVARIANTS_PATH}}`) carry constitutional force.
+- Domain invariants (`docs/domain/flowboard-invariants.md`) carry constitutional force.
 
 ## Task-Scoped Reading
 
@@ -107,7 +103,7 @@ Read the pack that matches what you are about to touch — not everything, every
 | Project with more than one developer | `docs/sdlc/team-workflow.md` |
 | Backend / service logic | `docs/rulebooks/backend-rules.md` |
 | A schema / migration | `docs/rulebooks/database-rules.md` + `docs/sdlc/rollback-process.md` |
-| Domain-critical logic | `{{DOMAIN_INVARIANTS_PATH}}` |
+| Domain-critical logic | `docs/domain/flowboard-invariants.md` |
 | A feature declared Critical (regulated / high-risk) | `docs/sdlc/critical-delivery.md` |
 | Frontend UI | `docs/rulebooks/frontend-rules.md` + `docs/rulebooks/` compliance checklist for that tier |
 | Reviewing / finishing a phase | `docs/sdlc/review-process.md` + the templates in `specs/_templates/` |

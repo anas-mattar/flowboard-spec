@@ -66,3 +66,9 @@ Status flow: `idea → specified → in progress → shipped → dropped`
   data residency, archive retention) must be answered during constitution ratification /
   before the feature that touches each — L-04 already fixes WIP limits as advisory.
 - 2026-08-27 v1.1+ scope (§10) deliberately excluded from the table above.
+- 2026-08-27 Constitution v1.0.0 ratified. Decisions: PK = `INT IDENTITY` internal + opaque
+  public identifier on every API-exposed entity (invariant 8); labels board-scoped (§11 Q1
+  closed, invariant 7); archive restorability ≥ 30 days (§11 Q5 closed, invariant 4).
+- 2026-08-27 Deferred as business (not engineering) questions: observer billing (§11 Q3),
+  EU-only data residency at launch (§11 Q4). Revisit before 002-auth-workspaces ships billing-
+  or hosting-relevant schema.
