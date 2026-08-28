@@ -213,9 +213,9 @@ reference check (the Visual Compliance Loop's deviation table). Commit Phase B.
 
 ## Phase 12: Polish & Cross-Cutting Concerns
 
-- [ ] T054 [P] Walk `quickstart.md` end-to-end (all US1–US8 rows, both edge cases) and
+- [x] T054 [P] Walk `quickstart.md` end-to-end (all US1–US8 rows, both edge cases) and
   fix any doc drift in specs/004-card-crud/quickstart.md
-- [ ] T055 Write phase review notes (backend + frontend compliance checklist results,
+- [x] T055 Write phase review notes (backend + frontend compliance checklist results,
   gate evidence, the domain-invariant pass) in
   specs/004-card-crud/review-notes.md; write
   specs/004-card-crud/human-pr-review.md; on merge, set roadmap row 004 →

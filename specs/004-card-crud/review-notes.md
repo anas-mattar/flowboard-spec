@@ -176,3 +176,12 @@ edits vs. new-record forms). **Post-merge**: one real gap found (missing Observe
 permission gating, incorrectly marked PASS originally) and fixed, verified end-to-end
 against a real Observer account. Cleared to commit this follow-up fix once the user
 runs the frontend gate and confirms exit 0.
+
+## Wrap-up (T054–T055)
+
+`specs/004-card-crud/quickstart.md` walked end-to-end against the final (post-fix) code:
+every US1–US8 row and both edge-case rows were manually exercised — the Observer edge
+case specifically is what surfaced the post-merge permission-gating gap above. No doc
+drift found; `quickstart.md` needed no changes. Both gates re-confirmed by the user
+(backend: 71/71 tests, `EXIT: 0`; frontend: `EXIT: 0` after each of the two frontend
+commits). `docs/roadmap.md` row 004 set to `shipped`.
