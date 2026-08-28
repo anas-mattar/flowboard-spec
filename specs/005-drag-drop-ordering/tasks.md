@@ -36,7 +36,7 @@ dragging, US2 move via an accessible menu, US3 reorder lists by dragging). See
 No new packages this feature (plan.md Technical Context) — nothing to add in a separate
 Setup phase; no migration either (no schema change).
 
-- [ ] T001 Add `CardMoved = "card.moved"` to flowboard-api/src/Flowboard.Api/Domain/ActivityEventType.cs (data-model.md ActivityEvent)
+- [x] T001 Add `CardMoved = "card.moved"` to flowboard-api/src/Flowboard.Api/Domain/ActivityEventType.cs (data-model.md ActivityEvent)
 
 **Checkpoint**: Shared event-type constant exists. Backend endpoint work (Phase 2) can
 now begin.
@@ -51,10 +51,10 @@ US2 (the "Move" menu) call.
 **Independent Test**: `quickstart.md` §3, backend half of the US1/US2 rows — callable
 directly against the running API before any frontend exists.
 
-- [ ] T002 [US1] `CardService.MoveCardAsync` — resolve `listPublicId`/`beforeCardPublicId` into an `Ordering.Append`/`InsertBetween` call (research.md R-1); reject if the target list or `beforeCardPublicId` isn't on the same board (`400`); write a `card.moved` event only when the resolved list differs from the card's current list (research.md R-3); never check `RowVersion`/`If-Match` (plan.md ADR-21); never enforce the destination's WIP limit (research.md R-6) — in flowboard-api/src/Flowboard.Api/Services/CardService.cs (cite contracts/move-api.md)
-- [ ] T003 [US1] `POST /v1/cards/{cardPublicId}/move` in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T002)
-- [ ] T004 [P] [US1] Integration test: same-list reorder lands at the resolved position and writes no activity entry; cross-list move lands correctly, disappears from the source list, and writes exactly one `card.moved` entry; a destination list already over its WIP limit still accepts the move; a stale caller's move still succeeds against a card someone else just moved (last-write-wins, no `409`); `beforeCardPublicId`/`listPublicId` from a different board → `400`; Observer → `403`; no board access → `404` — in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
-- [ ] T005 [P] Golden-fixture test: given a set of sibling positions and a target "insert before" id, `CardService`'s insertion-point resolution calls the correct `Ordering.Append`/`InsertBetween` with hand-worked expected values, including the "append at the end" (`beforeCardPublicId` omitted) case — in flowboard-api/tests/Flowboard.Api.Tests/OrderingTests.cs
+- [x] T002 [US1] `CardService.MoveCardAsync` — resolve `listPublicId`/`beforeCardPublicId` into an `Ordering.Append`/`InsertBetween` call (research.md R-1); reject if the target list or `beforeCardPublicId` isn't on the same board (`400`); write a `card.moved` event only when the resolved list differs from the card's current list (research.md R-3); never check `RowVersion`/`If-Match` (plan.md ADR-21); never enforce the destination's WIP limit (research.md R-6) — in flowboard-api/src/Flowboard.Api/Services/CardService.cs (cite contracts/move-api.md)
+- [x] T003 [US1] `POST /v1/cards/{cardPublicId}/move` in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T002)
+- [x] T004 [P] [US1] Integration test: same-list reorder lands at the resolved position and writes no activity entry; cross-list move lands correctly, disappears from the source list, and writes exactly one `card.moved` entry; a destination list already over its WIP limit still accepts the move; a stale caller's move still succeeds against a card someone else just moved (last-write-wins, no `409`); `beforeCardPublicId`/`listPublicId` from a different board → `400`; Observer → `403`; no board access → `404` — in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
+- [x] T005 [P] Golden-fixture test: given a set of sibling positions and a target "insert before" id, `CardService`'s insertion-point resolution calls the correct `Ordering.Append`/`InsertBetween` with hand-worked expected values, including the "append at the end" (`beforeCardPublicId` omitted) case — in flowboard-api/tests/Flowboard.Api.Tests/OrderingTests.cs
 
 **Checkpoint**: A card can be moved anywhere on the board through the API alone.
 
@@ -67,9 +67,9 @@ group this project has built.
 
 **Independent Test**: `quickstart.md` §3, US3 row's backend half.
 
-- [ ] T006 [US3] `ListService.MoveListAsync` — resolve `beforeListPublicId` into an `Ordering.Append`/`InsertBetween` call the same way T002 does for cards; reject a `beforeListPublicId` from a different board (`400`); no activity event (lists aren't card-scoped, research.md R-3's own note) — in flowboard-api/src/Flowboard.Api/Services/ListService.cs (new file; cite contracts/move-api.md)
-- [ ] T007 [US3] `POST /v1/lists/{listPublicId}/move` in flowboard-api/src/Flowboard.Api/Endpoints/ListsEndpoints.cs (new file; depends on T006); register `IListService` and `MapListsEndpoints` in flowboard-api/src/Flowboard.Api/Program.cs
-- [ ] T008 [P] [US3] Integration test: reordering a list lands it at the resolved position for a subsequent board fetch; dropping a list back at its own position is a no-op; a `beforeListPublicId` from a different board → `400`; Observer → `403`; no board access → `404` — in flowboard-api/tests/Flowboard.Api.Tests/ListsEndpointTests.cs (new file)
+- [x] T006 [US3] `ListService.MoveListAsync` — resolve `beforeListPublicId` into an `Ordering.Append`/`InsertBetween` call the same way T002 does for cards; reject a `beforeListPublicId` from a different board (`400`); no activity event (lists aren't card-scoped, research.md R-3's own note) — in flowboard-api/src/Flowboard.Api/Services/ListService.cs (new file; cite contracts/move-api.md)
+- [x] T007 [US3] `POST /v1/lists/{listPublicId}/move` in flowboard-api/src/Flowboard.Api/Endpoints/ListsEndpoints.cs (new file; depends on T006); register `IListService` and `MapListsEndpoints` in flowboard-api/src/Flowboard.Api/Program.cs
+- [x] T008 [P] [US3] Integration test: reordering a list lands it at the resolved position for a subsequent board fetch; dropping a list back at its own position is a no-op; a `beforeListPublicId` from a different board → `400`; Observer → `403`; no board access → `404` — in flowboard-api/tests/Flowboard.Api.Tests/ListsEndpointTests.cs (new file)
 
 **Checkpoint — Phase A gate**: STOP. User runs
 `dotnet build --warnaserror && dotnet test` in flowboard-api and confirms EXIT 0. AI
