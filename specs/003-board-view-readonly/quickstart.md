@@ -25,7 +25,9 @@ Verify directly (using the fixture owner's token from 002's quickstart login ste
 
 ```powershell
 curl http://localhost:5111/v1/boards -H "Authorization: Bearer <token>"
-# -> 200, { items: [3 boards], nextCursor: null }
+# -> 200, { items: [4 boards], nextCursor: null }
+# (the 3 seeded here, plus 002's bare "Fixture Board" — the fixture owner owns its
+# workspace directly, so it's visible too; this migration also gives it a Color)
 ```
 
 ## 3. Start the frontend

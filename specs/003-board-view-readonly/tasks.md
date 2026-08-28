@@ -179,9 +179,9 @@ reference check (the Visual Compliance Loop's deviation table). Commit Phase B.
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T039 [P] Walk `quickstart.md` end-to-end (all US1–US4 rows, both edge cases) and
+- [x] T039 [P] Walk `quickstart.md` end-to-end (all US1–US4 rows, both edge cases) and
   fix any doc drift in specs/003-board-view-readonly/quickstart.md
-- [ ] T040 Write phase review notes (backend + frontend compliance checklist results,
+- [x] T040 Write phase review notes (backend + frontend compliance checklist results,
   gate evidence, the domain-invariant pass) in
   specs/003-board-view-readonly/review-notes.md; write
   specs/003-board-view-readonly/human-pr-review.md; on merge, set roadmap row 003 →
