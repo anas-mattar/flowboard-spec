@@ -101,25 +101,25 @@ cross-repository rule, the backend gates and merges to `main` **before** Phase B
 
 **Independent Test**: `quickstart.md` §4 US1 rows, through the browser.
 
-- [ ] T025 [US1] Create server-only boards client (`list`, `getContent`) in flowboard-web/src/lib/api/boards-client.ts (cite contracts/board-content-api.md)
-- [ ] T026 [US1] Create the `boards` router (`protectedProcedure`: `list`, `getContent`) in flowboard-web/src/server/api/routers/boards.ts; register in root.ts
-- [ ] T027 [US1] Create the authenticated app-shell layout (ADR-13: redirect to `/login`
+- [x] T025 [US1] Create server-only boards client (`list`, `getContent`) in flowboard-web/src/lib/api/boards-client.ts (cite contracts/board-content-api.md)
+- [x] T026 [US1] Create the `boards` router (`protectedProcedure`: `list`, `getContent`) in flowboard-web/src/server/api/routers/boards.ts; register in root.ts
+- [x] T027 [US1] Create the authenticated app-shell layout (ADR-13: redirect to `/login`
   if unauthenticated, render `Sidebar` + `TopBar` around `{children}`) in flowboard-web/src/app/(app)/layout.tsx
-- [ ] T028 [US1] Create `Sidebar` (brand block, boards list with color swatch/name/count,
+- [x] T028 [US1] Create `Sidebar` (brand block, boards list with color swatch/name/count,
   currently-open-board highlight, collapse control, user footer — VI-001/VI-002/VI-003)
   in flowboard-web/src/components/layout/sidebar.tsx
-- [ ] T029 [US1] Move flowboard-web/src/app/page.tsx to flowboard-web/src/app/(app)/page.tsx (content unchanged; URL unaffected by the route group)
-- [ ] T030 [US1] Move flowboard-web/src/app/boards/[boardPublicId]/page.tsx to
+- [x] T029 [US1] Move flowboard-web/src/app/page.tsx to flowboard-web/src/app/(app)/page.tsx (content unchanged; URL unaffected by the route group)
+- [x] T030 [US1] Move flowboard-web/src/app/boards/[boardPublicId]/page.tsx to
   flowboard-web/src/app/(app)/boards/[boardPublicId]/page.tsx, extended to fetch board
   content (`boards.getContent`) and render `BoardCanvas` (still shows the existing
   access-denied state for a 404, unchanged from 002)
-- [ ] T031 [P] [US1] Create `BoardCanvas` (horizontal list row — VI-006) in flowboard-web/src/components/board/board-canvas.tsx
-- [ ] T032 [P] [US1] Create `ListColumn` (header + WIP pill + cards + inert "+ Add a
+- [x] T031 [P] [US1] Create `BoardCanvas` (horizontal list row — VI-006) in flowboard-web/src/components/board/board-canvas.tsx
+- [x] T032 [P] [US1] Create `ListColumn` (header + WIP pill + cards + inert "+ Add a
   card" footer — VI-007/VI-008, FR-007) in flowboard-web/src/components/board/list-column.tsx
-- [ ] T033 [P] [US1] Create `CardFront` (label chips, title, meta row: due badge colored
+- [x] T033 [P] [US1] Create `CardFront` (label chips, title, meta row: due badge colored
   by server-computed `dueStatus`, checklist progress, comment count, member avatars —
   VI-009/VI-010/VI-011) in flowboard-web/src/components/board/card-front.tsx
-- [ ] T034 [US1] Make `TopBar` board-aware (R-6): accept an optional board-summary prop
+- [x] T034 [US1] Make `TopBar` board-aware (R-6): accept an optional board-summary prop
   and render the full VI-004/VI-005 layout (title, star, search, filter, avatar stack,
   invite, theme toggle) only when a board is open, with the non-functional controls
   inert (FR-007) — in flowboard-web/src/components/layout/top-bar.tsx
@@ -134,7 +134,7 @@ cross-repository rule, the backend gates and merges to `main` **before** Phase B
 
 **Independent Test**: `quickstart.md` §4 US2 row.
 
-- [ ] T035 [US2] Apply dark-mode Tailwind variants across `Sidebar`, `BoardCanvas`,
+- [x] T035 [US2] Apply dark-mode Tailwind variants across `Sidebar`, `BoardCanvas`,
   `ListColumn`, and `CardFront` (the existing `ThemeProvider`/class-toggle from 001
   needs no new logic — only styling coverage on the new components) in flowboard-web/src/components/layout/sidebar.tsx, flowboard-web/src/components/board/*.tsx
 
@@ -146,7 +146,7 @@ cross-repository rule, the backend gates and merges to `main` **before** Phase B
 
 **Independent Test**: `quickstart.md` §4 US3 row.
 
-- [ ] T036 [US3] Add collapse/expand state and the ☰ control's behavior to `Sidebar`
+- [x] T036 [US3] Add collapse/expand state and the ☰ control's behavior to `Sidebar`
   (client component) and wire the app-shell layout so the canvas expands/contracts
   immediately in flowboard-web/src/components/layout/sidebar.tsx, flowboard-web/src/app/(app)/layout.tsx
 
@@ -158,7 +158,7 @@ cross-repository rule, the backend gates and merges to `main` **before** Phase B
 
 **Independent Test**: `quickstart.md` §4 US4 row.
 
-- [ ] T037 [US4] Audit and fix keyboard operability across `Sidebar`'s board links,
+- [x] T037 [US4] Audit and fix keyboard operability across `Sidebar`'s board links,
   its collapse control, and the theme toggle — native `<button>`/`<a>` elements only (no
   `onClick`-only `<div>`s), visible focus-visible styling — in flowboard-web/src/components/layout/sidebar.tsx, flowboard-web/src/components/shell/theme-toggle.tsx
 
@@ -166,7 +166,7 @@ cross-repository rule, the backend gates and merges to `main` **before** Phase B
 
 ## Phase 7: Visual Compliance Loop (`docs/sdlc/review-process.md`) — before the Phase B gate
 
-- [ ] T038 Capture the implemented board view at the same viewport as
+- [x] T038 Capture the implemented board view at the same viewport as
   `screenshots/board-canvas.png`, compare item-by-item against VI-001–VI-011, produce
   the deviation table, fix and recapture until it is empty or every remaining row is
   user-approved; attach the table and both screenshots to the phase notes
