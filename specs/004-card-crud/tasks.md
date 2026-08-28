@@ -36,13 +36,13 @@ comments/activity, US8 copy/delete). See "Delivery Mapping" below.
 No new packages this feature (plan.md Technical Context) — nothing to add in a separate
 Setup phase.
 
-- [ ] T001 [P] Add `PublicId` column + unique index to `ChecklistItem` in flowboard-api/src/Flowboard.Api/Data/Configurations/ChecklistItemConfiguration.cs (data-model.md ChecklistItem)
-- [ ] T002 [P] Create `ActivityEvent` entity in flowboard-api/src/Flowboard.Api/Domain/Entities/ActivityEvent.cs (data-model.md ActivityEvent)
-- [ ] T003 [P] Create `ActivityEventConfiguration` (no soft delete, `IX_ActivityEvent_CardId_CreatedDate`) in flowboard-api/src/Flowboard.Api/Data/Configurations/ActivityEventConfiguration.cs (depends on T002)
-- [ ] T004 Register `ActivityEvent` as a `DbSet` in flowboard-api/src/Flowboard.Api/Data/FlowboardDbContext.cs (depends on T002)
-- [ ] T005 [P] Create the ordering module — `Append(lastPosition)`, `InsertBetween(lower, upper)` — in flowboard-api/src/Flowboard.Api/Domain/Ordering.cs (plan.md ADR-18, 001's ADR-4 reserved this file)
-- [ ] T006 [P] Extract `CardDueStatus.Compute(dueAt, dueComplete, now)` into flowboard-api/src/Flowboard.Api/Domain/CardDueStatus.cs; update flowboard-api/src/Flowboard.Api/Services/BoardContentService.cs to call it instead of its inline 003 logic (research.md R-5 — no behavior change, single source of truth)
-- [ ] T007 Generate the `AddCardActivity` migration (`dotnet ef migrations add`, repo-local tool) — `ActivityEvent` table + `ChecklistItem.PublicId` column, no seed changes — in flowboard-api/src/Flowboard.Api/Migrations/ (depends on T001–T004)
+- [x] T001 [P] Add `PublicId` column + unique index to `ChecklistItem` in flowboard-api/src/Flowboard.Api/Data/Configurations/ChecklistItemConfiguration.cs (data-model.md ChecklistItem)
+- [x] T002 [P] Create `ActivityEvent` entity in flowboard-api/src/Flowboard.Api/Domain/Entities/ActivityEvent.cs (data-model.md ActivityEvent)
+- [x] T003 [P] Create `ActivityEventConfiguration` (no soft delete, `IX_ActivityEvent_CardId_CreatedDate`) in flowboard-api/src/Flowboard.Api/Data/Configurations/ActivityEventConfiguration.cs (depends on T002)
+- [x] T004 Register `ActivityEvent` as a `DbSet` in flowboard-api/src/Flowboard.Api/Data/FlowboardDbContext.cs (depends on T002)
+- [x] T005 [P] Create the ordering module — `Append(lastPosition)`, `InsertBetween(lower, upper)` — in flowboard-api/src/Flowboard.Api/Domain/Ordering.cs (plan.md ADR-18, 001's ADR-4 reserved this file)
+- [x] T006 [P] Extract `CardDueStatus.Compute(dueAt, dueComplete, now)` into flowboard-api/src/Flowboard.Api/Domain/CardDueStatus.cs; update flowboard-api/src/Flowboard.Api/Services/BoardContentService.cs to call it instead of its inline 003 logic (research.md R-5 — no behavior change, single source of truth)
+- [x] T007 Generate the `AddCardActivity` migration (`dotnet ef migrations add`, repo-local tool) — `ActivityEvent` table + `ChecklistItem.PublicId` column, no seed changes — in flowboard-api/src/Flowboard.Api/Migrations/ (depends on T001–T004)
 
 **Checkpoint**: Foundation ready — schema, ordering module, and shared due-status helper
 exist. Backend endpoint work (Phase 2) can now begin.
@@ -57,29 +57,29 @@ exist. Backend endpoint work (Phase 2) can now begin.
 **Independent Test**: `quickstart.md` §4, backend half of every row — each capability
 callable directly against the running API before any frontend exists.
 
-- [ ] T008 [US1] `CardService.CreateCard` (position via `Ordering.Append`, writes a `card.created` event, no WIP-limit check — invariant 3) in flowboard-api/src/Flowboard.Api/Services/CardService.cs (cite contracts/card-crud-api.md)
-- [ ] T009 [US1] `POST /v1/lists/{listPublicId}/cards` in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T008); register in Program.cs
-- [ ] T010 [P] [US1] Integration test: create succeeds and appends at the bottom regardless of the list's `WipLimit`; empty/too-long title → `400`; no board access → `404` in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
-- [ ] T011 [US2] `CardService.GetCardDetail` (full detail incl. checklist items, `dueStatus` via T006's helper) in flowboard-api/src/Flowboard.Api/Services/CardService.cs
-- [ ] T012 [US2] `GET /v1/cards/{cardPublicId}` with `ETag` response header in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T011)
-- [ ] T013 [P] [US2] Integration test: detail returned correctly including empty sections; Observer can view; no access → `404` in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
-- [ ] T014 [US3] `CardService.UpdateCard` (title/description/`dueAt`/`dueComplete`, `RowVersion`/`If-Match` check, writes `card.renamed`/`card.described`/`due.set`/`due.cleared`/`due.completed` events as applicable) in flowboard-api/src/Flowboard.Api/Services/CardService.cs (cite contracts/card-crud-api.md, plan.md ADR-17)
-- [ ] T015 [US3] `PATCH /v1/cards/{cardPublicId}` — `If-Match` required, `409` on mismatch — in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T014)
-- [ ] T016 [P] [US3] Integration test: title/description update succeeds and reflects in a follow-up `GET`; a stale `If-Match` on a genuinely concurrent edit → `409` with the card unchanged; empty title/no board access → `400`/`404` in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
-- [ ] T017 [US4] `CardService` label assign/remove (invariant 7: reject a label from a different board) and member assign/remove (auto-adds the user to the board, invariant 5's sanctioned side effect) in flowboard-api/src/Flowboard.Api/Services/CardService.cs
-- [ ] T018 [US4] `POST/DELETE /v1/cards/{cardPublicId}/labels[/{labelPublicId}]` and `.../members[/{userPublicId}]` in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T017)
-- [ ] T019 [P] [US4] Integration test: assigning a label from a different board → `400`; assign/remove are idempotent; assigning a non-board-member adds them to the board (verify via `BoardMember`) in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
-- [ ] T020 [P] [US5] Integration test: `dueStatus` bucketing after `PATCH` (future/soon/overdue), and `dueComplete=true` forces `"complete"` regardless of date; clearing `dueAt` returns `dueStatus: null` — reuses T014/T015, no new endpoint — in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
-- [ ] T021 [US6] `CardService` checklist item add/toggle/delete (writes `checklist.item.added`/`checked`/`deleted` events) in flowboard-api/src/Flowboard.Api/Services/CardService.cs
-- [ ] T022 [US6] `POST /v1/cards/{cardPublicId}/checklist-items`, `PATCH`/`DELETE /v1/checklist-items/{checklistItemPublicId}` in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T021)
-- [ ] T023 [P] [US6] Integration test: add/tick/delete each reflected in a follow-up `GET` card detail; no board access → `404` in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
-- [ ] T024 [US7] `CardService.AddComment` (writes a `Comment` row + a `comment.added` event embedding the body, research.md R-6) and `GetActivity` (cursor-paginated, newest first) in flowboard-api/src/Flowboard.Api/Services/CardService.cs
-- [ ] T025 [US7] `POST /v1/cards/{cardPublicId}/comments`, `GET /v1/cards/{cardPublicId}/activity` in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T024)
-- [ ] T026 [P] [US7] Integration test: an Observer can comment; the feed contains one correctly-typed entry per mutation exercised by T010/T016/T019/T023, newest first; pagination shape matches ADR-12 in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
-- [ ] T027 [US8] `CardService.CopyCard` (position via `Ordering.InsertBetween`, duplicates labels/members/checklist text with `Done` reset to `false`, fresh `card.created` event only — research.md R-3) and `DeleteCard` (soft-delete trio) in flowboard-api/src/Flowboard.Api/Services/CardService.cs
-- [ ] T028 [US8] `POST /v1/cards/{cardPublicId}/copy`, `DELETE /v1/cards/{cardPublicId}` in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T027)
-- [ ] T029 [P] [US8] Integration test: copy duplicates labels/members/due date/description, resets checklist `Done`, and starts a fresh activity feed containing only its own creation; delete excludes the card from `GET /v1/boards/{id}` (003's existing exclusion) and a second delete → `404` in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
-- [ ] T030 [P] Golden-fixture test: `Ordering.Append`/`InsertBetween` against hand-worked expected position values (backend-rules.md's requirement for position/ranking math) in flowboard-api/tests/Flowboard.Api.Tests/OrderingTests.cs
+- [x] T008 [US1] `CardService.CreateCard` (position via `Ordering.Append`, writes a `card.created` event, no WIP-limit check — invariant 3) in flowboard-api/src/Flowboard.Api/Services/CardService.cs (cite contracts/card-crud-api.md)
+- [x] T009 [US1] `POST /v1/lists/{listPublicId}/cards` in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T008); register in Program.cs
+- [x] T010 [P] [US1] Integration test: create succeeds and appends at the bottom regardless of the list's `WipLimit`; empty/too-long title → `400`; no board access → `404` in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
+- [x] T011 [US2] `CardService.GetCardDetail` (full detail incl. checklist items, `dueStatus` via T006's helper) in flowboard-api/src/Flowboard.Api/Services/CardService.cs
+- [x] T012 [US2] `GET /v1/cards/{cardPublicId}` with `ETag` response header in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T011)
+- [x] T013 [P] [US2] Integration test: detail returned correctly including empty sections; Observer can view; no access → `404` in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
+- [x] T014 [US3] `CardService.UpdateCard` (title/description/`dueAt`/`dueComplete`, `RowVersion`/`If-Match` check, writes `card.renamed`/`card.described`/`due.set`/`due.cleared`/`due.completed` events as applicable) in flowboard-api/src/Flowboard.Api/Services/CardService.cs (cite contracts/card-crud-api.md, plan.md ADR-17)
+- [x] T015 [US3] `PATCH /v1/cards/{cardPublicId}` — `If-Match` required, `409` on mismatch — in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T014)
+- [x] T016 [P] [US3] Integration test: title/description update succeeds and reflects in a follow-up `GET`; a stale `If-Match` on a genuinely concurrent edit → `409` with the card unchanged; empty title/no board access → `400`/`404` in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
+- [x] T017 [US4] `CardService` label assign/remove (invariant 7: reject a label from a different board) and member assign/remove (auto-adds the user to the board, invariant 5's sanctioned side effect) in flowboard-api/src/Flowboard.Api/Services/CardService.cs
+- [x] T018 [US4] `POST/DELETE /v1/cards/{cardPublicId}/labels[/{labelPublicId}]` and `.../members[/{userPublicId}]` in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T017)
+- [x] T019 [P] [US4] Integration test: assigning a label from a different board → `400`; assign/remove are idempotent; assigning a non-board-member adds them to the board (verify via `BoardMember`) in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
+- [x] T020 [P] [US5] Integration test: `dueStatus` bucketing after `PATCH` (future/soon/overdue), and `dueComplete=true` forces `"complete"` regardless of date; clearing `dueAt` returns `dueStatus: null` — reuses T014/T015, no new endpoint — in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
+- [x] T021 [US6] `CardService` checklist item add/toggle/delete (writes `checklist.item.added`/`checked`/`deleted` events) in flowboard-api/src/Flowboard.Api/Services/CardService.cs
+- [x] T022 [US6] `POST /v1/cards/{cardPublicId}/checklist-items`, `PATCH`/`DELETE /v1/checklist-items/{checklistItemPublicId}` in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T021)
+- [x] T023 [P] [US6] Integration test: add/tick/delete each reflected in a follow-up `GET` card detail; no board access → `404` in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
+- [x] T024 [US7] `CardService.AddComment` (writes a `Comment` row + a `comment.added` event embedding the body, research.md R-6) and `GetActivity` (cursor-paginated, newest first) in flowboard-api/src/Flowboard.Api/Services/CardService.cs
+- [x] T025 [US7] `POST /v1/cards/{cardPublicId}/comments`, `GET /v1/cards/{cardPublicId}/activity` in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T024)
+- [x] T026 [P] [US7] Integration test: an Observer can comment; the feed contains one correctly-typed entry per mutation exercised by T010/T016/T019/T023, newest first; pagination shape matches ADR-12 in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
+- [x] T027 [US8] `CardService.CopyCard` (position via `Ordering.InsertBetween`, duplicates labels/members/checklist text with `Done` reset to `false`, fresh `card.created` event only — research.md R-3) and `DeleteCard` (soft-delete trio) in flowboard-api/src/Flowboard.Api/Services/CardService.cs
+- [x] T028 [US8] `POST /v1/cards/{cardPublicId}/copy`, `DELETE /v1/cards/{cardPublicId}` in flowboard-api/src/Flowboard.Api/Endpoints/CardsEndpoints.cs (depends on T027)
+- [x] T029 [P] [US8] Integration test: copy duplicates labels/members/due date/description, resets checklist `Done`, and starts a fresh activity feed containing only its own creation; delete excludes the card from `GET /v1/boards/{id}` (003's existing exclusion) and a second delete → `404` in flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs
+- [x] T030 [P] Golden-fixture test: `Ordering.Append`/`InsertBetween` against hand-worked expected position values (backend-rules.md's requirement for position/ranking math) in flowboard-api/tests/Flowboard.Api.Tests/OrderingTests.cs
 
 **Checkpoint — Phase A gate**: STOP. User runs
 `dotnet build --warnaserror && dotnet test` in flowboard-api and confirms EXIT 0. AI
