@@ -95,11 +95,11 @@ cross-repository rule, the backend gates and merges to `main` **before** Phase B
 
 **Independent Test**: `quickstart.md` §4 US1 row, through the browser.
 
-- [ ] T031 [US1] Create `lib/cards/schemas.ts` (Zod: create/update/label/member/checklist/comment input schemas — author all of them now, later tasks just import) in flowboard-web/src/lib/cards/schemas.ts
-- [ ] T032 [US1] Create the server-only cards client (`createCard` first; later tasks extend this file) in flowboard-web/src/lib/api/cards-client.ts (cite contracts/card-crud-api.md)
-- [ ] T033 [US1] Create the `cards` tRPC router (`create` `protectedProcedure` first; later tasks extend this file) in flowboard-web/src/server/api/routers/cards.ts; register in root.ts
-- [ ] T034 [US1] Create `CardComposer` (React Hook Form, Enter commits and re-opens empty, Escape cancels and discards typed text — `frontend-rules.md`'s inline-edit contract) in flowboard-web/src/components/board/card-composer.tsx
-- [ ] T035 [US1] Make `ListColumn` a client component wired to `cards.create` (invalidate `boards.getContent` on success, per plan.md ADR-19; success/error toast, X-01) in flowboard-web/src/components/board/list-column.tsx
+- [x] T031 [US1] Create `lib/cards/schemas.ts` (Zod: create/update/label/member/checklist/comment input schemas — author all of them now, later tasks just import) in flowboard-web/src/lib/cards/schemas.ts
+- [x] T032 [US1] Create the server-only cards client (`createCard` first; later tasks extend this file) in flowboard-web/src/lib/api/cards-client.ts (cite contracts/card-crud-api.md)
+- [x] T033 [US1] Create the `cards` tRPC router (`create` `protectedProcedure` first; later tasks extend this file) in flowboard-web/src/server/api/routers/cards.ts; register in root.ts
+- [x] T034 [US1] Create `CardComposer` (React Hook Form, Enter commits and re-opens empty, Escape cancels and discards typed text — `frontend-rules.md`'s inline-edit contract) in flowboard-web/src/components/board/card-composer.tsx
+- [x] T035 [US1] Make `ListColumn` a client component wired to `cards.create` (invalidate `boards.getContent` on success, per plan.md ADR-19; success/error toast, X-01) in flowboard-web/src/components/board/list-column.tsx
 
 **Checkpoint**: US1 verifiable end-to-end through the browser.
 
@@ -111,10 +111,10 @@ cross-repository rule, the backend gates and merges to `main` **before** Phase B
 
 **Independent Test**: `quickstart.md` §4 US2 row.
 
-- [ ] T036 [US2] Extend `cards` router/client with `getDetail` (depends on T032/T033) in flowboard-web/src/server/api/routers/cards.ts, flowboard-web/src/lib/api/cards-client.ts
-- [ ] T037 [US2] Make `BoardCanvas` a client component owning `openCardPublicId` state (plan.md ADR-14/ADR-19) in flowboard-web/src/components/board/board-canvas.tsx
-- [ ] T038 [US2] Wire `CardFront`'s click handler to set the open-card state (depends on T037) in flowboard-web/src/components/board/card-front.tsx
-- [ ] T039 [US2] Create `CardDetailModal` shell (shadcn `Dialog`; header with close button; breadcrumb; loading/error states; closes via ✕, outside click, and Escape) in flowboard-web/src/components/board/card-detail/card-detail-modal.tsx (depends on T036)
+- [x] T036 [US2] Extend `cards` router/client with `getDetail` (depends on T032/T033) in flowboard-web/src/server/api/routers/cards.ts, flowboard-web/src/lib/api/cards-client.ts
+- [x] T037 [US2] Make `BoardCanvas` a client component owning `openCardPublicId` state (plan.md ADR-14/ADR-19) in flowboard-web/src/components/board/board-canvas.tsx
+- [x] T038 [US2] Wire `CardFront`'s click handler to set the open-card state (depends on T037) in flowboard-web/src/components/board/card-front.tsx
+- [x] T039 [US2] Create `CardDetailModal` shell (shadcn `Dialog`; header with close button; breadcrumb; loading/error states; closes via ✕, outside click, and Escape) in flowboard-web/src/components/board/card-detail/card-detail-modal.tsx (depends on T036)
 
 **Checkpoint**: US2 verifiable end-to-end — every seeded card from 003 can be opened and
 closed.
@@ -128,9 +128,9 @@ closed.
 **Independent Test**: `quickstart.md` §4 US3 row, including the concurrency-conflict
 check.
 
-- [ ] T040 [US3] Extend `cards` router/client with `update` (passes the `ETag` captured from `getDetail` as `If-Match`; maps a `409` to a typed conflict result, not a generic error) in flowboard-web/src/server/api/routers/cards.ts, flowboard-web/src/lib/api/cards-client.ts
-- [ ] T041 [US3] Create `CardTitleField` (inline edit in the modal header) in flowboard-web/src/components/board/card-detail/card-title-field.tsx (depends on T040)
-- [ ] T042 [US3] Create `CardDescriptionPanel` (textarea + Save button; plain-text render via `whitespace-pre-wrap`, never `dangerouslySetInnerHTML` — plan.md ADR-15; on `409`, re-fetch via `getDetail` and show the "changed by someone else" toast, FR-013) in flowboard-web/src/components/board/card-detail/card-description-panel.tsx (depends on T040)
+- [x] T040 [US3] Extend `cards` router/client with `update` (passes the `ETag` captured from `getDetail` as `If-Match`; maps a `409` to a typed conflict result, not a generic error) in flowboard-web/src/server/api/routers/cards.ts, flowboard-web/src/lib/api/cards-client.ts
+- [x] T041 [US3] Create `CardTitleField` (inline edit in the modal header) in flowboard-web/src/components/board/card-detail/card-title-field.tsx (depends on T040)
+- [x] T042 [US3] Create `CardDescriptionPanel` (textarea + Save button; plain-text render via `whitespace-pre-wrap`, never `dangerouslySetInnerHTML` — plan.md ADR-15; on `409`, re-fetch via `getDetail` and show the "changed by someone else" toast, FR-013) in flowboard-web/src/components/board/card-detail/card-description-panel.tsx (depends on T040)
 
 **Checkpoint**: US3 verifiable end-to-end, including two-tab concurrent-edit rejection.
 
@@ -142,9 +142,9 @@ check.
 
 **Independent Test**: `quickstart.md` §4 US4 row.
 
-- [ ] T043 [US4] Extend `cards` router/client with `assignLabel`/`removeLabel`/`assignMember`/`removeMember` in flowboard-web/src/server/api/routers/cards.ts, flowboard-web/src/lib/api/cards-client.ts
-- [ ] T044 [P] [US4] Create `CardLabelsPanel` (multi-select from the board's own labels; success/error toast) in flowboard-web/src/components/board/card-detail/card-labels-panel.tsx (depends on T043)
-- [ ] T045 [P] [US4] Create `CardMembersPanel` (multi-select from current board members; success/error toast) in flowboard-web/src/components/board/card-detail/card-members-panel.tsx (depends on T043)
+- [x] T043 [US4] Extend `cards` router/client with `assignLabel`/`removeLabel`/`assignMember`/`removeMember` in flowboard-web/src/server/api/routers/cards.ts, flowboard-web/src/lib/api/cards-client.ts
+- [x] T044 [P] [US4] Create `CardLabelsPanel` (multi-select from the board's own labels; success/error toast) in flowboard-web/src/components/board/card-detail/card-labels-panel.tsx (depends on T043)
+- [x] T045 [P] [US4] Create `CardMembersPanel` (multi-select from current board members; success/error toast) in flowboard-web/src/components/board/card-detail/card-members-panel.tsx (depends on T043)
 
 **Checkpoint**: US4 verifiable end-to-end, including auto-adding a non-member.
 
@@ -156,7 +156,7 @@ check.
 
 **Independent Test**: `quickstart.md` §4 US5 row.
 
-- [ ] T046 [US5] Create `CardDueDatePanel` (set/clear/mark-complete, reusing T040's `update` mutation; success/error toast) in flowboard-web/src/components/board/card-detail/card-due-date-panel.tsx (depends on T040)
+- [x] T046 [US5] Create `CardDueDatePanel` (set/clear/mark-complete, reusing T040's `update` mutation; success/error toast) in flowboard-web/src/components/board/card-detail/card-due-date-panel.tsx (depends on T040)
 
 **Checkpoint**: US5 verifiable end-to-end — badge colors match 003's existing rule.
 
@@ -168,8 +168,8 @@ check.
 
 **Independent Test**: `quickstart.md` §4 US6 row.
 
-- [ ] T047 [US6] Extend `cards` router/client with `addChecklistItem`/`toggleChecklistItem`/`deleteChecklistItem` in flowboard-web/src/server/api/routers/cards.ts, flowboard-web/src/lib/api/cards-client.ts
-- [ ] T048 [US6] Create `CardChecklistPanel` (add/tick/delete, progress bar; success/error toast) in flowboard-web/src/components/board/card-detail/card-checklist-panel.tsx (depends on T047)
+- [x] T047 [US6] Extend `cards` router/client with `addChecklistItem`/`toggleChecklistItem`/`deleteChecklistItem` in flowboard-web/src/server/api/routers/cards.ts, flowboard-web/src/lib/api/cards-client.ts
+- [x] T048 [US6] Create `CardChecklistPanel` (add/tick/delete, progress bar; success/error toast) in flowboard-web/src/components/board/card-detail/card-checklist-panel.tsx (depends on T047)
 
 **Checkpoint**: US6 verifiable end-to-end.
 
@@ -181,8 +181,8 @@ check.
 
 **Independent Test**: `quickstart.md` §4 US7 row.
 
-- [ ] T049 [US7] Extend `cards` router/client with `addComment`/`getActivity` in flowboard-web/src/server/api/routers/cards.ts, flowboard-web/src/lib/api/cards-client.ts
-- [ ] T050 [US7] Create `CardActivityFeed` (comment box + feed rendering via the fixed message-template lookup, research.md R-6; success/error toast on comment) in flowboard-web/src/components/board/card-detail/card-activity-feed.tsx (depends on T049)
+- [x] T049 [US7] Extend `cards` router/client with `addComment`/`getActivity` in flowboard-web/src/server/api/routers/cards.ts, flowboard-web/src/lib/api/cards-client.ts
+- [x] T050 [US7] Create `CardActivityFeed` (comment box + feed rendering via the fixed message-template lookup, research.md R-6; success/error toast on comment) in flowboard-web/src/components/board/card-detail/card-activity-feed.tsx (depends on T049)
 
 **Checkpoint**: US7 verifiable end-to-end — every prior story's mutation shows up here.
 
@@ -194,8 +194,8 @@ check.
 
 **Independent Test**: `quickstart.md` §4 US8 row.
 
-- [ ] T051 [US8] Extend `cards` router/client with `copy`/`delete` in flowboard-web/src/server/api/routers/cards.ts, flowboard-web/src/lib/api/cards-client.ts
-- [ ] T052 [US8] Create `CardAddToCardMenu` (Members/Labels/Due date/Move[inert per FR-016/FR-017]/Copy/Delete; delete requires a confirmation dialog; success/error toast on both actions) in flowboard-web/src/components/board/card-detail/card-add-to-card-menu.tsx (depends on T051)
+- [x] T051 [US8] Extend `cards` router/client with `copy`/`delete` in flowboard-web/src/server/api/routers/cards.ts, flowboard-web/src/lib/api/cards-client.ts
+- [x] T052 [US8] Create `CardAddToCardMenu` (Members/Labels/Due date/Move[inert per FR-016/FR-017]/Copy/Delete; delete requires a confirmation dialog; success/error toast on both actions) in flowboard-web/src/components/board/card-detail/card-add-to-card-menu.tsx (depends on T051)
 
 **Checkpoint**: US8 verifiable end-to-end.
 
@@ -203,7 +203,7 @@ check.
 
 ## Phase 11: Visual Compliance Loop (`docs/sdlc/review-process.md`) — before the Phase B gate
 
-- [ ] T053 Capture the implemented card detail modal (and, best-effort, the composer mid-use) at the same viewport as `screenshots/card-detail-modal.png`, compare item-by-item against VI-001–VI-009, produce the deviation table, fix and recapture until it is empty or every remaining row is user-approved; attach the table and screenshots to the phase notes
+- [x] T053 Capture the implemented card detail modal (and, best-effort, the composer mid-use) at the same viewport as `screenshots/card-detail-modal.png`, compare item-by-item against VI-001–VI-009, produce the deviation table, fix and recapture until it is empty or every remaining row is user-approved; attach the table and screenshots to the phase notes
 
 **Checkpoint — Phase B gate**: STOP. User runs `npm run lint && npm run build` in
 flowboard-web and confirms EXIT 0. AI review AND human review, including the UI-vs-
