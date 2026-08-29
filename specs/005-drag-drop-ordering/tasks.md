@@ -86,11 +86,11 @@ plan.md ADR-22 establishes for this feature.
 
 **Independent Test**: `quickstart.md` §3 US1 row, through the browser.
 
-- [ ] T009 [US1] Create `lib/cards/schemas.ts` addition — `moveCardInputSchema` (cardPublicId, listPublicId, beforeCardPublicId optional) in flowboard-web/src/lib/cards/schemas.ts
-- [ ] T010 [US1] Extend the server-only cards client with `moveCard` in flowboard-web/src/lib/api/cards-client.ts (cite contracts/move-api.md)
-- [ ] T011 [US1] Extend the `cards` tRPC router with a `move` `protectedProcedure` in flowboard-web/src/server/api/routers/cards.ts (depends on T009/T010)
-- [ ] T012 [US1] Make `CardFront` draggable — `draggable`, `dragstart`/`dragend` reporting the dragged card's id up via a callback prop, faded (opacity) while dragging (VI-001) — in flowboard-web/src/components/board/card-front.tsx
-- [ ] T013 [US1] Wire `ListColumn`'s card container as a drop zone — `dragover`/`dragleave`/`drop`, resolving `beforeCardPublicId` by comparing the pointer's Y position against each visible sibling's vertical midpoint (research.md R-4), calling `cards.move` with an optimistic `boards.getContent` cache patch on `onMutate` and a snapshot-restore on `onError` (plan.md ADR-22); dashed drag-over outline on the hovered list (VI-002) — in flowboard-web/src/components/board/list-column.tsx
+- [x] T009 [US1] Create `lib/cards/schemas.ts` addition — `moveCardInputSchema` (cardPublicId, listPublicId, beforeCardPublicId optional) in flowboard-web/src/lib/cards/schemas.ts
+- [x] T010 [US1] Extend the server-only cards client with `moveCard` in flowboard-web/src/lib/api/cards-client.ts (cite contracts/move-api.md)
+- [x] T011 [US1] Extend the `cards` tRPC router with a `move` `protectedProcedure` in flowboard-web/src/server/api/routers/cards.ts (depends on T009/T010)
+- [x] T012 [US1] Make `CardFront` draggable — `draggable`, `dragstart`/`dragend` reporting the dragged card's id up via a callback prop, faded (opacity) while dragging (VI-001) — in flowboard-web/src/components/board/card-front.tsx
+- [x] T013 [US1] Wire `ListColumn`'s card container as a drop zone — `dragover`/`dragleave`/`drop`, resolving `beforeCardPublicId` by comparing the pointer's Y position against each visible sibling's vertical midpoint (research.md R-4), calling `cards.move` with an optimistic `boards.getContent` cache patch on `onMutate` and a snapshot-restore on `onError` (plan.md ADR-22); dashed drag-over outline on the hovered list (VI-002) — in flowboard-web/src/components/board/list-column.tsx
 
 **Checkpoint**: US1 verifiable end-to-end through the browser.
 
@@ -102,8 +102,8 @@ plan.md ADR-22 establishes for this feature.
 
 **Independent Test**: `quickstart.md` §3 US2 row, keyboard-only.
 
-- [ ] T014 [US2] Create `CardMovePanel` — a "Move to list" popover listing every list on the board (from the already-fetched board content, same derivation style as 004's `boardLabels`), a checkmark beside the card's current list, calling the same `cards.move` mutation from T011 with no `beforeCardPublicId` (append at the end) — in flowboard-web/src/components/board/card-detail/card-move-panel.tsx (mirrors `card-labels-panel.tsx`'s shape)
-- [ ] T015 [US2] Wire `CardAddToCardMenu`'s "Move" button to open `CardMovePanel` in a `Popover`, the same pattern as its Members/Labels/Due date buttons; remove the `disabled`/inert styling — in flowboard-web/src/components/board/card-detail/card-add-to-card-menu.tsx (depends on T014)
+- [x] T014 [US2] Create `CardMovePanel` — a "Move to list" popover listing every list on the board (from the already-fetched board content, same derivation style as 004's `boardLabels`), a checkmark beside the card's current list, calling the same `cards.move` mutation from T011 with no `beforeCardPublicId` (append at the end) — in flowboard-web/src/components/board/card-detail/card-move-panel.tsx (mirrors `card-labels-panel.tsx`'s shape)
+- [x] T015 [US2] Wire `CardAddToCardMenu`'s "Move" button to open `CardMovePanel` in a `Popover`, the same pattern as its Members/Labels/Due date buttons; remove the `disabled`/inert styling — in flowboard-web/src/components/board/card-detail/card-add-to-card-menu.tsx (depends on T014)
 
 **Checkpoint**: US2 verifiable end-to-end with a keyboard alone.
 
@@ -115,11 +115,11 @@ plan.md ADR-22 establishes for this feature.
 
 **Independent Test**: `quickstart.md` §3 US3 row, through the browser.
 
-- [ ] T016 [US3] Create `lib/lists/schemas.ts` — `moveListInputSchema` (listPublicId, beforeListPublicId optional) in flowboard-web/src/lib/lists/schemas.ts
-- [ ] T017 [US3] Create the server-only lists client — `moveList` in flowboard-web/src/lib/api/lists-client.ts (cite contracts/move-api.md)
-- [ ] T018 [US3] Create the `lists` tRPC router — `move` `protectedProcedure` in flowboard-web/src/server/api/routers/lists.ts (depends on T016/T017); register in flowboard-web/src/server/api/root.ts
-- [ ] T019 [US3] Make `ListColumn` itself draggable — `draggable`, `dragstart`/`dragend` on the list header, faded while dragging (VI-008) — in flowboard-web/src/components/board/list-column.tsx (depends on T013 — the card-drop-zone wiring from Phase 4 must not fire during a list-level drag)
-- [ ] T020 [US3] Wire `BoardCanvas`'s list container as the list drop zone — `dragover`/`dragleave`/`drop` resolving `beforeListPublicId` the same way T013 resolves cards, optimistic cache patch + snapshot-restore (ADR-22), dashed drag-over outline (VI-009) — in flowboard-web/src/components/board/board-canvas.tsx (depends on T018/T019)
+- [x] T016 [US3] Create `lib/lists/schemas.ts` — `moveListInputSchema` (listPublicId, beforeListPublicId optional) in flowboard-web/src/lib/lists/schemas.ts
+- [x] T017 [US3] Create the server-only lists client — `moveList` in flowboard-web/src/lib/api/lists-client.ts (cite contracts/move-api.md)
+- [x] T018 [US3] Create the `lists` tRPC router — `move` `protectedProcedure` in flowboard-web/src/server/api/routers/lists.ts (depends on T016/T017); register in flowboard-web/src/server/api/root.ts
+- [x] T019 [US3] Make `ListColumn` itself draggable — `draggable`, `dragstart`/`dragend` on the list header, faded while dragging (VI-008) — in flowboard-web/src/components/board/list-column.tsx (depends on T013 — the card-drop-zone wiring from Phase 4 must not fire during a list-level drag)
+- [x] T020 [US3] Wire `BoardCanvas`'s list container as the list drop zone — `dragover`/`dragleave`/`drop` resolving `beforeListPublicId` the same way T013 resolves cards, optimistic cache patch + snapshot-restore (ADR-22), dashed drag-over outline (VI-009) — in flowboard-web/src/components/board/board-canvas.tsx (depends on T018/T019)
 
 **Checkpoint**: US3 verifiable end-to-end through the browser.
 
@@ -127,7 +127,7 @@ plan.md ADR-22 establishes for this feature.
 
 ## Phase 7: Visual Compliance Loop (`docs/sdlc/review-process.md`) — before the Phase B gate
 
-- [ ] T021 Capture the implemented board mid-card-drag, the "Move to list" popover, and the board mid-list-drag at the same viewport as `screenshots/board-canvas-dragging.jpg`, `screenshots/card-move-to-list-popup.jpg`, and `screenshots/list-reorder-dragging.jpg`; compare item-by-item against VI-001–VI-009; produce the deviation table; fix and recapture until it is empty or every remaining row is user-approved; attach the table and screenshots to the phase notes
+- [x] T021 Capture the implemented board mid-card-drag, the "Move to list" popover, and the board mid-list-drag at the same viewport as `screenshots/board-canvas-dragging.jpg`, `screenshots/card-move-to-list-popup.jpg`, and `screenshots/list-reorder-dragging.jpg`; compare item-by-item against VI-001–VI-009; produce the deviation table; fix and recapture until it is empty or every remaining row is user-approved; attach the table and screenshots to the phase notes
 
 **Checkpoint — Phase B gate**: STOP. User runs `npm run lint && npm run build` in
 flowboard-web and confirms EXIT 0. AI review AND human review, including the UI-vs-

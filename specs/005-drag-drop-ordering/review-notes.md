@@ -1,8 +1,10 @@
-# AI Code Review — 005 Drag & Drop Ordering
+# Review Notes — 005 Drag & Drop Ordering
+
+## Phase A — backend (card move, list move) (T001–T008)
 
 **Reviewer**: Claude Sonnet 5 (agent)
 **Date**: 2026-08-28
-**Branches**: `flowboard-api` `005-drag-drop-ordering` (Phase A, not yet merged)
+**Branches**: `flowboard-api` `main` (merged, commit `c16939d`)
 **Scope reviewed**: `src/Flowboard.Api/Domain/ActivityEventType.cs`,
 `src/Flowboard.Api/Services/CardService.cs` (`MoveCardAsync` addition),
 `src/Flowboard.Api/Services/ListService.cs` (new),
@@ -136,3 +138,140 @@ warns against introducing without a plan.md justification.
 None identified for this phase. The one non-obvious technique (F1) is isolated to a
 single method and directly tested; list-move is a genuinely new endpoint group but follows
 the existing card-endpoint shape exactly, so no new review burden for future features.
+
+## Phase B — frontend, Visual Compliance Loop (T009–T021)
+
+**Scope of this entry**: the Visual Compliance Loop (`docs/sdlc/review-process.md`) against
+the already-implemented T009–T020 drag/move UI (card drag, the "Move to list" menu, list
+drag), run before the Phase B gate per this repo's workflow order (`../CLAUDE.md`:
+implement → Visual Compliance Loop → gate → commit → AI review). The gate was then
+user-run and confirmed `EXIT: 0`, the phase was committed, and the full frontend AI-review
+checklist below was completed against that commit.
+
+**Render method**: `flowboard-web` dev server, signed in as the existing WorkspaceAdmin
+fixture session, board "Product Roadmap Q3" (same board the reference screenshots were
+captured from). Card and list drag are native HTML5 drag-and-drop
+(`draggable`/`dragstart`/`dragover`, plan.md ADR-23); a mid-drag frame can't be captured by
+a scripted mouse-drag (the whole gesture completes atomically before a screenshot can be
+taken), so each mid-drag frame was staged by dispatching the same native `dragstart`/
+`dragenter`/`dragover` DOM events the browser would dispatch during a real drag (real
+`DataTransfer`, real event bubbling, real React handlers in `card-front.tsx`/
+`list-column.tsx`/`board-canvas.tsx` — no CSS or state was set directly). No `drop` event
+was dispatched, so no card or list was actually moved; a `dragend`/`dragleave` pair reset
+the state afterward.
+
+**Environment note (not a code defect)**: the first dev-server boot served a `next dev`
+HTML response that never linked the route's real compiled Tailwind chunk (only a small
+shared `[root-of-the-server]` chunk), so `opacity-40`/`outline-2 outline-dashed
+outline-ring` had no effect despite being correctly present in every className — the same
+class of dev-server/browser-cache artifact 004's review-notes.md already recorded for this
+codebase. Confirmed not a source defect by running `npm run build && npm run start`: the
+production CSS bundle contains `.opacity-40`, `.outline-2`, and the `dashed` outline-style
+rule exactly as authored. Worked around for this capture session by loading the dev
+server's own already-correctly-compiled chunk
+(`.next/dev/static/chunks/src_styles_globals_css_*.single.css`) directly into the page; no
+application code was touched.
+
+**Visual Compliance Loop** against `screenshots/board-canvas-dragging.jpg`,
+`screenshots/card-move-to-list-popup.jpg`, `screenshots/list-reorder-dragging.jpg`,
+compared structurally (layout, hierarchy, states) per the process doc, not pixel-diff —
+implemented captures: `screenshots/board-canvas-dragging-implemented.jpg`,
+`screenshots/card-move-to-list-popup-implemented.jpg`,
+`screenshots/list-reorder-dragging-implemented.jpg`:
+
+| # | Element (VI ref) | Reference shows | Implemented shows | Severity | Resolution |
+|---|---|---|---|---|---|
+
+Table is empty — no deviations found. Item-by-item:
+
+- VI-001 (dragged card faded, ~40% opacity, stays in its original slot): matches —
+  "Research competitor onboarding flows" fades in place in `In Progress` while dragged.
+- VI-002 (hovered list gets a dashed accent outline, exactly one list at a time): matches —
+  `Design` alone gained the dashed outline while under the pointer.
+- VI-003 (every other card/list renders normally): matches — no other list or card in the
+  captured frame shows any drag-related styling.
+- VI-004 (popover titled "MOVE TO LIST", anchored below "Move"): matches exactly, including
+  the uppercase title.
+- VI-005 (every list as a plain-text row, top-to-bottom in board order, not a dropdown):
+  matches — Backlog, Design, In Progress, Review in that order (this board has no "Done"
+  list, unlike the reference's fixture data — a data difference, not a structural one).
+- VI-006 (checkmark beside the card's current list only): matches — `In Progress` alone
+  carries the checkmark.
+- VI-007 (no icon but the list name; choosing a row is the entire interaction): matches —
+  confirmed against `card-move-panel.tsx`'s implementation as well as the rendered popover.
+- VI-008 (dragged list fades as one unit — header, cards, footer together): matches —
+  `Backlog`'s header, all three cards, and its "+ Add a card" composer all fade together.
+- VI-009 (hovered list during a list drag shows the identical VI-002 dashed outline):
+  matches — `In Progress` gained the same dashed outline style during the list drag.
+
+The reference prototype's dashed-outline/accent color reads more saturated (purple-blue)
+than this app's actual (grayish, `--ring`) accent — not logged as a deviation, following
+004's review-notes.md precedent: this app's monochrome color system was already an
+established, reviewed decision in 001–003, and the Source-of-Truth Hierarchy calls for
+comparing structure/specification, not literal color, against the prototype.
+
+Exit rule met: table is empty on the first pass, no fixes were required.
+
+**Gate**: `npm run lint && npm run build` in `flowboard-web` — user-run, confirmed
+`EXIT: 0`.
+
+**Diff surface** (`git diff --stat`, commit `1b939b2`): new
+`components/board/card-detail/card-move-panel.tsx`, `components/board/drag-data-types.ts`,
+`lib/api/lists-client.ts`, `lib/lists/schemas.ts`, `server/api/routers/lists.ts`. Edited:
+`components/board/board-canvas.tsx` (list drop zone, US3), `components/board/card-detail/
+card-add-to-card-menu.tsx` (wires the Move button), `components/board/card-detail/
+card-detail-modal.tsx` (threads `boardLists`), `components/board/card-front.tsx`
+(draggable, VI-001), `components/board/list-column.tsx` (card drop zone + draggable list
+header, US1/US3), `lib/api/cards-client.ts`/`lib/cards/schemas.ts`/`server/api/routers/
+cards.ts` (`move` procedure), `server/api/root.ts` (+`lists` router registration). 14 files,
+exactly tasks.md's T009–T020 file list — no unrelated files touched, no new npm package
+(`package.json`/`package-lock.json` untouched, confirmed via `git diff`).
+
+**AI review vs `docs/rulebooks/frontend-compliance-checklist.md`**:
+
+| Section | Result | Notes |
+|---|---|---|
+| Structure | PASS | `card-move-panel.tsx` mirrors `card-labels-panel.tsx`'s shape exactly (same props style, same `errorMessage`/`isTRPCClientError` helper, same panel layout) as tasks.md required; `lists-client.ts`/`lists/schemas.ts`/`routers/lists.ts` mirror the cards-side files 1:1; `'use client'` present only on `card-move-panel.tsx`/`card-add-to-card-menu.tsx` (both use hooks/mutations) — `drag-data-types.ts` and the server-only `lists-client.ts`/`routers/lists.ts` correctly carry none |
+| Data Flow | PASS | `cards-client.ts`/`lists-client.ts` are called only from their own `protectedProcedure` routers, never imported into client components except as `import type` (erased at compile, `card-move-panel.tsx`'s `ListContent` import); both new/extended `move` procedures validate input with Zod (`moveCardInputSchema`/`moveListInputSchema`); `applyOptimisticCardMove`/`applyOptimisticListMove` only reorder already-fetched arrays for display (comment states this explicitly) — the server-owned `Position` is never computed or written client-side (invariant 2); `onSettled` invalidation reconciles both optimistic paths with the server (ADR-22) |
+| Forms | N/A | No new data-entry form this phase — `CardMovePanel` is a selection list (click a row), same non-RHF category 004's review-notes.md already established for single-action pickers (`card-labels-panel.tsx` precedent), not a form needing RHF/Zod-resolver ceremony |
+| UI States & Accessibility | PASS, one pre-existing/approved gap noted (see F1) | `Escape` closes the Move popover with no move (Radix `Popover`, verified manually); color is never the only drag-state signal (opacity + outline, both paired with the drag itself, not a standalone color cue) |
+| State, Styling | PASS, dark theme not re-verified this session (see below) | No Context/Redux added; `opacity-40`/`outline-2 outline-dashed outline-ring` are Tailwind utilities via `cn()`, not hardcoded styles; the pre-existing inline `style={{ backgroundColor: ... }}` for label/member colors is untouched 004-era code, not introduced here. Layout matches `screenshots/` (Visual Compliance Loop above, empty table) |
+| Security & Performance | PASS | No backend token reaches the client bundle (same server-only-client pattern as 004); no new `dangerouslySetInnerHTML`; `canMutate` correctly gates both new interactions — `draggable={canMutate}` on both `CardFront` and the list header, `onCardDragOver`/`onCardDrop`/`onListDragOver`/`onListDrop` all short-circuit `if (!canMutate)`, and `CardAddToCardMenu` (which now also renders the Move button) already returns `null` entirely for a non-mutating viewer — Observer gets neither a draggable surface nor the menu, matching 004's post-merge-fixed pattern from the start rather than repeating that gap |
+| Process | PASS | No new package; diff surface is exactly T009–T020; gate user-run, `EXIT: 0` |
+
+### F1 — List reorder (US3) has no keyboard/menu equivalent — ACCEPTED (pre-approved, plan.md ADR-23)
+
+`docs/rulebooks/frontend-rules.md` states "every drag interaction MUST have a keyboard/
+menu equivalent (C-11) in the same phase — not deferred," and this phase ships a second
+new drag interaction (list reorder, US3/L-03) with no non-drag path at all — the list
+header's "⋯" menu stays `disabled` (`aria-label="List options (not available yet)"`,
+unchanged from 004, list management itself is out of scope until 006). This was not an
+oversight introduced during implementation: `plan.md` ADR-23 explicitly reasons through
+this exact question and concludes the keyboard-operable "Move" menu (US2) alone satisfies
+`FUNCTIONAL_SPEC.md` §8's accessibility requirement for the whole feature, treating native
+drag's own lack of keyboard support for list reorder specifically as "not a compliance
+gap" — an approved plan-time decision (constitution IV), not something this review is
+positioned to silently overrule.
+*Action: none from this review — flagging for the human reviewer to make the same judgment
+call explicitly (agree with ADR-23's scoping of C-11 to C-02, or send back for a list-level
+keyboard equivalent) rather than this passing unnoticed.*
+
+**Dark theme**: not manually re-verified this session (no dark-mode screenshot exists for
+this feature; the reference screenshots are light-mode only, matching 003/004's own
+practice). Low risk — `opacity-40` is theme-independent and `outline-ring` resolves through
+the same `--ring` CSS variable both themes already define (`styles/globals.css`), so no new
+theme-conditional styling was introduced this phase.
+
+**Verdict**: Phase B **APPROVE**. Visual Compliance Loop passed with an empty deviation
+table; frontend-compliance-checklist all PASS except one disclosed, pre-approved
+accessibility scoping decision (F1, ADR-23) surfaced for the human reviewer's explicit
+sign-off, and dark theme left unverified (low risk, no theme-conditional code added). No
+unrelated files touched, no new package, gate user-confirmed `EXIT: 0`. Cleared to proceed
+to human review.
+
+## Wrap-up note
+
+Phase B (T009–T021) is reviewed and gated (`EXIT: 0`); commit `1b939b2` on
+`005-drag-drop-ordering`. Per this repo's one-phase-at-a-time workflow, T022–T023
+(quickstart walkthrough, phase review notes, roadmap update) and merge remain pending
+human review approval.
