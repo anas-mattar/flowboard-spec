@@ -97,3 +97,35 @@ unverified this session (low risk, no theme-conditional code added).
 
 **Decision**: **APPROVED** (2026-08-29) — Phase B cleared for merge to `flowboard-web`'s
 `main`.
+
+## Post-merge fix — `card.moved` activity text never rendered
+
+**Date**: 2026-08-29
+**AI review read**: the "Post-merge fix" section appended to `review-notes.md` after Phase
+B above was already merged and pushed. The T022 quickstart walkthrough surfaced that
+`CardActivityFeed` never rendered a description for `card.moved` events — the backend's
+event and payload were already correct throughout.
+
+### Business Review
+
+- [x] Behavior now matches spec.md's own quoted wording ("moved this card from X to Y")
+      for both US1 (drag) and US2 (Move menu) — verified live against the real board.
+- [x] No open questions outstanding.
+
+### Technical Review
+
+- [x] Code diff read end-to-end (commit `6b956c2`) — one line added to
+      `card-activity-feed.tsx`'s `describe()` switch; no other file touched.
+- [x] Security implications: none — display-only text, no data or permission change.
+- [x] Verification method accepted: confirmed via a `next build` bundle grep rather than
+      the live dev server, given the recorded dev-server chunk-staleness issue.
+
+## Gate Result
+
+- [x] Gate run by the user: `npm run lint && npm run build` in `flowboard-web` —
+      **EXIT: 0** (2026-08-29)
+
+## Approval
+
+**Decision**: **APPROVED** (2026-08-29) — fix cleared for merge to `flowboard-web`'s
+`main`.

@@ -58,3 +58,37 @@ cd D:\solutions\flowboard\flowboard-web ; npm run lint && npm run build
 Both must print `EXIT: 0`. Phase A (backend) gates and merges first (cross-repository
 rule, `docs/sdlc/repository-strategy.md`); Phase B (frontend) — which also runs the
 Visual Compliance Loop against `screenshots/` before requesting the gate — follows.
+
+## 5. Walkthrough results (T022, 2026-08-29)
+
+Both dev servers were exercised against the just-merged `main` on both repos (backend
+`c16939d`, frontend `6e871ac`), driven live through a real browser session against the
+seeded "Product Roadmap Q3" board. One row's check surfaced a real gap, fixed and
+re-verified below; every other row matched this document exactly.
+
+| Row | Result |
+|---|---|
+| US1 — same-list reorder | Dragging "Prototype smoke card" to the top of Backlog landed it there and the position survived a full page reload; its activity feed gained no new entry |
+| US1 — cross-list move | Dragging "Accessibility audit" from Backlog into the middle of Design's cards landed it exactly there, removed it from Backlog, and wrote one `card.moved` event (`fromListName: "Backlog", toListName: "Design"`) — confirmed via the raw `cards.getActivity` response |
+| US1 — WIP limit never blocks | Dropping "Empty-state illustrations" into "In Progress" (already 4/3, over limit) still succeeded; the pill just updated to 5/3 |
+| US2 — Move menu, different list | Opening "Card detail redesign" and choosing "Review" moved it to the end of that list, showed a "Moved to \"Review\"" toast, and wrote the same `card.moved` event shape as a drag |
+| US2 — Move menu, own list | Choosing the card's own current list ("Design") did nothing — no request fired, no toast, checkmark unchanged |
+| US2 — Escape | Pressing Escape closed the "Move to list" popover with the card unmoved |
+| US3 — list reorder | Dragging "Review" (last) to the first position moved it there and the new order survived a full page reload |
+| US3 — same-position drop | Dropping "Review" back onto itself left the board's list order unchanged |
+| Edge — Observer | A freshly invited Observer account saw every card/list with `draggable === false`, no "Add a card" composer on any list, and no "Move" button or "Add to card" panel at all inside an open card |
+| Edge — permission at the API | The same Observer's token called `POST /v1/cards/{id}/move` directly against the backend → `403`, matching the UI-level gating rather than relying on it |
+| Edge — last-write-wins | Not re-derived live this walkthrough — a same-browser-profile login switch (testing the Observer edge case above) overwrote the admin session's cookie before this row could be exercised, and no second known-password admin/member account remained to restore it without touching the dev database directly. Already covered by an automated, passing test (`MoveCard_TwoSuccessiveMoves_NeitherIsRejected_LastWriteWins`, `flowboard-api`), the same substitution 002's own quickstart walkthrough made for its blocked "live privilege change" row |
+
+**Gap found and fixed**: the US1/US2 activity-feed checks above ("wrote one `card.moved`
+event") were confirmed at the API layer first because the *rendered* activity feed showed
+nothing at all — `CardActivityFeed`'s `describe()` switch (`card-activity-feed.tsx`) had no
+`case "card.moved"`, so it silently fell through to `default: return null` instead of
+rendering "moved this card from X to Y" (spec.md's own quoted wording for this exact row).
+Fixed by adding that case; re-verified via a `next build` bundle inspection because the
+`next dev` server serving this session's browser tab would not reflect the new component
+code no matter how many clean cache-and-restart cycles were tried (see review-notes.md's
+environment notes — the same class of dev-server-only staleness already recorded twice
+elsewhere this feature, never present in a production build). See
+`specs/005-drag-drop-ordering/review-notes.md`'s Wrap-up section for the fix's own
+gate/review/merge record.

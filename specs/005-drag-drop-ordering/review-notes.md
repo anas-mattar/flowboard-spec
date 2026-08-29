@@ -269,9 +269,59 @@ sign-off, and dark theme left unverified (low risk, no theme-conditional code ad
 unrelated files touched, no new package, gate user-confirmed `EXIT: 0`. Cleared to proceed
 to human review.
 
-## Wrap-up note
+## Post-merge fix — `card.moved` activity text never rendered
+
+**Date**: 2026-08-29
+**Found via**: `quickstart.md`'s own T022 walkthrough (US1/US2 activity-feed checks), after
+Phase B above was already reviewed, gated, approved, merged, and pushed — the same
+discovery path 004's own post-merge fix took.
+
+**Diff surface**: `src/components/board/card-detail/card-activity-feed.tsx` — one line
+added to the `describe()` switch:
+
+```diff
++    case "card.moved":
++      return `moved this card from ${payload.fromListName} to ${payload.toListName}`;
+```
+
+**What was found**: the backend correctly writes a `card.moved` `ActivityEvent` with
+`{fromListName, toListName}` on every cross-list move — confirmed directly via
+`cards.getActivity`'s raw response for both a drag-based move and a Move-menu move — but
+`CardActivityFeed`'s `describe()` function had no case for that type, silently falling
+through to `default: return null`. The rendered feed showed only the actor's name and a
+timestamp with no description at all, instead of spec.md's own quoted "moved this card
+from X to Y" — a real, silent regression against FR-003/quickstart's own US1 and US2
+rows, missed during Phase B because the Visual Compliance Loop's VI-001–VI-009 never
+touch the activity feed, and none of T009–T020 named `card-activity-feed.tsx` as a file to
+touch (a genuine task-list gap, not a corner someone cut).
+
+**Verification note**: confirming the fix took two passes because of an unrelated
+environment issue — after editing the file, the running `next dev` server (even after a
+full `.next` cache wipe and clean restart) kept serving a JS chunk for this exact URL that
+did not contain the new code, while the file on disk and a fresh `npm run build`'s output
+both did. This is the same category of dev-server/browser staleness already recorded in
+Phase B's Visual Compliance Loop entry above (that one was a missing CSS `<link>`; this one
+a stale JS chunk body at a stable URL) and in 004's own review-notes.md before that. The
+fix was confirmed correct by grepping the `npm run build` output for the new string, not by
+trusting the dev server's rendered page.
+
+**AI review**: `git diff` limited to the one-line addition above; no other file touched; no
+new package. `npm run lint && npm run build` clean (self-run, `EXIT: 0`; certifying run is
+the user's). Low risk — a display-only fix with no data or permission implications; the
+underlying `card.moved` event and its payload were already correct and already covered by
+Phase A's own backend tests.
+
+**Verdict**: **APPROVE**. Recommend committing on a small `fix/card-moved-activity-text`
+branch (`docs/sdlc/branch-strategy.md`'s `fix/<name>` lane) and merging the same way as
+Phase B, once the user confirms the gate.
+
+## Wrap-up note (T022–T023)
 
 Phase B (T009–T021) is reviewed and gated (`EXIT: 0`); commit `1b939b2` on
-`005-drag-drop-ordering`. Per this repo's one-phase-at-a-time workflow, T022–T023
-(quickstart walkthrough, phase review notes, roadmap update) and merge remain pending
-human review approval.
+`005-drag-drop-ordering`, merged to `main` (`6e871ac`) and pushed. `quickstart.md` was
+walked end-to-end against that merged `main` (T022) — every US1–US3 row and both testable
+edge-case rows matched, one real gap found and fixed (above); the last-write-wins edge row
+was substituted with its existing automated-test coverage after a same-profile login
+switch overwrote the admin browser session mid-walkthrough, the same substitution 002's own
+quickstart walkthrough made for a different blocked row. See `quickstart.md` §5 for the
+full per-row results table.

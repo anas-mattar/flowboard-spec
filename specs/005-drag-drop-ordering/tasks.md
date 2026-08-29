@@ -137,10 +137,10 @@ reference check (the Visual Compliance Loop's deviation table). Commit Phase B.
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T022 [P] Walk `quickstart.md` end-to-end (US1–US3 rows, all edge cases including
+- [x] T022 [P] Walk `quickstart.md` end-to-end (US1–US3 rows, all edge cases including
   the two-window last-write-wins check) and fix any doc drift in
   specs/005-drag-drop-ordering/quickstart.md
-- [ ] T023 Write phase review notes (backend + frontend compliance checklist results,
+- [x] T023 Write phase review notes (backend + frontend compliance checklist results,
   gate evidence, the domain-invariant pass) in
   specs/005-drag-drop-ordering/review-notes.md; write
   specs/005-drag-drop-ordering/human-pr-review.md; on merge, set roadmap row 005 →
