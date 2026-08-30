@@ -50,7 +50,7 @@ Status flow: `idea → specified → in progress → shipped → dropped`
 | 004-card-crud (composer, detail modal, labels, members, due date, checklist, comments) | INV-007; C-01, C-03…C-10, C-12, C-13; X-01 | P2 | shipped | anas.m | `specs/004-card-crud/` |
 | 005-drag-drop-ordering (card/list drag, move-via-menu, ordering model) | C-02, C-11, L-03; INV-013 §5.1 | P2 | shipped | anas.m | `specs/005-drag-drop-ordering/` |
 | 006-board-list-management (board/list CRUD, star, archive, WIP limit, sort by due date) | B-02…B-04, B-06; L-01, L-02, L-04…L-06 | P2 | shipped | anas.m | `specs/006-board-list-management/` |
-| 007-search-filter (live search, label/member/due filters, chips, empty state) | INV-003; F-01…F-04 | P3 | idea | anas.m | — |
+| 007-search-filter (live search, label/member/due filters, chips, empty state) | INV-003; F-01…F-04 | P3 | in progress | anas.m | `specs/007-search-filter/` |
 | 008-realtime-sync (websocket layer, concurrency rules) | INV-015 realtime part; INV-016 | P3 | idea | anas.m | — |
 
 ## Decisions log *(authored)*
