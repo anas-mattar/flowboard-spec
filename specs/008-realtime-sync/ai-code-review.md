@@ -252,3 +252,176 @@ flowboard-web:
   two-browser-session UI check was attempted but this verification session's browser
   automation shares one cookie jar across tabs, so a second login kept reverting to the
   first session — a tooling limitation of this pass, recorded rather than papered over.
+
+---
+
+# AI Code Review — 008 Realtime Sync & Concurrency (US2)
+
+**Reviewer**: Claude Sonnet 5 (self-review of own implementation — Critical Delivery
+addendum item 5 requires this be treated as informational only; an independent human
+reviewer, or a second-model adversarial review if solo, is still required before merge)
+**Date**: 2026-08-30
+**Branches**:
+- `flowboard-api` `008-realtime-sync` (tip `1122466`)
+- `flowboard` (governance/specs repo) `008-realtime-sync` (tip `5bcb888`)
+**Scope reviewed**: `tests/Flowboard.Api.Tests/CardsEndpointTests.cs` and
+`tests/Flowboard.Api.Tests/BoardHubTests.cs` (the only files this phase's diff touches —
+see `git diff --stat` in the Evidence Appendix); the underlying production code these
+tests exercise and did not change (`CardService.UpdateCardAsync`/`MoveCardAsync`,
+`CardConfiguration.cs`'s `RowVersion` mapping); `specs/008-realtime-sync/tasks.md`
+Phase 4; `docs/domain/flowboard-invariants.md` invariants 1, 5, 6, 8 (the ones this phase
+touches or could touch).
+**Feature contract**: No migration, no new table/column, no new package — Phase 4's own
+scope statement in `tasks.md` is "regression tests, not new production code, unless a gap
+is found"; no gap was found, so the diff is test-only (confirmed below).
+
+**Covers**: `tasks.md` Phase 4 (T020–T023 — User Story 2 only). US1 was reviewed
+separately above; US3/US4/Polish remain out of scope for this review.
+
+## Verdict
+
+**APPROVE.** This phase adds three regression tests and performs one manual two-window
+walkthrough; it changes no production code, which is the correct outcome per plan.md's
+own framing ("this feature does not renegotiate concurrency rules"). All three tests
+pass individually and as part of the full 121/121 suite, each test's assertions match
+what it claims to prove (traced against the actual `CardService` code paths, not just
+run), and the manual walkthrough reproduced both US2 acceptance scenarios live with
+screenshot evidence. One MINOR test-robustness note (F1) carried over from this
+codebase's existing hub-test convention, not introduced by this phase; no BLOCKING or
+CONFIRM findings.
+
+## What was verified (evidence)
+
+| Area | Evidence |
+|---|---|
+| Spec match (FR-004, FR-005, FR-006, SC-002, SC-003 for US2's scope) | FR-004 (no silent overwrite) verified by `UpdateCard_StaleIfMatch_RejectedSaveNeverPersistsOrBroadcasts`: traced `CardService.cs` lines 235–248 — the `catch (DbUpdateConcurrencyException)` returns *before* the `foreach`/`PublishActivityEventAsync` loop, so a rejected save cannot reach either persistence or broadcast; the test proves this via the activity feed (exactly one `CardRenamed` entry, the winner's) rather than asserting a hub non-event, and separately confirms the loser is shown current data and can retry. FR-005/SC-003 (concurrent moves converge, no dup/loss) verified by `MoveCard_TwoConcurrentMoves_ConvergeToOnePosition_NoDuplicateOrLostBroadcast` using genuine `Task.WhenAll` concurrency (not sequential calls dressed up as concurrent) — traced `CardService.MoveCardAsync` lines 839–846: `ExecuteUpdateAsync` has no `WHERE RowVersion=...` clause, confirming last-write-wins is real, not incidental. FR-006 (move + field edit, neither erases the other) verified by `MoveCard_ThenFieldEdit_BothPersist_NeitherErasesTheOther`, which also documents *why* it re-fetches the field edit's `If-Match` after the move rather than racing a stale one against it (see Finding discussion below — this is a deliberate, correct scope choice, not a gap). |
+| Visual-reference match | N/A — no UI change in this phase. |
+| Feature contract held | Confirmed: `git diff --stat` (Evidence Appendix) shows exactly 2 files, both test files, 143 insertions, 0 deletions — no production file touched, no migration, no package change. |
+| Constitution / domain invariants | See dedicated section below. |
+| Security (authn/authz, secrets, sensitive logging) | No new endpoint, no new auth path. Tests reuse the existing fixture-owner/invited-client authorization helpers already used throughout `CardsEndpointTests.cs`/`BoardHubTests.cs` — no new credential or token-handling code introduced. |
+| Scope guard (`git diff --stat`) | Matches `tasks.md`'s Phase 4 file list exactly (`CardsEndpointTests.cs`, `BoardHubTests.cs`) — see Evidence Appendix. |
+| Rollback safety | No schema/migration exists in this phase to roll back; reverting it only removes three test methods, touching zero production code and zero data. |
+
+## Findings
+
+### F1 — Fixed `Task.Delay(1s)` buffer before asserting broadcast count — MINOR
+
+`MoveCard_TwoConcurrentMoves_ConvergeToOnePosition_NoDuplicateOrLostBroadcast` waits a
+flat 1 second after both moves complete, then asserts `movedEvents.Count == 2`, rather
+than waiting on a completion signal for exactly 2 events the way
+`BoardEvent_AfterCommentAdded_MatchesPersistedActivityEvent` and
+`RemoveMember_EvictsConnectedConnection_NoFurtherBoardEvents` wait on a
+`TaskCompletionSource` for one specific event. Under unusual system load (as actually
+observed once during this feature's own US1 manual-verification pass, per the first
+review's Evidence Appendix note on a slower `dotnet test` run), a fixed delay is
+theoretically flakier than an event-counted wait. This matches an existing pattern
+already in this test file for the *other* eviction assertion in the same test
+(`RemoveMember_EvictsConnectedConnection_NoFurtherBoardEvents` also uses a flat
+`Task.Delay(1s)` for its negative-count check, since there's no positive signal to wait
+on for "no more events arrive") — so this isn't a new convention, and the test passed
+cleanly across three separate full-suite runs during this phase (see Evidence Appendix).
+*Action: none required to merge; if this test is ever seen to flake in CI, tighten it to
+a short polling loop with a longer ceiling rather than a single fixed sleep.*
+
+### Carried forward from the US1 review (not re-decided here)
+
+F1 (`ListService.SortByDueDateAsync` never broadcasts), F2 (partial "one broadcast per
+mutating endpoint" test coverage — this phase adds coverage for `UpdateCardAsync` and
+`MoveCardAsync`, narrowing but not closing that gap), and F4 (no environment-specific
+`Cors:RealtimeOrigin` override) are all still open and untouched by this phase's diff —
+none are re-assessed here since Phase 4 changes no production code they'd interact with.
+
+## Constitution re-check (post-implementation)
+
+- **I Specification First**: Held — spec/plan/tasks already existed; this phase only
+  implemented Phase 4 exactly as `tasks.md` describes it (regression tests, no new prod
+  code, since no gap was found).
+- **VII Domain Invariants**: See dedicated pass below — this phase exists specifically to
+  confirm invariant 6.
+- **XI Testing Requirements**: Held for this phase's own scope — plan.md's Testing
+  section calls for regression coverage of the existing concurrency rules under the new
+  broadcast calls; T020–T022 deliver exactly that.
+- **XII Human Review**: Pending — this document is the AI half; human review (or
+  second-model adversarial + cooling-off if solo) is still required before merge.
+- All other principles: unaffected by a test-only diff; see the US1 review above for
+  their full-feature assessment, unchanged by this phase.
+
+## Domain Invariant Pass (Critical Delivery addendum item 2)
+
+| # | Invariant | Verdict | Evidence |
+|---|---|---|---|
+| 1 | Activity Is Append-Only | **PASS** | `UpdateCard_StaleIfMatch_RejectedSaveNeverPersistsOrBroadcasts` confirms the rejected save adds zero `ActivityEvent` rows (exactly one `CardRenamed` entry exists, the winner's) — the rejected write never reaches `db.ActivityEvents.AddRange`'s persisted counterpart, matching append-only-and-never-diverged-from-history for the loser. |
+| 5 | Permissions Server-Side | **N/A** | Not exercised by this phase's tests — no new endpoint or auth path added; unchanged from the US1 review. |
+| 6 | Optimistic Concurrency — No Silent Overwrites | **PASS** | This is the invariant this phase exists to confirm. `UpdateCard_StaleIfMatch_RejectedSaveNeverPersistsOrBroadcasts` proves the reject-and-refetch field-edit path is unbroken by US1's broadcast calls. `MoveCard_TwoConcurrentMoves_ConvergeToOnePosition_NoDuplicateOrLostBroadcast` proves genuinely concurrent last-write-wins moves still converge to exactly one position with no duplicated/missing card. `MoveCard_ThenFieldEdit_BothPersist_NeitherErasesTheOther` proves the two concurrency mechanisms (whole-row `RowVersion` precondition vs. precondition-free `ExecuteUpdateAsync`) don't clobber each other's disjoint columns. All three confirm existing (004/005) behavior is unchanged by this feature, per plan.md's explicit claim. |
+| 8 | Opaque Public Identifiers | **PASS** | Every new test asserts and constructs URLs using `PublicId` values exclusively (`card.PublicId`, `board.PublicId`, `destinationAPublicId`, etc.), consistent with every existing test in both files — no internal `Id` surfaced anywhere in the new code. |
+
+**Rollback interaction**: no invariant-relevant data is created or mutated by this phase's
+diff (test code only); there is nothing to roll back beyond the three test methods
+themselves.
+
+## Test coverage observed
+
+- **`Flowboard.Api.Tests`** (`dotnet test`, full suite, re-run during this review):
+  **121/121 passing**, 0 failed, 0 skipped (up from 118 in the US1 review — 3 new tests,
+  0 regressions). New in this phase:
+  `UpdateCard_StaleIfMatch_RejectedSaveNeverPersistsOrBroadcasts` and
+  `MoveCard_ThenFieldEdit_BothPersist_NeitherErasesTheOther` (`CardsEndpointTests.cs`),
+  `MoveCard_TwoConcurrentMoves_ConvergeToOnePosition_NoDuplicateOrLostBroadcast`
+  (`BoardHubTests.cs`).
+- **Frontend**: no change this phase; not re-verified (no frontend file touched).
+- **Manual verification** (quickstart.md §4, T023): performed live against real
+  `dotnet run` + `npm run dev` processes, two browser tabs on the same card. Both US2
+  acceptance scenarios reproduced and screenshotted: window B's stale save rejected with
+  a "This card was changed by someone else. Showing the latest version." toast, showing
+  window A's saved text rather than overwriting it; two near-simultaneous drags to
+  different lists converged both windows to the identical final state (card in exactly
+  one list, the other left empty — no duplicate/phantom card).
+
+## Residual risk
+
+Negligible for this phase in isolation — test-only diff, all findings MINOR or carried
+forward from a prior phase's still-open items. Residual risk for the feature overall
+still concentrates where the US1 review placed it (F1/F2/F4 there), unchanged by this
+phase. Safe to merge Phase 4 once a human (or second-model adversarial, if solo)
+reviewer signs off, independent of those carried-forward items' disposition.
+
+---
+
+## Evidence Appendix (Critical Delivery addendum item 3 — audit evidence retained)
+
+### Backend gate (re-run during this review)
+
+```text
+$ dotnet build --warnaserror
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+$ dotnet test
+Passed!  - Failed: 0, Passed: 121, Skipped: 0, Total: 121, Duration: 1 m 3 s
+```
+
+(User separately ran the gate and confirmed exit 0 before requesting this review and the
+commit.)
+
+### `git diff --stat` (Phase 4 commit, `flowboard-api`)
+
+```text
+tests/Flowboard.Api.Tests/BoardHubTests.cs      | 61 ++++++++++++++++++
+tests/Flowboard.Api.Tests/CardsEndpointTests.cs | 82 +++++++++++++++++++++++++
+2 files changed, 143 insertions(+)
+```
+
+### Manual verification (quickstart.md §4, T023)
+
+- Two browser tabs opened the same card's detail modal (RT Verify Board, the board
+  seeded during the US1 manual-verification pass).
+- Window A saved a description edit first — succeeded, toast "Description saved."
+- Window B, still showing the pre-edit (empty) description, saved a different edit based
+  on the same stale precondition — rejected with toast "This card was changed by someone
+  else. Showing the latest version," and the field immediately displayed window A's
+  saved text, not window B's attempted overwrite.
+- Both windows then dragged the same card to different destination lists (Doing vs.
+  Done) within the same few seconds. After settling, both windows converged to an
+  identical final state: the card in "Doing" only, "Done" empty, no duplicate or phantom
+  card in either list.
