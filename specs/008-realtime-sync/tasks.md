@@ -452,15 +452,11 @@ current data. Executable via quickstart.md §6.
   a React/render error in any run — only SignalR's own logged connection-failure messages.
 
 **Review**: AI self-review (`ai-code-review.md`) — APPROVE. Second-model adversarial review
-(`human-pr-review.md`, Codex, one round — no findings requiring a fix) — APPROVED,
-contingent on the gate re-confirmation below.
+(`human-pr-review.md`, Codex, one round — no findings requiring a fix) — **APPROVED**.
 
-**Gate**: `npm run lint` and `npm run build`/`npx tsc --noEmit` re-run by the assistant and
-by the Codex reviewer independently as dev-verification checkpoints (all clean) — not the
-Done gate. Per CLAUDE.md's Strict Rules, Phase 6 is not Done until the user runs `dotnet
-build --warnaserror && dotnet test` (backend, unaffected by this frontend-only change but
-still part of the gate slice) and `npm run lint && npm run build` (frontend) and confirms
-exit 0.
+**Gate**: `dotnet build --warnaserror && dotnet test` (backend) and `npm run lint && npm run
+build` (frontend) re-run by the user covering the Phase 6 commit (`52b7338`) — confirmed
+exit 0. Phase 6 (US4) is Done.
 
 **Checkpoint**: All four user stories are independently functional.
 
