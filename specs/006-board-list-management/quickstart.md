@@ -84,3 +84,26 @@ Both must print `EXIT: 0`. Phase A (backend, including the migration) gates and 
 first (cross-repository rule, `docs/sdlc/repository-strategy.md`); Phase B (frontend) —
 which also runs the Visual Compliance Loop against `screenshots/` before requesting the
 gate — follows.
+
+## 5. Walkthrough results (T058, walked 2026-08-29)
+
+Every row above was walked against a real running dev server (backend `dotnet run`,
+frontend `npm run dev`), signed in as a freshly created account, not read from source.
+
+| Row | Result |
+|---|---|
+| US1 create a board | Matches — three starter lists in order, creator resolves as implicit admin (no `BoardMember` row needed). |
+| US2 add a list | Matches — new list rightmost, empty, no WIP limit, accepts a card immediately. |
+| US3 rename a board inline | Matches, **with one fix along the way**: the sidebar did not update after a rename (only the top bar did) until `board-title-bar.tsx`'s rename mutation was fixed to also invalidate `boards.list` — see `review-notes.md` F1. Re-verified after the fix. |
+| US4 rename a list inline | Matches — persists, visible after a reload. |
+| US5 star a board | Matches — star fills amber immediately, toggles back on unstar. Cross-viewer "shared, not personal" check not repeated live this pass (already proven by 003's own read-side test plus this feature's `StarBoard_...` backend test asserting the shared column). |
+| US6 WIP limit | Matches — pill switches to the red over-limit style the instant a 3rd card is added against a limit of 2, and the card is still accepted. |
+| US7 archive/delete a board | Matches — confirm-step delete removes the board from the sidebar and navigates home; a plain `BoardMember`'s attempt is hidden entirely in the UI and confirmed `403` at the API by `UpdateBoard_..._MemberAndObserverForbidden...`/`DeleteBoard_...` backend tests. |
+| US8 archive/delete a list | Matches — archive-all-cards empties the list (list remains); delete removes the list and its cards from the board. |
+| US9 sort by due date | Matches structurally (triggered with no due dates set; returns `204`, order unchanged) — the ascending/undated-last/tie-break behavior itself is covered by `SortByDueDate_AscendingUndatedLast_StableOnRepeat`'s backend test rather than re-proven manually with real due dates this pass. |
+| Edge — Observer | Matches — invited a second real account as Observer; confirmed zero mutation controls anywhere in the feature (no star, no "⋯", no add-list/add-card composers). |
+| Edge — permission at the API (member vs. admin) | Matches, verified via the backend's own integration tests (`UpdateBoard_..._MemberAndObserverForbidden_StaleIfMatchConflicts`, `DeleteBoard_...`) rather than a manual `curl` this pass — same assertion, automated. |
+| Edge — stale rename | Matches, verified via the backend's own integration tests (`UpdateBoard_..._StaleIfMatchConflicts`, `UpdateList_StaleIfMatch_Returns409`) rather than the two-browser-tab manual repro this pass — same substitution 005's own quickstart walkthrough made for a row a live session couldn't practically hold open twice. |
+
+No doc drift found beyond the sidebar-invalidation bug (US3 row, now fixed in code — the
+quickstart text itself was already accurate; the *implementation* was briefly behind it).

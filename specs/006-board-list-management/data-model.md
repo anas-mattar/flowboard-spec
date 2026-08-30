@@ -34,6 +34,17 @@ card at a time. `Card.IsDeleted`/`DeletedDate`/`DeletedBy` are set for every car
 belonging to a list that gets deleted (research R-5), using the same soft-delete
 convention 004 already established for a single deleted card.
 
+## Response DTOs — addendum found during implementation
+
+`GetBoardContentAsync` (003) is the only read path either entity has — there is no
+dedicated `GET /v1/boards/{id}` "just this board" or `GET /v1/lists/{id}` route the way
+`GET /v1/cards/{id}` sets an ETag for cards. Without exposing `RowVersion` somewhere, a
+client has no way to arm its *first* `If-Match` for board/list rename. Fix: `BoardContentDto`
+and `ListContentDto` (both 003) each gain a `rowVersion` (base64 `string`) field, populated
+from the same `Board`/`List` rows `GetBoardContentAsync` already loads — no new query, no
+new endpoint. This is additive to 003's existing response shape and does not change
+`contracts/board-list-management-api.md`'s own PATCH responses.
+
 ## Response DTOs
 
 - `POST /v1/boards` → `201 Created`, body `BoardSummaryDto` (existing shape from 003's
