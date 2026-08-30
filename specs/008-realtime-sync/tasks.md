@@ -377,11 +377,19 @@ throughout. Executable via quickstart.md §5.
   level. A real two-network-blip check (e.g. toggling Wi-Fi) is worth doing before Done,
   as T019 similarly flagged for its own two-browser-session case.
 
+**Post-review fix**: `ai-code-review.md`'s Finding F1 (`onreconnected`'s `JoinBoard`
+re-invoke had no `.catch()`, unlike the initial-connect path) was fixed in
+`use-board-realtime.ts` per the feature owner's decision to fix now rather than defer —
+see the review doc's "F1 — Disposition: FIXED" note. `npm run lint` re-run clean after the
+change (assistant dev-verification only, not a Done gate per item 4 below).
+
 **Gate**: Backend (`dotnet build --warnaserror && dotnet test`) and frontend (`npm run
 lint && npm run build`) both run and confirmed exit 0 by the user
 (`docs/sdlc/gate-command.md`; per `docs/sdlc/critical-delivery.md` item 4, this is the only
 gate run that counts toward Done for this Critical feature — the assistant's own T027/T028
-dev-verification runs do not).
+dev-verification runs do not). **Note**: this exit-0 confirmation predates the F1 fix above
+— the gate should be re-run and re-confirmed to cover the post-review change before this
+phase is treated as Done.
 
 **Checkpoint**: User Stories 1, 2, and 3 all work independently — dropped connections
 recover cleanly and visibly.

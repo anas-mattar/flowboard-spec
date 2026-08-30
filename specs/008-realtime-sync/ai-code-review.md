@@ -611,6 +611,37 @@ introduces no new invariant, security, or architectural risk. Safe to merge once
 disposition (fix now vs. tracked follow-up) explicitly rather than silently, consistent with
 how F1/F2/F4 were handled in the US1 review.
 
+### F1 — Disposition: FIXED (post-review, same cycle)
+
+The feature owner elected to fix rather than defer. `use-board-realtime.ts`'s
+`onreconnected` handler now chains a `.catch()` onto the `JoinBoard` re-invoke, matching
+the initial-connect path's existing error handling:
+
+```ts
+connection.onreconnected(() => {
+  setStatus("connected");
+  connection
+    .invoke("JoinBoard", boardPublicId)
+    .catch(() => {
+      setStatus("disconnected");
+    });
+  void utilsRef.current.boards.getContent.invalidate({ boardPublicId });
+});
+```
+
+A failed rejoin (the `Context.Abort()` case traced above) now flips the indicator to
+"Offline" immediately instead of leaving an unhandled promise rejection and a
+"connected"-labeled indicator over stale content — closing the client-side signal gap.
+Note the unconditional `getContent.invalidate` two lines below is unchanged and still
+correct: it is not conditioned on `JoinBoard` succeeding because a *successful* reconnect
+still needs the cache refresh to catch up on any events missed while offline (FR-008); a
+*failed* rejoin invalidates a query the client can no longer read anyway (harmless no-op
+via existing 403 handling, not a new failure mode). Re-verified: `npm run lint` clean
+(no new warnings, including no new `react-hooks/set-state-in-effect` violation from the
+added `setStatus` call inside the `.catch()`, which is inside a connection-lifecycle
+callback, not inside the `useEffect` body itself — the same shape already accepted for
+`onreconnecting`/`onclose`).
+
 ---
 
 ## Evidence Appendix (Critical Delivery addendum item 3 — audit evidence retained)
