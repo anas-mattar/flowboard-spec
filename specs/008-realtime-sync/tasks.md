@@ -387,9 +387,10 @@ change (assistant dev-verification only, not a Done gate per item 4 below).
 lint && npm run build`) both run and confirmed exit 0 by the user
 (`docs/sdlc/gate-command.md`; per `docs/sdlc/critical-delivery.md` item 4, this is the only
 gate run that counts toward Done for this Critical feature — the assistant's own T027/T028
-dev-verification runs do not). **Note**: this exit-0 confirmation predates the F1 fix above
-— the gate should be re-run and re-confirmed to cover the post-review change before this
-phase is treated as Done.
+dev-verification runs do not). **Post-fix re-confirmation**: the F1 fix touched only
+`flowboard-web` (no backend file changed), so the frontend gate (`npm run lint && npm run
+build`) was re-run by the user and confirmed exit 0 after the fix — the backend exit-0
+above still stands, untouched by this change. Phase 5 (US3) is Done.
 
 **Checkpoint**: User Stories 1, 2, and 3 all work independently — dropped connections
 recover cleanly and visibly.
