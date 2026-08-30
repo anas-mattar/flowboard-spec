@@ -397,7 +397,7 @@ is complete — request the backend gate (`dotnet build --warnaserror && dotnet 
 - [x] T058 [P] Walk `quickstart.md` end-to-end (US1–US9 rows, all edge cases including
   the admin-vs-member permission split and the stale-rename `409` check) and fix any doc
   drift in specs/006-board-list-management/quickstart.md
-- [ ] T059 Write phase review notes (backend + frontend compliance checklist results,
+- [x] T059 Write phase review notes (backend + frontend compliance checklist results,
   gate evidence, the domain-invariant pass) in
   specs/006-board-list-management/review-notes.md; write
   specs/006-board-list-management/human-pr-review.md; on merge, set roadmap row 006 →
