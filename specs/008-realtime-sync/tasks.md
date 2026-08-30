@@ -240,12 +240,13 @@ deterministic position. Executable via quickstart.md §4.
   `flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs`: a stale `If-Match` on
   `UpdateCardAsync` still returns `409` with the current `RowVersion`/data, and the
   broadcast added in T013 fires for the winning save only, never for the rejected one
-  (FR-004). **Note**: `UpdateCard_StaleIfMatch_RejectedSaveNeverPersistsOrBroadcasts`
-  proves the "never for the rejected one" half via the activity feed rather than a hub
-  connection — `UpdateCardAsync`'s `catch (DbUpdateConcurrencyException)` returns before
-  the `foreach`/`PublishActivityEventAsync` line (CardService.cs), so an activity feed
-  containing exactly one `CardRenamed` entry (the winner's) is sufficient proof no
-  publish call was ever reached for the rejected request.
+  (FR-004). **Note (post adversarial-review, see `human-pr-review.md`)**:
+  `UpdateCard_StaleIfMatch_RejectedSaveNeverPersistsOrBroadcasts` proves the persistence
+  half via the activity feed; a companion hub-level test,
+  `BoardHubTests.UpdateCard_StaleIfMatch_RejectedSaveNeverBroadcasts`, was added to
+  *empirically* observe the hub and confirm zero `"card.renamed"` broadcast for the
+  rejected save (round 1 of the adversarial review found the activity-feed-only proof
+  insufficient on its own).
 
 - [x] T021 [P] [US2] Regression test in
   `flowboard-api/tests/Flowboard.Api.Tests/BoardHubTests.cs` (hub-level, per the
@@ -258,17 +259,30 @@ deterministic position. Executable via quickstart.md §4.
   deliberately does not assert which of the two destinations wins, or that broadcast
   arrival order matches DB commit order (SignalR delivery isn't synchronized with each
   request's independent commit-then-publish sequence, so a stronger assertion would be
-  flaky) — only the two properties the requirements actually demand.
+  flaky) — only the two properties the requirements actually demand. **Note (post
+  adversarial review)**: the broadcast assertion was tightened from per-element
+  containment to an exact sorted-multiset comparison — round 1 found the original form
+  would still pass if one destination's broadcast was duplicated while the other's was
+  dropped.
 
-- [x] T022 [US2] Regression test in `CardsEndpointTests.cs`: a concurrent `MoveCardAsync`
-  and a field-edit `UpdateCardAsync` on the same card both persist — final state carries
-  the new position AND the field edit, neither erasing the other (FR-006).
-  `MoveCard_ThenFieldEdit_BothPersist_NeitherErasesTheOther` re-fetches the field edit's
-  `If-Match` after the move (as a real client would before typing into an already-open
-  field) rather than racing a stale precondition against it — `Card.RowVersion` is a
-  whole-row SQL Server `rowversion` (`CardConfiguration.cs`), so a genuinely raced stale
-  field edit is *correctly* rejected by existing invariant-6 semantics regardless of
-  which columns it touches; that path is already covered by T020, not this task.
+- [x] T022 [US2] Four regression tests in `CardsEndpointTests.cs` covering every
+  legitimate interleaving of a `MoveCardAsync` and a field-edit `UpdateCardAsync` on the
+  same card (FR-006, FR-004): `FieldEdit_ThenMove_BothPersist_NeitherErasesTheOther`
+  (field edit first, fresh precondition — both persist),
+  `MoveCard_ThenFieldEditWithFreshPrecondition_BothPersist` (move first, then a field
+  edit whose precondition reflects the post-move state — both persist),
+  `MoveCard_ThenStaleFieldEdit_RejectedWithoutCorruptingTheMove` (move first, then a
+  field edit whose precondition predates the move — correctly rejected, move intact),
+  and `MoveCard_ConcurrentWithFieldEdit_NeitherCorruptsNorSilentlyErasesTheOther` (a
+  genuinely concurrent `Task`-started version, accepting either legitimate outcome, as a
+  complementary check that true concurrency doesn't take a different, corruption-prone
+  path than either sequential case). **Note (post adversarial review, see
+  `human-pr-review.md` — this task went through 4 review rounds)**: the original
+  single-test version re-fetched its precondition after the move, silently eliminating
+  the race it claimed to test; the fix (round 2) replaced it with the racy version alone,
+  which round 2's own reviewer then flagged as unable to prove both interleavings are
+  reachable; the two deterministic tests added in response (round 3) initially omitted
+  the move-first-with-fresh-precondition case by mistake, caught and restored in round 4.
 
 - [x] T023 [US2] Manual verification: quickstart.md §4 (two-window field-edit conflict and
   concurrent-drag walkthrough). Confirmed via real `dotnet run` + the already-running
