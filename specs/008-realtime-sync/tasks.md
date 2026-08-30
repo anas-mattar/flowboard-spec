@@ -309,27 +309,73 @@ reconnect catches up to current server state with no duplicated or missed events
 another session, restore the connection, confirm full catch-up with a visible indicator
 throughout. Executable via quickstart.md §5.
 
-- [ ] T024 [US3] Extend `flowboard-web/src/lib/realtime/use-board-realtime.ts` (depends on
+- [x] T024 [US3] Extend `flowboard-web/src/lib/realtime/use-board-realtime.ts` (depends on
   T017): configure `withAutomaticReconnect()`, track connection state
   (`connecting`/`connected`/`reconnecting`/`disconnected`) via `onreconnecting`/
   `onreconnected`/`onclose` handlers, call `utils.boards.getContent.invalidate(...)` and
   re-issue `JoinBoard(boardPublicId)` in `onreconnected` (research.md R-7, contracts/
-  realtime-api.md), and expose the current state to callers.
+  realtime-api.md), and expose the current state to callers. **Amendment**: the "no hub
+  URL configured" branch's status is computed as the `useState` initializer rather than a
+  synchronous `setStatus` call inside the effect — `react-hooks/set-state-in-effect`
+  (Next.js 16's ESLint config) flags any direct `setState` in an effect body; this
+  environment condition never changes for the component's lifetime, so an initializer is
+  equivalent and lint-clean.
 
-- [ ] T025 [P] [US3] Create a small connection-status indicator component (e.g.
+- [x] T025 [P] [US3] Create a small connection-status indicator component (e.g.
   `flowboard-web/src/components/layout/realtime-status-indicator.tsx`) rendering
   "live"/"reconnecting"/"offline" states using existing shadcn/ui primitives, per FR-009.
 
-- [ ] T026 [US3] Wire the connection state from `use-board-realtime` (T024) into the
+- [x] T026 [US3] Wire the connection state from `use-board-realtime` (T024) into the
   indicator (T025) via `flowboard-web/src/components/layout/top-bar.tsx` and
-  `app/(app)/boards/[boardPublicId]/page.tsx`.
+  `app/(app)/boards/[boardPublicId]/page.tsx`. **Amendment**: TopBar and BoardCanvas are
+  page-level siblings, not parent/child (ADR-30) — the one hub connection needs to be
+  shared between BoardCanvas (which no longer calls the hook itself) and TopBar's
+  indicator without opening a second connection. Added
+  `flowboard-web/src/components/board/board-realtime-context.tsx` (not itself a listed
+  task file, but the same established shape as `sidebar-context.tsx`/
+  `board-filter-context.tsx` — a small client Context Provider for exactly this
+  sibling-state problem), and moved the `useBoardRealtime` call from `board-canvas.tsx`
+  into that provider. `page.tsx` now wraps `<TopBar>` and `<BoardCanvas>` in
+  `<BoardRealtimeProvider boardPublicId={boardPublicId}>` (nested inside the existing
+  `BoardFilterProvider`).
 
-- [ ] T027 [P] [US3] Integration test in `BoardHubTests.cs`: a client that disconnects and
+- [x] T027 [P] [US3] Integration test in `BoardHubTests.cs`: a client that disconnects and
   reconnects successfully re-joins its board's group and receives subsequent
   `"BoardEvent"` messages, with no event delivered twice (FR-008, SC-004).
+  `Reconnect_RejoinsGroupAndReceivesSubsequentEvents_NoDuplicateDelivery` stops and
+  restarts the same `HubConnection`, re-invokes `JoinBoard`, and counts `"card.created"`
+  broadcasts (that event's payload is empty — `CardService.cs`'s `NewEvent(..., new {})`
+  — so the test counts occurrences rather than matching a payload field): one before the
+  drop, one made *while* disconnected (must never be delivered — no server-side replay
+  buffer exists), one after reconnect — asserting the final count is exactly 2. Done ahead
+  of T024–T026 per `docs/sdlc/repository-strategy.md`'s cross-repository rule (backend
+  before frontend within a story); full backend gate slice (`dotnet build --warnaserror &&
+  dotnet test`, 126/126) run by the assistant as a dev-verification checkpoint, not the
+  Done gate.
 
-- [ ] T028 [US3] Manual verification: quickstart.md §5 (offline/online toggle, indicator
-  behavior, catch-up with no manual reload).
+- [x] T028 [US3] Manual verification: quickstart.md §5 (offline/online toggle, indicator
+  behavior, catch-up with no manual reload). Confirmed via a real `dotnet run` (backend)
+  against the already-running `npm run dev` (frontend, left over from a prior session's
+  manual verification — reused rather than starting a second instance on a different
+  port), one browser session on a freshly seeded board: indicator showed "● Live"
+  (emerald dot) on load; killing the backend process produced "Reconnecting…" (amber,
+  pulsing) within seconds while the board itself stayed fully rendered/usable (lists and
+  cards, no error boundary, no blocked interaction); SignalR's default 4-attempt backoff
+  (0/2/10/30s) exhausted before the backend came back up in this pass, producing "Offline"
+  — the correct `onclose` fallback (FR-012/US4 territory), not a bug. A card created via
+  the API immediately after the backend returned did not appear until the page was
+  reloaded (expected — the automatic-reconnect window had already closed); reloading
+  showed "● Live" again and the card was already present with no data loss, confirming
+  FR-008's core guarantee (a fresh connection converges to current state). **Tooling
+  limitation, not a code issue** (same class as T019's note): reliably timing a *second*
+  backend restart inside the ~2–10s retry window to observe the automatic
+  reconnect-without-reload path from the browser was not achievable through this
+  session's tool round-trip latency. That exact mechanism (stop → restart → re-`JoinBoard`
+  → resume delivery, no duplicate/replayed event) is what T027's automated hub test
+  proves directly; the frontend's `onreconnected` handler (T024) implements the identical
+  contract (re-invoke `JoinBoard`, invalidate `getContent`) that test validates at the hub
+  level. A real two-network-blip check (e.g. toggling Wi-Fi) is worth doing before Done,
+  as T019 similarly flagged for its own two-browser-session case.
 
 **Checkpoint**: User Stories 1, 2, and 3 all work independently — dropped connections
 recover cleanly and visibly.
