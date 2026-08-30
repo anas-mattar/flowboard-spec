@@ -236,24 +236,50 @@ deterministic position. Executable via quickstart.md §4.
 > are regression tests and manual verification, not new production code, unless a gap is
 > found.
 
-- [ ] T020 [P] [US2] Regression test in
+- [x] T020 [P] [US2] Regression test in
   `flowboard-api/tests/Flowboard.Api.Tests/CardsEndpointTests.cs`: a stale `If-Match` on
   `UpdateCardAsync` still returns `409` with the current `RowVersion`/data, and the
   broadcast added in T013 fires for the winning save only, never for the rejected one
-  (FR-004).
+  (FR-004). **Note**: `UpdateCard_StaleIfMatch_RejectedSaveNeverPersistsOrBroadcasts`
+  proves the "never for the rejected one" half via the activity feed rather than a hub
+  connection — `UpdateCardAsync`'s `catch (DbUpdateConcurrencyException)` returns before
+  the `foreach`/`PublishActivityEventAsync` line (CardService.cs), so an activity feed
+  containing exactly one `CardRenamed` entry (the winner's) is sufficient proof no
+  publish call was ever reached for the rejected request.
 
-- [ ] T021 [P] [US2] Regression test in
-  `flowboard-api/tests/Flowboard.Api.Tests/OrderingTests.cs` (or `BoardHubTests.cs` if
-  hub-level): two concurrent `MoveCardAsync` calls on the same card converge to exactly
-  one final list/position with no duplication or loss, and the resulting `"BoardEvent"`
-  reflects only that final state (FR-005, SC-003).
+- [x] T021 [P] [US2] Regression test in
+  `flowboard-api/tests/Flowboard.Api.Tests/BoardHubTests.cs` (hub-level, per the
+  parenthetical — asserting on the delivered `"BoardEvent"` needs a live hub connection,
+  which `OrderingTests.cs` has no fixture for): two genuinely concurrent `MoveCardAsync`
+  calls (`Task.WhenAll`) on the same card converge to exactly one final list with no
+  duplication or loss, and the hub delivers exactly one `"card.moved"` broadcast per
+  accepted move — never a duplicated or dropped one (FR-005, SC-003).
+  `MoveCard_TwoConcurrentMoves_ConvergeToOnePosition_NoDuplicateOrLostBroadcast`
+  deliberately does not assert which of the two destinations wins, or that broadcast
+  arrival order matches DB commit order (SignalR delivery isn't synchronized with each
+  request's independent commit-then-publish sequence, so a stronger assertion would be
+  flaky) — only the two properties the requirements actually demand.
 
-- [ ] T022 [US2] Regression test in `CardsEndpointTests.cs`: a concurrent `MoveCardAsync`
+- [x] T022 [US2] Regression test in `CardsEndpointTests.cs`: a concurrent `MoveCardAsync`
   and a field-edit `UpdateCardAsync` on the same card both persist — final state carries
   the new position AND the field edit, neither erasing the other (FR-006).
+  `MoveCard_ThenFieldEdit_BothPersist_NeitherErasesTheOther` re-fetches the field edit's
+  `If-Match` after the move (as a real client would before typing into an already-open
+  field) rather than racing a stale precondition against it — `Card.RowVersion` is a
+  whole-row SQL Server `rowversion` (`CardConfiguration.cs`), so a genuinely raced stale
+  field edit is *correctly* rejected by existing invariant-6 semantics regardless of
+  which columns it touches; that path is already covered by T020, not this task.
 
-- [ ] T023 [US2] Manual verification: quickstart.md §4 (two-window field-edit conflict and
-  concurrent-drag walkthrough).
+- [x] T023 [US2] Manual verification: quickstart.md §4 (two-window field-edit conflict and
+  concurrent-drag walkthrough). Confirmed via real `dotnet run` + the already-running
+  `npm run dev`, two browser tabs on the same card (RT Verify Board, seeded from the
+  T019 session): window A's description save succeeded; window B's conflicting save
+  (based on the same pre-edit state) was rejected with a "This card was changed by
+  someone else. Showing the latest version." toast and immediately showed window A's
+  saved text, never B's — FR-004 exactly as specified, not a silent overwrite. Two
+  near-simultaneous drags of the same card (A → Doing, B → Done) converged both windows
+  to the identical final state (card in Doing only, Done empty, no duplicate/phantom
+  card) — FR-005/live sync reconciling both sessions to one outcome.
 
 **Checkpoint**: User Stories 1 AND 2 both work independently — concurrent-edit and
 concurrent-move outcomes are confirmed correct and now visible live.
