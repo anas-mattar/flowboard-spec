@@ -451,11 +451,16 @@ current data. Executable via quickstart.md §6.
   guard is a defensive, zero-cost addition, not exercised end-to-end. No console error was
   a React/render error in any run — only SignalR's own logged connection-failure messages.
 
-**Gate**: `npm run lint` and `npm run build` re-run by the assistant as a dev-verification
-checkpoint (both clean) — not the Done gate. Per CLAUDE.md's Strict Rules, Phase 6 is not
-Done until the user runs `dotnet build --warnaserror && dotnet test` (backend, unaffected
-by this frontend-only change but still part of the gate slice) and `npm run lint && npm run
-build` (frontend) and confirms exit 0.
+**Review**: AI self-review (`ai-code-review.md`) — APPROVE. Second-model adversarial review
+(`human-pr-review.md`, Codex, one round — no findings requiring a fix) — APPROVED,
+contingent on the gate re-confirmation below.
+
+**Gate**: `npm run lint` and `npm run build`/`npx tsc --noEmit` re-run by the assistant and
+by the Codex reviewer independently as dev-verification checkpoints (all clean) — not the
+Done gate. Per CLAUDE.md's Strict Rules, Phase 6 is not Done until the user runs `dotnet
+build --warnaserror && dotnet test` (backend, unaffected by this frontend-only change but
+still part of the gate slice) and `npm run lint && npm run build` (frontend) and confirms
+exit 0.
 
 **Checkpoint**: All four user stories are independently functional.
 

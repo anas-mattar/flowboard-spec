@@ -780,6 +780,14 @@ change); if it never triggers in practice because no realistic misconfiguration 
 that is a safe outcome, not a wasted one. No fix is being requested — noting this so a future
 reader doesn't mistake the manual verification for having exercised this exact branch.*
 
+**F1 — Disposition: CLARIFIED (independent review, same cycle).** The Codex adversarial
+review below identified a concrete, realistic trigger this self-review didn't find: a
+whitespace-only `NEXT_PUBLIC_FLOWBOARD_HUB_URL` value (e.g. `" "`) is truthy — so it passes
+this hook's `if (!hubUrl) return;` guard — but is rejected synchronously by SignalR's own
+URL validation inside `.withUrl()`/`.build()`, unlike the relative-URL strings this review
+tried. No code change was needed; this closes the open question in the finding above with a
+concrete example rather than leaving the guard's reachability unconfirmed.
+
 ## Constitution re-check (post-implementation)
 
 - **I Specification First**: Held — T029 implemented exactly as `tasks.md` describes, scoped

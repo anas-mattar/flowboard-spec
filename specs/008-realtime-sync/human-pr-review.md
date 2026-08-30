@@ -204,3 +204,78 @@ approval, in addition to the pending gate re-run.
   partial broadcast coverage, F4 CORS env config) remain open and are not this document's
   concern; they should be resolved or explicitly deferred before the feature as a whole is
   declared Done.
+
+# Human PR Review — 008 Realtime Sync & Concurrency (US4)
+
+**Reviewer**: Second-model adversarial review (OpenAI Codex, `gpt-5.x`-class, via `codex
+exec -s read-only`) — solo-developer substitute for independent human review, per
+`docs/sdlc/critical-delivery.md` item 5.
+**Date**: 2026-08-31
+**AI review**: `specs/008-realtime-sync/ai-code-review.md`, fourth section ("AI Code Review
+— 008 Realtime Sync & Concurrency (US4)") — read first by the adversarial reviewer. Its
+APPROVE verdict carried one CONFIRM-only note (F1): the self-review couldn't find a
+realistic input that reaches the new synchronous-throw guard from a browser. This loop
+closed that note with a concrete example (see Process note).
+**Scope reviewed**: `flowboard-web` only — `flowboard-api` has zero diff this phase (noted
+in the AI review header, tip unchanged at `41d5830`), so no backend round was run.
+- `flowboard-web`: `src/lib/realtime/use-board-realtime.ts`, the complete Phase 6 diff,
+  `git diff a13c72d..HEAD` (one commit, `52b7338`).
+
+## Process note
+
+One round, one repository — this phase's diff is a single ~44-line change to one file:
+
+| Round | Repo | Verdict | Finding(s) |
+|---|---|---|---|
+| 1 | `flowboard-web` | **APPROVED** | No findings requiring a fix. Independently verified: the entire `HubConnectionBuilder` construction chain (`.withUrl()`, `.withAutomaticReconnect()`, `.configureLogging()`, `.build()`) sits inside the `try`; `connection: HubConnection` is definitely assigned on every path that uses it; the catch returns before handler registration, `start()`, or cleanup, so no `LeaveBoard`/`stop()` is ever attempted on a connection that was never created; the success path's behavior and timing are unchanged; `queueMicrotask` genuinely moves the `setStatus` call into a callback from `react-hooks/set-state-in-effect`'s perspective, and an intervening unmount before the microtask runs is inert, not a bug. Beyond confirming the fix, this round supplied the concrete trigger the self-review's F1 note was missing: a whitespace-only `NEXT_PUBLIC_FLOWBOARD_HUB_URL` (e.g. `" "`) is truthy — passing this hook's own `if (!hubUrl) return;` guard — but is rejected synchronously by SignalR's own URL validation, unlike the relative-URL strings the self-review had tried. |
+
+Gate run by this developer before requesting the review (dev-verification, not the counted
+Done gate): `npm run lint` (clean) and `npx tsc --noEmit` (equivalent read-only run passed,
+exit 0 — the literal `tsc --noEmit` command failed only on a read-only-filesystem artifact
+unrelated to the code, `tsconfig.tsbuildinfo` write permission, in the review sandbox).
+
+## Business Review
+
+- [x] Behavior matches the business intent in `spec.md`'s US4 section — verified live
+  against a real backend+frontend with the hub pointed at an unreachable port (the actual
+  "live channel cannot be established" scenario): the board loaded and stayed fully usable
+  (create, search/filter all worked via REST/tRPC), and a card created directly via the API
+  appeared after a manual reload with no live channel involved — both acceptance scenarios
+  hold.
+- [x] Domain correctness — N/A, no data path touched (confirmed in both reviews).
+- [x] No open CONFIRM/BLOCKING findings pertain to the current diff — the AI review's F1 was
+  a request for clarification, not a fix, and this loop supplied that clarification.
+
+## Technical Review
+
+- [x] Code diff read end-to-end — one file, one commit, no unrelated changes; final `git
+  diff --stat`: `flowboard-web` — `src/lib/realtime/use-board-realtime.ts` only (29
+  insertions, 15 deletions), no migration, no package change; `flowboard-api` unchanged.
+- [x] Architectural compliance — no new library, no new pattern; a `try/catch` around an
+  existing construction call and a standard `queueMicrotask` deferral to satisfy an existing
+  lint rule.
+- [x] Security implications — none; no auth/authorization path touched, nothing logged.
+- [x] Migrations/schema — N/A, none in this diff.
+
+## Gate Result
+
+- [ ] Gate run **by the developer**: `dotnet build --warnaserror && dotnet test` (backend,
+  unaffected by this frontend-only change but still part of the gate slice) and `npm run
+  lint && npm run build` (frontend). Not yet re-confirmed by the developer — recorded in
+  `tasks.md`'s Phase 6 Gate line pending that run.
+
+## Approval
+
+**Decision**: **APPROVED, contingent on the outstanding gate re-confirmation above.**
+Review-process standpoint (constitution XII) is satisfied — the one round's finding was a
+clarifying question, not a defect, and it has been answered. Per critical-delivery.md item
+5, a cooling-off period is expected before merge on top of this approval, in addition to the
+pending gate run.
+
+## Comments
+
+- This phase's small, single-file diff didn't need the multi-round pattern US2/US3 required
+  — one thorough round with no findings-that-need-fixing is a legitimate outcome, not a
+  shortcut; the review still re-read the whole diff from scratch, ran the type-check and
+  lint itself, and pushed back on the one unresolved uncertainty in the self-review rather
+  than rubber-stamping "APPROVE."
