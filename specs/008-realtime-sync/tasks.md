@@ -390,7 +390,16 @@ gate run that counts toward Done for this Critical feature — the assistant's o
 dev-verification runs do not). **Post-fix re-confirmation**: the F1 fix touched only
 `flowboard-web` (no backend file changed), so the frontend gate (`npm run lint && npm run
 build`) was re-run by the user and confirmed exit 0 after the fix — the backend exit-0
-above still stands, untouched by this change. Phase 5 (US3) is Done.
+above still stands, untouched by this change.
+
+**Second-model adversarial review** (`human-pr-review.md`'s US3 section, per
+`critical-delivery.md` item 5): three rounds against both repos found and fixed two further
+gaps beyond F1 — a backend test-rigor weakness (commit `0640924`) and a frontend
+catch-up-ordering + stale-attempt race (commits `ff116c3`, `a13c72d`) — landing after the
+gate re-confirmation above. **The gate has not yet been re-run for these four commits.**
+Phase 5 (US3) is APPROVED by the adversarial review contingent on that re-run; not Done
+until the user re-runs `dotnet build --warnaserror && dotnet test` (backend) and `npm run
+lint && npm run build` (frontend) and confirms exit 0 covering the full current diff.
 
 **Checkpoint**: User Stories 1, 2, and 3 all work independently — dropped connections
 recover cleanly and visibly.
