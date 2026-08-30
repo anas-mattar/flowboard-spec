@@ -176,18 +176,16 @@ below for the actual counted run).
 - [x] Gate run **by the developer** (not either model) after Phase 5's original T024-T028
   commits: `dotnet build --warnaserror && dotnet test` and `npm run lint && npm run build`
   — **EXIT: 0** (recorded in `tasks.md`'s Phase 5 Gate line, before this review loop).
-- [ ] **Not yet re-confirmed by the developer**: this review loop added four further
-  commits after that gate run — `0640924` (backend), and `f0dc03c`, `ff116c3`, `a13c72d`
-  (frontend). Per `critical-delivery.md` item 4, only a developer-executed run counts; the
-  dev-verification runs noted in the Process note above do not. **The gate must be re-run
-  and its exit code re-confirmed by the developer before this phase is treated as Done or
-  merged**, covering the full current diff.
+- [x] **Re-confirmed by the developer**: this review loop added four further commits after
+  that gate run — `0640924` (backend), and `f0dc03c`, `ff116c3`, `a13c72d` (frontend).
+  `dotnet build --warnaserror && dotnet test` and `npm run lint && npm run build` re-run by
+  the developer covering the full current diff — **EXIT: 0**.
 
 ## Approval
 
-**Decision**: **APPROVED, contingent on the outstanding gate re-confirmation above.**
-Review-process standpoint (constitution XII) is otherwise satisfied — all findings raised
-across three rounds, in both repositories, are fixed and independently re-verified. Per
+**Decision**: **APPROVED.** Review-process standpoint (constitution XII) is satisfied — all
+findings raised across three rounds, in both repositories, are fixed and independently
+re-verified, and the gate has been re-confirmed covering every commit in this loop. Per
 critical-delivery.md item 5, a cooling-off period is expected before merge on top of this
 approval, in addition to the pending gate re-run.
 

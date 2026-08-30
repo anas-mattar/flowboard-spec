@@ -395,11 +395,10 @@ above still stands, untouched by this change.
 **Second-model adversarial review** (`human-pr-review.md`'s US3 section, per
 `critical-delivery.md` item 5): three rounds against both repos found and fixed two further
 gaps beyond F1 — a backend test-rigor weakness (commit `0640924`) and a frontend
-catch-up-ordering + stale-attempt race (commits `ff116c3`, `a13c72d`) — landing after the
-gate re-confirmation above. **The gate has not yet been re-run for these four commits.**
-Phase 5 (US3) is APPROVED by the adversarial review contingent on that re-run; not Done
-until the user re-runs `dotnet build --warnaserror && dotnet test` (backend) and `npm run
-lint && npm run build` (frontend) and confirms exit 0 covering the full current diff.
+catch-up-ordering + stale-attempt race (commits `ff116c3`, `a13c72d`) — all APPROVED on
+round 3. **Final gate re-confirmation**: `dotnet build --warnaserror && dotnet test`
+(backend) and `npm run lint && npm run build` (frontend) re-run by the user covering these
+four commits — confirmed exit 0. Phase 5 (US3) is Done.
 
 **Checkpoint**: User Stories 1, 2, and 3 all work independently — dropped connections
 recover cleanly and visibly.
