@@ -414,15 +414,48 @@ board via the existing 003–007 behavior, with a manual refresh reflecting othe
 the board still loads and every existing feature still works, and manual refresh reflects
 current data. Executable via quickstart.md §6.
 
-- [ ] T029 [US4] Harden `flowboard-web/src/lib/realtime/use-board-realtime.ts` (depends on
+- [x] T029 [US4] Harden `flowboard-web/src/lib/realtime/use-board-realtime.ts` (depends on
   T024) so a hub connection failure (initial connect or `onclose` after exhausted
   reconnect attempts) is caught and surfaced only as the indicator's "unavailable" state —
   it must never throw, block rendering, or prevent the board page's existing data-fetching
-  from working (FR-012).
+  from working (FR-012). The async failure paths (failed `connection.start()`, exhausted
+  reconnect via `onclose`) were already caught as of T024/T028. The gap this task closes:
+  `new HubConnectionBuilder().withUrl(hubUrl, ...).build()` runs synchronously inside the
+  effect and validates `hubUrl` — since `NEXT_PUBLIC_FLOWBOARD_HUB_URL` has no schema
+  validation anywhere in the repo, a malformed value in a misconfigured deployment could
+  throw synchronously out of the effect and, with no error boundary around
+  `BoardRealtimeProvider`, take down the whole board page instead of degrading. Wrapped the
+  construction chain in try/catch; on failure, defers `setStatus("disconnected")` via
+  `queueMicrotask` rather than calling it directly in the effect body (satisfies the
+  `react-hooks/set-state-in-effect` lint rule — every other `setStatus` call in this hook
+  already runs inside an async/event callback, never synchronously in the effect body).
 
-- [ ] T030 [US4] Manual verification: quickstart.md §6 (hub connection blocked; board still
+- [x] T030 [US4] Manual verification: quickstart.md §6 (hub connection blocked; board still
   loads and every 003–007 feature — create/edit/move cards, board/list management,
   search/filter — still works; a manual refresh still reflects another window's changes).
+  Verified with a real `dotnet run` (backend, port 5111) and `npm run dev` (frontend),
+  `NEXT_PUBLIC_FLOWBOARD_HUB_URL` pointed at an unreachable port so only the hub was
+  unavailable while the REST/tRPC path stayed up: signed up a fresh test account, created a
+  board with three lists, indicator showed "● Offline" (never stuck on a spinner, never a
+  crashed page); added a card via the UI (`Add a card` → REST-backed mutation) — worked;
+  filtered the board with the search box for that card's text — worked; created a second
+  card directly via `POST /v1/lists/{id}/cards` (simulating another window's change) and
+  did a full page reload — the card appeared with no live channel involved, confirming
+  Acceptance Scenario 2. Separately re-pointed the hub URL at a value that resolves as a
+  relative same-origin path (`not a valid url`) to probe the T029 synchronous-throw guard —
+  this landed on the pre-existing async-failure path (browsers resolve almost any string as
+  a valid relative URL against the document's base, so `HubConnectionBuilder.build()` did
+  not actually throw here), so the new try/catch was verified by lint/build/type-check
+  (react-hooks/set-state-in-effect passes, `tsc` passes) rather than by forcing a live
+  synchronous throw — no realistic way was found to trigger one from a browser tab; the
+  guard is a defensive, zero-cost addition, not exercised end-to-end. No console error was
+  a React/render error in any run — only SignalR's own logged connection-failure messages.
+
+**Gate**: `npm run lint` and `npm run build` re-run by the assistant as a dev-verification
+checkpoint (both clean) — not the Done gate. Per CLAUDE.md's Strict Rules, Phase 6 is not
+Done until the user runs `dotnet build --warnaserror && dotnet test` (backend, unaffected
+by this frontend-only change but still part of the gate slice) and `npm run lint && npm run
+build` (frontend) and confirms exit 0.
 
 **Checkpoint**: All four user stories are independently functional.
 

@@ -710,3 +710,128 @@ flowboard (governance repo, c452bb6 + c967c62):
 - A card created via the API immediately after the backend returned did not appear until
   the page was reloaded (expected — the automatic-reconnect window had already closed by
   then); reloading showed "● Live" again with the card already present, no data loss.
+
+# AI Code Review — 008 Realtime Sync & Concurrency (US4)
+
+**Reviewer**: Claude Sonnet 5 (self-review of own implementation — Critical Delivery
+addendum item 5 requires this be treated as informational only; an independent human
+reviewer, or a second-model adversarial review if solo, is still required before merge)
+**Date**: 2026-08-31
+**Branches**:
+- `flowboard-api` `008-realtime-sync` (tip `41d5830`, unchanged this phase)
+- `flowboard-web` `008-realtime-sync` (tip `52b7338`)
+- `flowboard` (governance/specs repo) `008-realtime-sync` (tip `dbf318d` at review start)
+**Scope reviewed**: `flowboard-web/src/lib/realtime/use-board-realtime.ts` (only file
+touched this phase); `specs/008-realtime-sync/tasks.md` Phase 6; `contracts/realtime-api.md`'s
+Connection lifecycle section; `docs/domain/flowboard-invariants.md` (all 8 items, to confirm
+none apply to a client-side-only change).
+**Feature contract**: No migration, no new table/column, no new package, no new endpoint,
+no backend change at all — this phase is one defensive try/catch in an existing client hook.
+
+**Covers**: `tasks.md` Phase 6 (T029–T030 — User Story 4 only). US1/US2/US3 were reviewed
+separately above; Polish remains out of scope for this review.
+
+## Verdict
+
+**APPROVE.** This is the smallest possible change that closes the one remaining gap FR-012
+names: a synchronous throw out of `use-board-realtime.ts`'s effect (from
+`HubConnectionBuilder.build()`, which validates `NEXT_PUBLIC_FLOWBOARD_HUB_URL` synchronously
+and has no schema validation anywhere upstream) would propagate through
+`BoardRealtimeProvider`, which has no error boundary, and take down the whole board page —
+directly contradicting FR-012's "board MUST remain fully usable." Every other hardening
+target named in T029's own description (a failed `connection.start()`, `onclose` after
+exhausted reconnect attempts) was already caught as of T024/T028's `.catch()` handlers; T029
+correctly scoped itself to the one gap those didn't cover rather than re-doing already-solved
+work.
+
+## What was verified (evidence)
+
+| Area | Evidence |
+|---|---|
+| Spec match (FR-012 for US4's scope) | Verified live in two ways. (1) Hub pointed at an unreachable port (backend up, only the hub unreachable — the actual US4 scenario, not a full outage): board loaded, indicator settled to "● Offline", create/search/filter all worked via the unaffected REST/tRPC path, and a card created directly via `POST /v1/lists/{id}/cards` (simulating another window) appeared after a manual reload with no live channel involved — both spec.md Acceptance Scenarios for US4 hold. (2) Hub URL set to a value chosen to probe the new synchronous-throw guard (`not a valid url`): this did *not* actually reach the new try/catch — browsers resolve almost any non-empty string as a valid relative URL against the document's base, so `HubConnectionBuilder.build()` didn't throw even here, and the run instead exercised the pre-existing async-failure path (negotiate got Next.js's own HTML fallback page back, treated as a connection failure). No realistic way was found to force a live synchronous throw from a browser tab; see Findings for what this means for confidence in the fix. |
+| Visual-reference match | N/A — no new rendered UI; the indicator's "Offline" presentation already existed as of US3. |
+| Feature contract held | Confirmed: `git diff --stat` (Evidence Appendix) shows one file changed, no migration, no `package.json` change, no new endpoint. |
+| Constitution / domain invariants | No domain invariant applies — this touches connection setup only, no `Board`/`List`/`Card`/`ActivityEvent` read or write path. |
+| Security (authn/authz, secrets, sensitive logging) | No change to any auth surface; the catch block logs nothing (no `console.error`/`console.log` added) and carries no secret. |
+| Scope guard (`git diff --stat`) | Matches `tasks.md`'s Phase 6 file list exactly (`use-board-realtime.ts` only). |
+| Rollback safety | Trivial — reverting restores the pre-T029 hook; no schema, no data touched. |
+
+## Findings
+
+### F1 — The synchronous-throw guard's actual trigger condition was not exercised live — CONFIRM, not BLOCKING
+
+The new `try { ... } catch { queueMicrotask(() => setStatus("disconnected")); return; }`
+around the `HubConnectionBuilder` construction chain is correct by inspection (verified by
+`tsc`'s type-check passing with `connection` typed as `HubConnection`, not `any`, and by the
+`react-hooks/set-state-in-effect` lint rule — which specifically flags a *synchronous*
+`setState` call inside an effect body — passing only once the `setStatus` call was moved
+into `queueMicrotask`, confirming the deferral is doing real work, not decoration). What
+wasn't verified end-to-end: an actual synchronous throw from `.build()` in a live browser.
+Every string tried (an unreachable-port URL, a spaces-containing non-URL string) resolved
+successfully as either an absolute or same-origin-relative URL — the WHATWG URL parser
+browsers use is extremely permissive for relative references, so it's unclear what class of
+misconfigured `NEXT_PUBLIC_FLOWBOARD_HUB_URL` value would actually reach this catch block in
+practice (a value with an invalid scheme *and* no valid relative interpretation, e.g.
+containing certain control characters, is the closest candidate, untested).
+*Action: CONFIRM only — this doesn't block approval. The guard is defensive and costs
+nothing when it doesn't trigger (the try/catch adds no behavior change to the success path,
+confirmed by the "unreachable port" run showing identical behavior with and without T029's
+change); if it never triggers in practice because no realistic misconfiguration reaches it,
+that is a safe outcome, not a wasted one. No fix is being requested — noting this so a future
+reader doesn't mistake the manual verification for having exercised this exact branch.*
+
+## Constitution re-check (post-implementation)
+
+- **I Specification First**: Held — T029 implemented exactly as `tasks.md` describes, scoped
+  to the one gap not already covered by T024/T028.
+- **III Repository Separation**: Held — no backend change; nothing crossed the boundary.
+- **IV Architecture Consistency**: Held — no new package, no new pattern; a `try/catch`
+  around an existing construction call and a standard `queueMicrotask` deferral.
+- Domain invariants 1–8: N/A, no data path touched.
+
+## Evidence Appendix
+
+### Frontend gate (dev-verification checkpoint, not the Done gate)
+
+```text
+$ npm run lint
+> eslint
+(no output — clean)
+
+$ npm run build
+✓ Compiled successfully in 2.7s
+  Running TypeScript ...
+  Finished TypeScript in 6.5s ...
+✓ Generating static pages using 10 workers (6/6)
+```
+
+(User has not yet re-run the gate for this phase; per CLAUDE.md's Strict Rules, Phase 6 is
+not Done until they do and confirm exit 0 — see `tasks.md`'s Phase 6 Gate line.)
+
+### `git diff --stat` (Phase 6 commit)
+
+```text
+flowboard-web (52b7338):
+ src/lib/realtime/use-board-realtime.ts | 44 ++++++++++++++++++++++------------
+ 1 file changed, 29 insertions(+), 15 deletions(-)
+```
+
+### Manual verification (quickstart.md §6, T030)
+
+- Backend run for real (`dotnet run`, port 5111); frontend run for real (`npm run dev`) with
+  `NEXT_PUBLIC_FLOWBOARD_HUB_URL` pointed at an unreachable port, so only the hub was
+  unavailable while the REST/tRPC path stayed up — the actual US4 scenario.
+- Signed up a fresh test account, created a board with the default three lists — board
+  loaded fully; indicator showed "● Offline", never stuck on a spinner, never a crashed page.
+- Added a card via the UI (`+ Add a card`, a REST-backed mutation) — worked.
+- Filtered the board with the search box for that card's text — worked (client-side filter,
+  independent of the hub).
+- Created a second card directly via `POST /v1/lists/{id}/cards` (simulating another
+  window's change) and did a full page reload — the card appeared with no live channel
+  involved, confirming spec.md's Acceptance Scenario 2 ("a manual refresh reflects current
+  data").
+- Re-pointed the hub URL at a value chosen to probe the synchronous-throw guard specifically
+  (see F1 above for why this didn't land on that exact branch) — board still rendered fully,
+  indicator still correctly showed "● Offline".
+- No console error in any run was a React/render error (no "Uncaught", no error-boundary
+  fallback UI) — only SignalR's own `LogLevel.Warning`-configured connection-failure logs.
