@@ -425,3 +425,257 @@ tests/Flowboard.Api.Tests/CardsEndpointTests.cs | 82 +++++++++++++++++++++++++
   Done) within the same few seconds. After settling, both windows converged to an
   identical final state: the card in "Doing" only, "Done" empty, no duplicate or phantom
   card in either list.
+
+---
+
+# AI Code Review — 008 Realtime Sync & Concurrency (US3)
+
+**Reviewer**: Claude Sonnet 5 (self-review of own implementation — Critical Delivery
+addendum item 5 requires this be treated as informational only; an independent human
+reviewer, or a second-model adversarial review if solo, is still required before merge)
+**Date**: 2026-08-31
+**Branches**:
+- `flowboard-api` `008-realtime-sync` (tip `41d5830`)
+- `flowboard-web` `008-realtime-sync` (tip `2503c86`)
+- `flowboard` (governance/specs repo) `008-realtime-sync` (tip `c967c62`)
+**Scope reviewed**: `flowboard-web/src/lib/realtime/use-board-realtime.ts`,
+`flowboard-web/src/components/board/board-realtime-context.tsx` (new),
+`flowboard-web/src/components/layout/realtime-status-indicator.tsx` (new),
+`flowboard-web/src/components/layout/top-bar.tsx`,
+`flowboard-web/src/app/(app)/boards/[boardPublicId]/page.tsx`,
+`flowboard-web/src/components/board/board-canvas.tsx`,
+`flowboard-api/tests/Flowboard.Api.Tests/BoardHubTests.cs` (new test), and
+`flowboard-api/src/Flowboard.Api/Hubs/BoardHub.cs` (unchanged this phase, read to trace
+what `JoinBoard` does on failure — `Context.Abort()`, no explicit rejection message);
+`specs/008-realtime-sync/tasks.md` Phase 5; `contracts/realtime-api.md`'s Connection
+lifecycle section; `docs/domain/flowboard-invariants.md` (all 8 items).
+**Feature contract**: No migration, no new table/column, no new package, no new endpoint
+— this phase is client-side reconnect/status UI plus one backend hub test confirming the
+existing `JoinBoard`/group-membership contract holds across a reconnect.
+
+**Covers**: `tasks.md` Phase 5 (T024–T028 — User Story 3 only). US1/US2 were reviewed
+separately above; US4/Polish remain out of scope for this review.
+
+## Verdict
+
+**APPROVE with follow-ups.** The reconnect/status-indicator mechanism works correctly for
+the common case — verified by a new hub-level integration test (stop/restart/rejoin, no
+duplicate or replayed delivery), the full existing suite (126/126, no regressions), and a
+live manual run against real `dotnet run` + `npm run dev` where the indicator was observed
+transitioning Live → Reconnecting → Offline and a post-outage reload correctly caught up
+with no data loss. One real gap (F1) was found by tracing the failure path of a reconnect
+that races an access revocation: the client neither surfaces the failure cleanly (an
+unhandled promise rejection) nor re-syncs board content along that specific path. It is
+narrow (disconnected + access revoked while disconnected + then reconnect) and
+self-correcting within a few hundred milliseconds (the indicator does end up showing
+"Offline"), not a security gap or silent data corruption — a CONFIRM, not BLOCKING.
+
+## What was verified (evidence)
+
+| Area | Evidence |
+|---|---|
+| Spec match (FR-008, FR-009, SC-004 for US3's scope) | FR-009 (visible signal when the connection is down) verified live in-browser: killing the backend process produced "● Reconnecting…" (amber, pulsing) within seconds, and "● Offline" (grey) once SignalR's default reconnect policy (0/2/10/30s) was exhausted — screenshots taken during this phase's manual pass. FR-008 (no missed change left unreflected after reconnect) is proven at the protocol level by the new hub test `Reconnect_RejoinsGroupAndReceivesSubsequentEvents_NoDuplicateDelivery` (traced: stops/restarts the same `HubConnection`, re-invokes `JoinBoard`, and asserts the final `card.created` count is exactly 2 — the pre-drop and post-reconnect cards, never the while-offline one, never a duplicate) and reproduced live via reload-based catch-up (a card created via the API immediately after the backend returned was absent until reload, then present with no loss — consistent with FR-008's "converges to current state," though see F1 for the one path where convergence doesn't happen automatically). SC-004 (reconnect within 60s converges with zero duplicated/missing events) — the hub test's assertion window (10s) is well inside SC-004's 60s bound; not separately re-tested at the 60s boundary. |
+| Visual-reference match | N/A — plan.md's Constitution Check already noted this feature adds no new rendered layout beyond the small status indicator, which has no prototype reference to compare against; confirmed by direct observation instead (Evidence Appendix). |
+| Feature contract held | Confirmed: `git diff --stat` (Evidence Appendix) shows no migration, no `package.json` change, no new endpoint — every file is either an existing file this phase extends or a small new client component/context. |
+| Constitution / domain invariants | See dedicated section below. |
+| Security (authn/authz, secrets, sensitive logging) | No new auth surface. Reconnect re-invokes the existing `JoinBoard`, which re-runs `IBoardAccessService.ResolveAsync` (`BoardHub.cs:28`, unchanged this phase) — access is re-checked on every join, not cached from the original connection. No secret added; no new logging. |
+| Scope guard (`git diff --stat`) | Matches `tasks.md`'s Phase 5 file list, plus the one documented amendment (`board-realtime-context.tsx`, not itself a listed task file but the same established sibling-state-sharing shape as `sidebar-context.tsx`/`board-filter-context.tsx`, noted inline in `tasks.md`'s T026 entry). |
+| Rollback safety | No schema/migration exists in this phase. Reverting removes the reconnect handlers, the status context/indicator, and the one hub test — touches zero `Board`/`List`/`Card`/`ActivityEvent` rows. |
+
+## Findings
+
+### F1 — A `JoinBoard` failure on reconnect (e.g., access revoked while disconnected) is an unhandled rejection and never re-syncs board content — CONFIRM
+
+`use-board-realtime.ts`'s `onreconnected` handler (line 64) does:
+
+```ts
+connection.onreconnected(() => {
+  setStatus("connected");
+  void connection.invoke("JoinBoard", boardPublicId);
+  void utilsRef.current.boards.getContent.invalidate({ boardPublicId });
+});
+```
+
+`BoardHub.JoinBoard` (`BoardHub.cs:28-33`) calls `Context.Abort()` — not an exception
+returned to the caller — when the caller's role no longer resolves. Tracing the existing
+`JoinBoard_TokenBoardMismatch_ClosesConnection`/`JoinBoard_AfterAccessRevoked_
+ReResolvesRoleAndCloses` hub tests (both wrap their `InvokeAsync("JoinBoard", ...)` in a
+`try/catch`, with a comment noting the abort "can surface as a connection error here")
+confirms `connection.invoke(...)` genuinely rejects when the server aborts mid-call — this
+is exercised behavior, not a hypothetical. In the initial connect path (`connection.start()
+.then(() => connection.invoke("JoinBoard", ...))`, line 72-79), that rejection is caught by
+the chain's trailing `.catch()`. In `onreconnected`, the same call is `void`-fired with no
+`.catch()` — a genuine inconsistency between the two call sites for the exact same
+invocation.
+
+Concretely, this matters for one edge case named in spec.md itself ("A member is removed
+from a board... while they are actively viewing it"): if the member is *disconnected* at
+the moment they're removed, the targeted `access.revoked` `BoardEvent`
+(`BoardEventPublisher.EvictUserAsync`) has no connection to reach — nothing is tracked for
+them at that moment. When they later reconnect, `JoinBoard` fails immediately and the
+connection is aborted, but `getContent` is never invalidated along this specific path (the
+unconditional `invalidate` two lines below only runs because `onreconnected` fired at all,
+not conditioned on `JoinBoard` having actually succeeded) — so the stale, no-longer-
+accessible board content is not immediately replaced with the "no access" state T018
+established for the tracked-eviction case. The status indicator is not permanently wrong
+(`onclose` fires shortly after the abort and flips it to "Offline"), but the board content
+itself stays stale until a manual refresh, and the browser console logs an unhandled
+promise rejection in the meantime.
+*Action: CONFIRM whether to fix now or defer. A narrow fix exists — chain a `.catch()` onto
+the `onreconnected` invoke that also calls `getContent.invalidate(...)`, treating a failed
+rejoin the same as a received `access.revoked` event — but this is a judgment call for the
+feature owner on timing (US3 vs. a fast-follow), not mine to make unilaterally. Not
+BLOCKING: the scenario requires being disconnected at the exact moment access is revoked,
+self-corrects to "Offline" within one reconnect cycle, and leaks no data to an unauthorized
+viewer (the hub still refuses the rejoin).*
+
+## Constitution re-check (post-implementation)
+
+- **I Specification First**: Held — T024–T028 implemented exactly as `tasks.md` describes.
+- **III Repository Separation**: Held — the hub test stayed in `flowboard-api`; the
+  reconnect hook/context/indicator stayed in `flowboard-web`.
+- **IV Architecture Consistency**: Held — `board-realtime-context.tsx` reuses the
+  already-established sibling-state Context Provider shape (`sidebar-context.tsx`,
+  `board-filter-context.tsx`) rather than introducing a new state-sharing mechanism; no new
+  UI library, no new package.
+- **V Data Standards**: N/A — no new entity.
+- **VI Auditability**: N/A — no new business entity.
+- **VII Domain Invariants**: See dedicated pass below.
+- **VIII Security**: Held — see Security row above; F1 does not grant unauthorized access,
+  it only delays the *client-side signal* that access is gone.
+- **IX External Integration Governance**: N/A.
+- **X Performance Responsibility**: Held — no new query added to any hot path; reconnect
+  handling is event-driven, not polling.
+- **XI Testing Requirements**: Held for the hub/server contract (T027, automated). The
+  frontend reconnect UI itself has no automated test — unchanged limitation from every
+  prior phase in this repo (no frontend test runner exists yet, 003 precedent) — covered
+  instead by manual verification (T028), which is where F1's specific failure path was
+  *not* exercised (the manual pass tested the happy-path drop/restore, not a
+  drop-then-access-revoked-then-reconnect sequence).
+- **XII Human Review**: Pending — this document is the AI half; human review (or
+  second-model adversarial + cooling-off if solo, per Critical Delivery item 5) is still
+  required before merge.
+- **XIII Controlled Delivery**: Held — T027 (backend) was implemented, tested, and gated
+  before T024–T026 (frontend), per `docs/sdlc/repository-strategy.md`'s cross-repository
+  rule.
+
+## Domain Invariant Pass (Critical Delivery addendum item 2)
+
+| # | Invariant | Verdict | Evidence |
+|---|---|---|---|
+| 1 | Activity Is Append-Only | **N/A** | This phase writes no `ActivityEvent` row and adds no new broadcast call site — it only changes how the client reacts to the connection lifecycle. |
+| 2 | Ordering Integrity | **N/A** | No position-computation logic touched. |
+| 3 | WIP Limits Are Advisory | **N/A** | Not touched. |
+| 4 | Soft Delete Only, 30-Day Restorability | **N/A** | No new deletion path. |
+| 5 | Permissions Server-Side | **PASS (with F1 caveat)** | `JoinBoard`'s existing `IBoardAccessService.ResolveAsync` re-check (`BoardHub.cs:28`, unchanged) runs on *every* join, including a post-reconnect rejoin — confirmed by this phase's own hub test, which only receives events again after re-invoking `JoinBoard`. The server-side enforcement itself is correct and unaffected by this phase; F1 is a client-side signal-surfacing gap, not a permissions gap — no unauthorized access is ever granted. |
+| 6 | Optimistic Concurrency — No Silent Overwrites | **N/A** | Untouched by this phase; US2 already confirmed this invariant holds under the live channel. |
+| 7 | Labels Are Board-Scoped | **N/A** | Not touched. |
+| 8 | Opaque Public Identifiers | **PASS** | The new hub test uses `board.PublicId` exclusively (never an internal `Id`); the reconnect hook and context continue to key everything by the `boardPublicId` prop already threaded through since T017/T018 — no new identifier surface introduced. |
+
+**Rollback interaction**: no invariant-relevant data is created or mutated by this phase's
+diff; reverting it touches zero rows in any table.
+
+## Test coverage observed
+
+- **`Flowboard.Api.Tests`** (`dotnet test`, full suite, re-run during this review):
+  **126/126 passing**, 0 failed, 0 skipped (up from 121 after the US2 review — 5 new tests
+  from the frontend-parallel batch plus 1 new in this phase). New in this phase:
+  `Reconnect_RejoinsGroupAndReceivesSubsequentEvents_NoDuplicateDelivery`. Scope note: this
+  test simulates a drop via a manual `StopAsync()`/`StartAsync()` on the same
+  `HubConnection` (the .NET SignalR test client has no `withAutomaticReconnect()`
+  equivalent) — it validates the *server-side* contract ("a new connection must
+  `JoinBoard` again to receive events, and nothing is replayed for the gap") rather than
+  the frontend's automatic-reconnect timing/backoff policy itself, which has no automated
+  coverage (see XI above).
+- **Frontend**: no test runner exists yet (003 precedent, unchanged) — `npm run lint` and
+  `npm run build` both pass cleanly; correctness otherwise established by the manual
+  in-browser verification (T028), which did not happen to exercise F1's specific failure
+  path.
+- **Manual verification** (quickstart.md §5, T028): real `dotnet run` + `npm run dev`,
+  one browser session. Indicator showed "● Live" on load; killing the backend produced
+  "● Reconnecting…" while the board stayed fully usable; the indicator settled to
+  "● Offline" once automatic reconnect exhausted its attempts; a reload after the backend
+  returned showed "● Live" again with a card created during the outage already present, no
+  data loss. The tighter "reconnect succeeds automatically, no reload" path and F1's
+  specific race were not reproduced live — documented as tooling/time limitations in
+  `tasks.md`'s T028 note, not silently skipped.
+
+## Residual risk
+
+Risk concentrates entirely in F1 — narrow, self-correcting, not a security or data-loss
+issue, but a real gap against FR-008's "no missed change left unreflected" for one specific
+race. Everything else in this phase (the common reconnect path, the status indicator, the
+sibling-state sharing, the hub-side re-authorization contract) is verified working and
+introduces no new invariant, security, or architectural risk. Safe to merge once a human
+(or second-model adversarial, if solo) reviewer signs off; recommend deciding F1's
+disposition (fix now vs. tracked follow-up) explicitly rather than silently, consistent with
+how F1/F2/F4 were handled in the US1 review.
+
+---
+
+## Evidence Appendix (Critical Delivery addendum item 3 — audit evidence retained)
+
+### Backend gate (re-run during this review)
+
+```text
+$ dotnet build --warnaserror
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+$ dotnet test
+Passed!  - Failed: 0, Passed: 126, Skipped: 0, Total: 126, Duration: 2 m 44 s
+```
+
+(User separately ran the gate — both `flowboard-api`'s and `flowboard-web`'s — and
+confirmed exit 0 for both before requesting this review; recorded in `tasks.md`'s Phase 5
+Gate line and this branch's `c967c62` commit.)
+
+### Frontend gate
+
+```text
+$ npm run lint
+> eslint
+(no output — clean)
+
+$ npm run build
+✓ Compiled successfully in 2.7s
+  Running TypeScript ...
+  Finished TypeScript in 5.1s ...
+✓ Generating static pages using 10 workers (6/6)
+```
+
+### `git diff --stat` (Phase 5 commits)
+
+```text
+flowboard-api (41d5830):
+ tests/Flowboard.Api.Tests/BoardHubTests.cs | 77 ++++++++++++++++++++++++++++++
+ 1 file changed, 77 insertions(+)
+
+flowboard-web (2503c86):
+ src/app/(app)/boards/[boardPublicId]/page.tsx      | 21 ++++++++----
+ src/components/board/board-canvas.tsx              |  3 --
+ src/components/board/board-realtime-context.tsx    | 31 +++++++++++++++++
+ src/components/layout/realtime-status-indicator.tsx| 27 +++++++++++++++
+ src/components/layout/top-bar.tsx                  |  7 +++-
+ src/lib/realtime/use-board-realtime.ts             | 39 +++++++++++++++++++---
+ 6 files changed, 112 insertions(+), 16 deletions(-)
+
+flowboard (governance repo, c452bb6 + c967c62):
+ specs/008-realtime-sync/tasks.md | 74 ++++++++++++++++++++++++++++++++++------
+ 1 file changed, 63 insertions(+), 11 deletions(-)
+```
+
+### Manual verification (quickstart.md §5, T028)
+
+- Fresh user/board seeded via API; logged into the real Next.js dev server, board opened —
+  indicator showed "● Live" (emerald dot).
+- Backend process killed: indicator transitioned to "● Reconnecting…" (amber, pulsing)
+  within seconds; board remained fully rendered and interactive throughout (lists/cards
+  visible, no error boundary).
+- SignalR's default 4-attempt backoff (0/2/10/30s) exhausted before the backend returned in
+  this pass; indicator correctly settled to "● Offline" (the `onclose` fallback,
+  US4-territory but confirms the hook doesn't get stuck in an intermediate state).
+- A card created via the API immediately after the backend returned did not appear until
+  the page was reloaded (expected — the automatic-reconnect window had already closed by
+  then); reloading showed "● Live" again with the card already present, no data loss.
