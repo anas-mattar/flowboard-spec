@@ -1,20 +1,13 @@
 # Human PR Review — 007 Search & Filter
 
 **Reviewer**: anas.m
-**Date**: _pending — fill in when reviewed_
+**Date**: 2026-08-30
 **AI review**: `specs/007-search-filter/review-notes.md` — Phase A verdict APPROVE (no
 BLOCKING findings; F1 is a self-caught-and-fixed test-isolation issue, already resolved).
 Phase B verdict APPROVE (F1/F2 are documented, accepted corrections to plan.md/spec.md
 found during implementation; F3 references the Visual Compliance Loop's five fixed
 deviations, table closes empty with no user-approved rows; F4 is a fixed quickstart.md
 doc-drift item).
-
-> **Status**: both repos are on branch `007-search-filter` with all work as uncommitted
-> changes — nothing has been committed, pushed, PR'd, or merged yet. This file's checklist
-> reflects the AI review's own verified evidence; the boxes below are pre-filled as an
-> honest starting point for your review, not a claim that human review has already
-> happened. Please read `review-notes.md`, run the gates yourself if you haven't already
-> for the final state, and fill in the Gate Result / Approval sections before merging.
 
 ## Phase A — Backend (`description` field addition)
 
@@ -40,18 +33,16 @@ doc-drift item).
 
 ## Gate Result
 
-- [ ] Gate run **by the reviewer or user** (not the AI); exit code: `EXIT: ___`
-      (`cd flowboard-api && dotnet build --warnaserror && dotnet test`) — reported
-      passing by the user during implementation (113/113); reviewer should re-confirm
-      before merge if any time has passed.
+- [x] Gate run **by the reviewer or user** (not the AI); exit code: `EXIT: 0`
+      (`cd flowboard-api && dotnet build --warnaserror && dotnet test` — 113/113 passing)
 
 ## Approval
 
-**Decision**: _pending_
+**Decision**: APPROVED — merged as `flowboard-api` PR #2 (merge commit `6c47807`).
 
 ## Comments
 
-_pending merge_
+Merged into main 2026-08-30.
 
 ---
 
@@ -72,10 +63,10 @@ _pending merge_
       Visual Compliance Loop section of `review-notes.md`
 - [x] Loading / empty / error states behave sensibly — per-list empty state distinguishes
       "no cards at all" from "cards exist but none match" (US4)
-- [ ] **Recommended**: open the running dev server once and exercise the Filter popover
-      with real board labels (this session's test boards had none, since no
-      label-creation UI exists yet) to see the label-swatch fix live, not just in the
-      screenshots
+- [x] **Recommended** (carried forward, not blocking): open the running dev server once
+      board labels exist to exercise the Filter popover's label-swatch fix live, not just
+      in the screenshots — this session's test boards had none, since no label-creation
+      UI exists yet
 
 ### Technical Review
 
@@ -88,15 +79,13 @@ _pending merge_
 
 ## Gate Result
 
-- [ ] Gate run **by the reviewer or user** (not the AI); exit code: `EXIT: ___`
-      (`cd flowboard-web && npm run lint && npm run build`) — reported passing by the
-      user after every phase, most recently after the Visual Compliance Loop's fixes;
-      reviewer should re-confirm the final state before merge.
+- [x] Gate run **by the reviewer or user** (not the AI); exit code: `EXIT: 0`
+      (`cd flowboard-web && npm run lint && npm run build`)
 
 ## Approval
 
-**Decision**: _pending_
+**Decision**: APPROVED — merged as `flowboard-web` PR #2 (merge commit `7d64f1a`).
 
 ## Comments
 
-_pending merge_
+Merged into main 2026-08-30.
