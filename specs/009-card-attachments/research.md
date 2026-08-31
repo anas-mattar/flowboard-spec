@@ -96,10 +96,18 @@ rejected, no reason to abandon the existing typed-binding convention just becaus
 
 ## R-4: Enforcing the 25 MB cap and the blocked-extension list (spec.md Assumptions)
 
-**Decision**: Enforce both at the API boundary, before any byte reaches `IAttachmentStorage`:
-size via ASP.NET Core's per-endpoint request body size limit (`IHttpMaxRequestBodySizeFeature`,
-no new package) returning a clean `413`-mapped validation failure through the existing
-`Failure`/`ResultMapping` pattern; extension via a fixed deny-list constant
+**Decision**: Enforce both at the API boundary, before any byte reaches `IAttachmentStorage`,
+as an ordinary `Failure.Validation` (→ `400`) through the existing `ResultMapping` pattern —
+`backend-rules.md`'s fixed status-code list (`200/201/204/400/401/403/404/409/422/500`) has no
+`413`, so this deliberately does not introduce one. The 25 MB product-facing cap is checked in
+the service against `IFormFile.Length` after binding, before anything is written to
+`IAttachmentStorage`; a separate, higher `IHttpMaxRequestBodySizeFeature` limit on the endpoint
+(no new package) is set purely as a server-level abuse backstop against a request that lies
+about its declared size, not as the mechanism that produces the user-visible rejection — a
+request that actually trips the hard cap fails at the Kestrel/ASP.NET Core level before
+reaching the handler at all, same as it would for any other endpoint, and is not this
+feature's concern to shape into a friendlier response. Extension is checked via a fixed
+deny-list constant
 (`.exe`, `.bat`, `.sh`, `.cmd`, `.msi`, matching spec.md's Assumptions verbatim) checked
 case-insensitively against the uploaded filename before the file is written anywhere. On the
 frontend, the Route Handler performs the same two checks up front (from the `File`'s

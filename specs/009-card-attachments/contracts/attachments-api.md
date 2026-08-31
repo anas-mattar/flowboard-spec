@@ -26,12 +26,15 @@ card endpoint's "board's existence is not confirmed to a non-member" rule).
 
 **Failure responses**:
 
-- `400` (validation) — no `file` field, empty file, filename extension on the blocked list
-  (research.md R-4).
+- `400` (validation) — no `file` field, empty file, filename extension on the blocked list,
+  or file exceeds the 25 MB cap (spec.md Assumptions, research.md R-4). `backend-rules.md`'s
+  fixed status-code list has no `413`, so an oversized file is a validation failure like any
+  other, not a distinct status — the request body itself is still allowed up to a higher
+  server-level hard cap (research.md R-4) purely as an abuse backstop, never surfaced to the
+  client as a different error shape than any other rejected upload.
 - `401` — unauthenticated.
 - `403` — caller has a role on the board but it is `Observer`.
 - `404` — card does not exist, or caller has no role on the card's board.
-- `413` — file exceeds the 25 MB cap (spec.md Assumptions, research.md R-4).
 
 **Side effects**: writes the file via `IAttachmentStorage`; inserts one `Attachment` row;
 inserts one `ActivityEvent` row (`attachment.added`); broadcasts it on the board's realtime

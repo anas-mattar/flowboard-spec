@@ -41,7 +41,7 @@ technical plan" — see Constitution Check, Architecture Consistency below).
 **Testing**: `dotnet test` — integration tests via `WebApplicationFactory` against the
 disposable `flowboard-db-test` database (existing pattern) covering: upload succeeds for
 board admin/member, fails (`403`) for Observer, fails (`404`) for a non-member, fails (`400`)
-for a blocked extension, fails (`413`) for an oversized file; download succeeds for every role
+for a blocked extension, fails (`400`) for an oversized file; download succeeds for every role
 including Observer, fails (`404`) after removal; removal succeeds for the uploader and for a
 board admin, fails (`403`) for a non-uploading board member and for Observer; one test
 confirming the activity feed gets exactly one `attachment.added`/`attachment.removed` entry
