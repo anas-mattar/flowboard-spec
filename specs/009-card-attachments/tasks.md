@@ -108,11 +108,11 @@ precedent where a story's backend work was pure test coverage over an existing e
 prior + 1 new), no regressions. User-confirmed. Committed as flowboard-api `a64e621` on branch
 `009-card-attachments`.
 
-**Checkpoint — Phase A gate**: STOP. User runs `dotnet build --warnaserror && dotnet test` in
-flowboard-api and confirms EXIT 0. AI review AND human review. Commit Phase A. Per
-`docs/sdlc/repository-strategy.md`'s cross-repository rule, the backend gates and merges to
-`main` **before** Phase B (frontend) begins. ⏳ Pending — T009-T019 are all implemented and
-gated task-by-task; the AI review + human review + merge-to-`main` step has not yet run.
+**Checkpoint — Phase A gate**: ✅ Done. AI review: `ai-code-review.md`, APPROVE with
+follow-ups (F1–F4, none blocking). Human review: `human-pr-review.md`, **APPROVED**
+(anas.m, 2026-08-31), gate re-confirmed EXIT 0 covering the full Phase A diff. Merged to
+`main` in flowboard-api as `65dcf75` (`git merge --no-ff 009-card-attachments`). Phase B
+(frontend) may now begin per `docs/sdlc/repository-strategy.md`'s cross-repository rule.
 
 ---
 
