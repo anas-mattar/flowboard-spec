@@ -680,9 +680,27 @@ notes under T031 and T032 above:
 Gate re-run after round 3: `dotnet build --warnaserror` — 0 warnings/errors; `dotnet
 test` — 129 total, 128 passed, same pre-existing unrelated F1 failure as round 2 (no
 regressions from either round-3 change; rollback.md is documentation-only).
-**Still required before Done**: the user must re-run and confirm the gate per Critical
-Delivery item 4 (a re-run by me does not count), and a fourth AI + second-model
-adversarial review pass over this diff, per `docs/sdlc/review-process.md`.
+
+**Round 4 re-review: APPROVE.** Full text appended to
+`specs/008-realtime-sync/human-pr-review.md`'s "Follow-up — rounds 2–4" section. Summary:
+round 3's two fixes were verified accurate against the actual current source (including
+direct confirmation against `flowboard-web` commit `2503c86`), the deterministic race
+test was confirmed no longer vacuous, and the underlying FR-007 evidence chain — this
+test proving `BoardEventPublisher`'s own code behaves correctly under the disputed race,
+combined with the explicit, undisputed documentation of the SignalR-transport-delivery
+boundary as out of scope — was judged honestly and adequately addressed. No new findings.
+**Second-model adversarial review substituting for independent human review
+(`docs/sdlc/critical-delivery.md` item 5) is now APPROVE**, covering every commit across
+all four rounds on both `flowboard-api` and `flowboard`.
+
+**Still required before Done**: per `docs/sdlc/definition-of-done.md` gate 3, the user
+must run the gate themselves on this branch (`dotnet build --warnaserror && dotnet test`
+in `flowboard-api/`; `npm run lint && npm run build` in `flowboard-web/`) and confirm the
+exit code. T033's user-confirmed exit-0 covered the original Phase 7 diff (T031–T033) —
+it does not cover the four remediation rounds' commits added afterward, every gate run
+for which has been mine only, and per that gate's own text "an agent-run gate never
+satisfies this item." Once the user confirms a fresh run on the branch as it now stands,
+all six Definition of Done gates are satisfied and Phase 7 — and the feature — is Done.
 
 Gate re-run after round 2: `dotnet build --warnaserror` — 0 warnings/errors; `dotnet
 test` — 129 total, 128 passed, 1 pre-existing unrelated F1 golden-fixture failure (this

@@ -440,3 +440,45 @@ live observations.
 - Route the date-dependent golden-fixture issue separately. Repository history
   conclusively excludes it from every 008 commit, but the project-wide gate will remain
   time-sensitive until that fixture is repaired.
+
+## Follow-up — rounds 2–4 (2026-08-31)
+
+Three further rounds of remediation and re-review followed this one, each addressed to
+`flowboard-api` and `flowboard` commits (full detail in
+`specs/008-realtime-sync/tasks.md`'s Phase 7 "Round N remediation" notes under T031/T032;
+summarized here for the audit trail):
+
+- **Round 2 re-review**: CHANGES REQUESTED. The round-1 hub-level race test
+  (`BoardHubTests.RemoveMember_ConcurrentDisconnectAtEvictionBoundary...`) didn't reliably
+  force the disputed tracker-snapshot/disconnect interleaving (no synchronization barrier
+  over TestServer's in-memory transport) and was redundant with pre-existing coverage
+  (its reconnect assertion passes regardless of whether `access.revoked` delivery works).
+  `rollback.md`'s round-1 fix also had a fresh error, misattributing the realtime
+  `invalidate(...)` call to `board-canvas.tsx`.
+- **Round 3 re-review**: CHANGES REQUESTED. The round-2 remediation added
+  `BoardEventPublisherTests.cs` (a unit test faking `IHubContext<BoardHub>` to force the
+  interleaving deterministically) — a real improvement, but its final assertions would
+  still pass even if the race-simulation callback were deleted outright, since
+  `EvictUserAsync` unconditionally clears the tracker afterward either way. `rollback.md`'s
+  round-2 fix also introduced a *new* inaccuracy while fixing the last one: it claimed
+  `board-canvas.tsx` calls `useBoardRealtime` via the context provider, which T026's
+  refactor (`flowboard-web` commit `2503c86`) had already removed.
+- **Round 4 re-review**: **APPROVE.** Round-3's fixes — an explicit `raceCallbackRan`
+  assertion plus a check that the tracker still held the connection at the moment the
+  callback ran (proving the interleaving landed genuinely mid-flight, not merely that the
+  end state was consistent with it), and a `rollback.md` rewrite correctly stating
+  `board-canvas.tsx` has no connection to the realtime hook/context at all — were verified
+  accurate against the actual current source and against commit `2503c86` directly.
+  Verdict: "the underlying FR-007 concern is now honestly and adequately addressed... no
+  remaining evidence gap warrants blocking approval," explicitly endorsing the documented
+  scope boundary (this test proves `BoardEventPublisher`'s own code behaves correctly
+  under the disputed race; whether the real SignalR transport delivers bytes to a socket
+  that's simultaneously closing is a framework guarantee, correctly left out of scope
+  rather than claimed away). No new issues found in either round-3 commit.
+
+**Decision (superseding the CHANGES REQUESTED above): APPROVE**, as of round 4
+(2026-08-31), covering `flowboard-api` commits `4471479`, `319b046`, `b1bcccd`,
+`12875b8`, `a3c31c6` and `flowboard` commits `cfe0535`, `34f94a2`, `d3afc6f`. The
+independent build/test re-run remained blocked by the reviewer's own sandbox permissions
+in every round (an environment limitation, not a finding) — the user-confirmed gate run
+recorded under T033 is the evidence of record per Critical Delivery item 4.
