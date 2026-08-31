@@ -143,12 +143,15 @@ flowboard-web `0ee5137` on branch `009-card-attachments` (created off `main`, pe
 
 **Independent Test**: `quickstart.md` §5.
 
-- [ ] T026 [US2] Add `removeAttachmentInputSchema` (`{ attachmentPublicId: z.string().uuid() }`) in flowboard-web/src/lib/cards/schemas.ts
-- [ ] T027 [US2] Extend `cards-client.ts` with `removeAttachment(attachmentPublicId, backendToken)` and the `cards` tRPC router with a `removeAttachment` `protectedProcedure` (`403`/`404` mapped the same way every other card mutation already is) in flowboard-web/src/lib/api/cards-client.ts, flowboard-web/src/server/api/routers/cards.ts (depends on T026)
-- [ ] T028 [US2] Compute `isBoardAdmin` and `currentUserPublicId` alongside the existing `canMutate` derivation and thread both down through `CardDetailModal` to `CardAttachmentsPanel`; render a remove control per attachment only when `isBoardAdmin || attachment.uploadedBy.publicId === currentUserPublicId`, calling `removeAttachment` on click — in flowboard-web/src/components/board/board-canvas.tsx, flowboard-web/src/components/board/card-detail/card-detail-modal.tsx, flowboard-web/src/components/board/card-detail/card-attachments-panel.tsx (depends on T027)
+- [x] T026 [US2] Add `removeAttachmentInputSchema` (`{ attachmentPublicId: z.string().uuid() }`) in flowboard-web/src/lib/cards/schemas.ts
+- [x] T027 [US2] Extend `cards-client.ts` with `removeAttachment(attachmentPublicId, backendToken)` and the `cards` tRPC router with a `removeAttachment` `protectedProcedure` (`403`/`404` mapped the same way every other card mutation already is) in flowboard-web/src/lib/api/cards-client.ts, flowboard-web/src/server/api/routers/cards.ts (depends on T026)
+- [x] T028 [US2] Compute `isBoardAdmin` and `currentUserPublicId` alongside the existing `canMutate` derivation and thread both down through `CardDetailModal` to `CardAttachmentsPanel`; render a remove control per attachment only when `isBoardAdmin || attachment.uploadedBy.publicId === currentUserPublicId`, calling `removeAttachment` on click — in flowboard-web/src/components/board/board-canvas.tsx, flowboard-web/src/components/board/card-detail/card-detail-modal.tsx, flowboard-web/src/components/board/card-detail/card-attachments-panel.tsx (depends on T027)
 
 **Checkpoint**: US2 verifiable end-to-end, including the three-way permission check
-(uploader / admin / neither) in the browser.
+(uploader / admin / neither) in the browser. ✅ Done.
+
+**Gate**: `npm run lint && npm run build` in flowboard-web — EXIT 0. User-confirmed. Committed
+as flowboard-web `ab61875` on branch `009-card-attachments`.
 
 ---
 
