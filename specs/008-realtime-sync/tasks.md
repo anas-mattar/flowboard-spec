@@ -557,6 +557,20 @@ final validation across all stories.
   F1's fix, merged separately to `main` via `flowboard-api`'s
   `fix/golden-fixture-due-status-date-drift`, commit `5b8c061`).
 
+  **Remediation, round 3**: re-review found a sharper version of the vacuousness concern
+  round 2 was meant to close — this test's *final* assertions (delivery attempted, group
+  cleaned up, tracker empty) would all still pass even if the race-simulation callback
+  (the fake's `SendAsync` side effect that removes the connection from the tracker) were
+  deleted outright, because `EvictUserAsync` unconditionally clears the tracker afterward
+  via `RemoveAllForBoardUser` regardless of whether the mid-send removal ever happened.
+  An empty tracker at the end was consistent with the race having occurred, but not
+  *evidence* that it had. Fixed: added an explicit `raceCallbackRan` flag plus a check,
+  captured from inside the callback itself, that the tracker still held the snapshotted
+  connection at the moment the callback ran (proving the removal landed genuinely
+  mid-flight, not before the send even started). Verified with a negative control
+  matching the review's own suggested sabotage (disabling the callback invocation),
+  confirmed the new assertion fails with a clear message, then reverted.
+
 - [x] T032 Re-read `specs/008-realtime-sync/rollback.md` against what was actually built in
   Phases 2–6 and correct any step that has drifted from the implementation (Critical
   Delivery item 1). **Found and fixed**: the Deployment Rollback section claimed "No
@@ -586,6 +600,21 @@ final validation across all stories.
   (invoked via `board-realtime-context.tsx`); `board-canvas.tsx` does call `.invalidate(...)`
   itself, but only from its own pre-existing (pre-008), unrelated mutation `onSettled`
   handlers. Verified against `flowboard-web`'s actual source and corrected in place.
+
+  **Remediation, round 3**: re-review found the round-2 fix had introduced a *new*
+  inaccuracy while fixing the last one — it claimed `board-canvas.tsx` "now calls the new
+  `useBoardRealtime(boardPublicId)` hook (via `board-realtime-context.tsx`)," which is
+  false. Checked directly against `flowboard-web` git history: an early T019 version of
+  `board-canvas.tsx` did call `useBoardRealtime` directly, but T026's refactor (commit
+  `2503c86`, own commit message: "board-canvas.tsx no longer calls the hook directly")
+  moved that call solely into `BoardRealtimeProvider` (`board-realtime-context.tsx`),
+  mounted once at the page level. `board-canvas.tsx` has no import, call, or subscription
+  connecting it to the realtime hook or context at all — it re-renders with fresh data
+  purely because the provider's invalidate calls hit the same shared tRPC query cache
+  (`boards.getContent`) that `board-canvas.tsx`'s own `useQuery` already subscribes to.
+  Corrected, with the T026 commit cited directly so the claim doesn't need re-verifying
+  again from scratch next time. Also fixed "handlers" → "handler" (singular; there is
+  exactly one pre-existing `onSettled` call site in `board-canvas.tsx`).
 
 - [x] T033 Run the gate slice — `dotnet build --warnaserror && dotnet test` in
   `flowboard-api/`, `npm run lint && npm run build` in `flowboard-web/`
@@ -624,15 +653,36 @@ reliably force the disputed interleaving and was redundant with pre-existing cov
 had a fresh factual error — misattributing the realtime `invalidate(...)` call to
 `board-canvas.tsx` (see "Remediation, round 2" under T032 above).
 
-**Round 2 remediation (2026-08-31).** Both addressed — see the "Remediation, round 2"
+**Round 2 remediation (2026-08-31), re-reviewed; CHANGES REQUESTED a third time.** Both
+round-2 fixes addressed the round-1 findings, but the re-review found each had its own
+new gap:
+1. T031 — `BoardEventPublisherTests.cs`'s deterministic race test was a genuine
+   improvement, but its final assertions would still pass even with the race-simulation
+   callback deleted entirely (the tracker gets cleared unconditionally afterward either
+   way) — so it didn't yet prove the disputed interleaving was actually exercised, only
+   that the end state was consistent with it.
+2. T032 — `rollback.md`'s fix for the round-1 misattribution introduced a fresh one: it
+   claimed `board-canvas.tsx` calls `useBoardRealtime` via the context provider, which
+   the T026 refactor (commit `2503c86` in `flowboard-web`) had already removed.
+
+**Round 3 remediation (2026-08-31).** Both addressed — see the "Remediation, round 3"
 notes under T031 and T032 above:
-1. T031 — added `BoardEventPublisherTests.cs`, a unit test faking `IHubContext<BoardHub>`
-   to force the disputed tracker-snapshot/disconnect race deterministically rather than
-   via wall-clock timing, verified to have real teeth via a negative-control sabotage/
-   revert. The round-1 hub test's docstring/claims were corrected to describe what it
-   actually proves (crash-safety and reconnect-rejection, not the disputed race).
-2. T032 — `rollback.md`'s `invalidate(...)` attribution corrected to
-   `use-board-realtime.ts`/`board-realtime-context.tsx`.
+1. T031 — added an explicit assertion that the race-simulation callback actually ran,
+   and that the tracker still held the snapshotted connection at the moment it did
+   (proving the removal landed genuinely mid-flight). Verified via the review's own
+   suggested negative control.
+2. T032 — corrected to state plainly that `board-canvas.tsx` has no call, import, or
+   subscription connecting it to the realtime hook/context at all; it re-renders solely
+   because the shared tRPC query cache gets invalidated by the provider mounted at the
+   page level. Cited the exact `flowboard-web` commit (`2503c86`) that made this true, so
+   the claim doesn't need re-deriving from scratch on a future pass.
+
+Gate re-run after round 3: `dotnet build --warnaserror` — 0 warnings/errors; `dotnet
+test` — 129 total, 128 passed, same pre-existing unrelated F1 failure as round 2 (no
+regressions from either round-3 change; rollback.md is documentation-only).
+**Still required before Done**: the user must re-run and confirm the gate per Critical
+Delivery item 4 (a re-run by me does not count), and a fourth AI + second-model
+adversarial review pass over this diff, per `docs/sdlc/review-process.md`.
 
 Gate re-run after round 2: `dotnet build --warnaserror` — 0 warnings/errors; `dotnet
 test` — 129 total, 128 passed, 1 pre-existing unrelated F1 golden-fixture failure (this

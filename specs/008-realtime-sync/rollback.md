@@ -52,15 +52,23 @@ shared migration to worry about (this feature adds no migration at all).
     `<RealtimeStatusIndicator />` as part of its own JSX, not just an added sibling file.
   - `components/board/board-canvas.tsx` — gained a new conditional render branch (a
     `boardError?.data?.code === "NOT_FOUND"` early return) for the "no access" state
-    (FR-007's live-revocation UI), and now calls the new `useBoardRealtime(boardPublicId)`
-    hook (via `board-realtime-context.tsx`) at the top of the component.
-    **Second correction (re-review, 2026-08-31): the previous version of this paragraph
-    wrongly attributed the realtime `utils.boards.getContent.invalidate(...)` call
-    (the one that runs on every incoming BoardEvent) to `board-canvas.tsx` itself — that
-    call actually lives in `lib/realtime/use-board-realtime.ts`, not in `board-canvas.tsx`.
-    `board-canvas.tsx` does call `getContent.invalidate(...)` itself, but only from its own
-    pre-existing (pre-008) mutation `onSettled` handlers — an unrelated, already-existing
-    call site.
+    (FR-007's live-revocation UI). It does **not** call `useBoardRealtime` or any realtime
+    context hook itself — an earlier T019 version did call `useBoardRealtime` directly, but
+    T026's refactor (commit `2503c86`, "board-canvas.tsx no longer calls the hook
+    directly") moved that call solely into `BoardRealtimeProvider`
+    (`board-realtime-context.tsx`), mounted once at the page level in `page.tsx`.
+    `board-canvas.tsx` re-renders with fresh data purely because the provider's
+    invalidate-on-event calls hit the same shared tRPC query cache
+    (`boards.getContent`) that `board-canvas.tsx`'s own `useQuery` already subscribes to —
+    no direct call, subscription, or import connects the two.
+    **Corrections (re-review, 2026-08-31, two rounds): the previous version of this
+    paragraph (a) wrongly attributed the realtime `utils.boards.getContent.invalidate(...)`
+    call to `board-canvas.tsx` itself — that call actually lives in
+    `lib/realtime/use-board-realtime.ts` — and, once corrected, (b) still wrongly claimed
+    `board-canvas.tsx` calls the hook "via `board-realtime-context.tsx`," which is also
+    false per the T026 diff above. `board-canvas.tsx` does call `getContent.invalidate(...)`
+    itself, but only from its own pre-existing (pre-008) mutation `onSettled` handler (one
+    call site, not "handlers") — unrelated to realtime.
 
   Reverting the feature must restore all three files to their pre-008 JSX, not just
   delete the newly-added files — a plain `git revert` of the phase commits does this
