@@ -102,12 +102,17 @@ precedent where a story's backend work was pure test coverage over an existing e
 
 **Independent Test**: `AttachmentsEndpointsTests.cs`'s activity-feed coverage (T019).
 
-- [ ] T019 [P] [US3] Integration test: attaching and then removing a file each produce exactly one correctly-typed, correctly-shaped `ActivityEvent` (`attachment.added` / `attachment.removed`, `{ fileName }` payload), retrievable via `GET /v1/cards/{cardPublicId}/activity` — in flowboard-api/tests/Flowboard.Api.Tests/AttachmentsEndpointsTests.cs (reuses T012/T017, no new production code)
+- [x] T019 [P] [US3] Integration test: attaching and then removing a file each produce exactly one correctly-typed, correctly-shaped `ActivityEvent` (`attachment.added` / `attachment.removed`, `{ fileName }` payload), retrievable via `GET /v1/cards/{cardPublicId}/activity` — in flowboard-api/tests/Flowboard.Api.Tests/AttachmentsEndpointsTests.cs (reuses T012/T017, no new production code)
+
+**Gate**: `dotnet build --warnaserror && dotnet test` in flowboard-api — EXIT 0, 154 passed (153
+prior + 1 new), no regressions. User-confirmed. Committed as flowboard-api `a64e621` on branch
+`009-card-attachments`.
 
 **Checkpoint — Phase A gate**: STOP. User runs `dotnet build --warnaserror && dotnet test` in
 flowboard-api and confirms EXIT 0. AI review AND human review. Commit Phase A. Per
 `docs/sdlc/repository-strategy.md`'s cross-repository rule, the backend gates and merges to
-`main` **before** Phase B (frontend) begins.
+`main` **before** Phase B (frontend) begins. ⏳ Pending — T009-T019 are all implemented and
+gated task-by-task; the AI review + human review + merge-to-`main` step has not yet run.
 
 ---
 
