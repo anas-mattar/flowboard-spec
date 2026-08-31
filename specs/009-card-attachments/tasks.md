@@ -172,7 +172,11 @@ before, once after an upload-restriction fix found during AI review prep — see
 F1). User-confirmed both times. Committed as flowboard-web `a4c591c` on branch
 `009-card-attachments`.
 
-**Checkpoint — Phase B gate**: AI review complete (`ai-code-review.md`). Human review pending.
+**Checkpoint — Phase B gate**: ✅ Done. AI review: `ai-code-review.md`, APPROVE with
+follow-ups (F2–F4, none blocking; F1 found and fixed during review). Human review:
+`human-pr-review.md`, **APPROVED** (anas.m, 2026-08-31), gate re-confirmed EXIT 0 covering the
+full Phase B diff. Merged to `main` in flowboard-web as `77959ec`
+(`git merge --no-ff 009-card-attachments`). Both repos' `main` now carry the full feature.
 
 ---
 
