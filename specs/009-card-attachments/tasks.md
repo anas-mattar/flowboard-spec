@@ -122,14 +122,18 @@ follow-ups (F1–F4, none blocking). Human review: `human-pr-review.md`, **APPRO
 
 **Independent Test**: `quickstart.md` §2/§3.
 
-- [ ] T020 [US1] Extend `CardDetail`/add `AttachmentDetail` types with the `attachments` field (mirrors contracts/attachments-api.md's card-detail-payload section) in flowboard-web/src/lib/api/cards-client.ts
-- [ ] T021 [US1] Create the server-only attachments client — `uploadAttachment(cardPublicId, formData, backendToken)` (forwards multipart), `downloadAttachment(attachmentPublicId, backendToken)` (returns the raw `Response` for streaming, not a parsed JSON result, since the body is a file) — in flowboard-web/src/lib/api/attachments-client.ts (new file; cite contracts/attachments-api.md; research.md R-2)
-- [ ] T022 [US1] Create `app/api/attachments/route.ts` (`POST` — `getBackendSession()`, forward the incoming `FormData` to `uploadAttachment`, map its result to a JSON response with the same status code) in flowboard-web/src/app/api/attachments/route.ts (new file; depends on T021; research.md R-2)
-- [ ] T023 [US1] Create `app/api/attachments/[attachmentPublicId]/route.ts` (`GET` — `getBackendSession()`, stream `downloadAttachment`'s response body straight through with its `Content-Type`/`Content-Disposition` headers) in flowboard-web/src/app/api/attachments/[attachmentPublicId]/route.ts (new file; depends on T021; research.md R-2)
-- [ ] T024 [US1] Create `CardAttachmentsPanel` — lists attachments (filename, human-readable size, uploader display name), an upload control (native `<input type="file">`, POSTs a `FormData` to `/api/attachments`, gated by `canMutate`, with a pending/uploading state per FR-item — spec.md acceptance scenario 3), each attachment name links to `/api/attachments/{publicId}` for open/download — in flowboard-web/src/components/board/card-detail/card-attachments-panel.tsx (new file; depends on T020, T022, T023)
-- [ ] T025 [US1] Mount `CardAttachmentsPanel` in the modal's left column, alongside the existing labels/description/checklist/activity panels — in flowboard-web/src/components/board/card-detail/card-detail-modal.tsx (depends on T024)
+- [x] T020 [US1] Extend `CardDetail`/add `AttachmentDetail` types with the `attachments` field (mirrors contracts/attachments-api.md's card-detail-payload section) in flowboard-web/src/lib/api/cards-client.ts
+- [x] T021 [US1] Create the server-only attachments client — `uploadAttachment(cardPublicId, formData, backendToken)` (forwards multipart), `downloadAttachment(attachmentPublicId, backendToken)` (returns the raw `Response` for streaming, not a parsed JSON result, since the body is a file) — in flowboard-web/src/lib/api/attachments-client.ts (new file; cite contracts/attachments-api.md; research.md R-2)
+- [x] T022 [US1] Create `app/api/attachments/route.ts` (`POST` — `getBackendSession()`, forward the incoming `FormData` to `uploadAttachment`, map its result to a JSON response with the same status code) in flowboard-web/src/app/api/attachments/route.ts (new file; depends on T021; research.md R-2)
+- [x] T023 [US1] Create `app/api/attachments/[attachmentPublicId]/route.ts` (`GET` — `getBackendSession()`, stream `downloadAttachment`'s response body straight through with its `Content-Type`/`Content-Disposition` headers) in flowboard-web/src/app/api/attachments/[attachmentPublicId]/route.ts (new file; depends on T021; research.md R-2)
+- [x] T024 [US1] Create `CardAttachmentsPanel` — lists attachments (filename, human-readable size, uploader display name), an upload control (native `<input type="file">`, POSTs a `FormData` to `/api/attachments`, gated by `canMutate`, with a pending/uploading state per FR-item — spec.md acceptance scenario 3), each attachment name links to `/api/attachments/{publicId}` for open/download — in flowboard-web/src/components/board/card-detail/card-attachments-panel.tsx (new file; depends on T020, T022, T023)
+- [x] T025 [US1] Mount `CardAttachmentsPanel` in the modal's left column, alongside the existing labels/description/checklist/activity panels — in flowboard-web/src/components/board/card-detail/card-detail-modal.tsx (depends on T024)
 
-**Checkpoint**: US1 verifiable end-to-end through the browser (`quickstart.md` §2/§3/§4).
+**Checkpoint**: US1 verifiable end-to-end through the browser (`quickstart.md` §2/§3/§4). ✅ Done.
+
+**Gate**: `npm run lint && npm run build` in flowboard-web — EXIT 0. User-confirmed. Committed as
+flowboard-web `0ee5137` on branch `009-card-attachments` (created off `main`, per
+`repository-strategy.md`'s cross-repository rule).
 
 ---
 
