@@ -539,10 +539,26 @@ final validation across all stories.
 
 **Gate**: Backend and frontend gates both run and confirmed exit 0 by the user
 (`docs/sdlc/gate-command.md`; per `docs/sdlc/critical-delivery.md` item 4, this is the only
-gate run that counts toward Done for this Critical feature). Phase 7 (Polish) is Done —
-all four user stories plus cross-cutting polish are complete. **008-realtime-sync is
-Done**, pending AI review, human/second-model adversarial review, and merge
-(`docs/sdlc/review-process.md`).
+gate run that counts toward Done for this Critical feature).
+
+**Review outcome — NOT yet Done.** AI self-review (`ai-code-review.md`'s Polish/Phase 7
+section) returned APPROVE. The second-model adversarial review substituting for
+independent human review (`human-pr-review.md`'s Polish/Phase 7 section, per
+`docs/sdlc/critical-delivery.md` item 5) returned **CHANGES REQUESTED**, disputing that
+verdict on two grounds: (1) the §7 FR-007 tooling-artifact conclusion above is disputed as
+not proven to exclude a real tracker-lookup/`SendAsync`/disconnect-cleanup race
+(`BoardEventPublisher.cs`/`BoardHub.cs`/`BoardConnectionTracker.cs`) — the diagnostic
+instrumentation used to reach it was reverted and so could not be independently inspected,
+and `SendAsync` completing does not by itself prove browser receipt; (2) this task's own
+`rollback.md` correction (T032, above) is itself still incomplete — it still claims no
+existing frontend component's rendering logic changed, which the reviewer confirmed false
+against the actual Phase 5 diff (`top-bar.tsx`, `board-canvas.tsx`, `page.tsx` all changed
+their render output/tree). Per `docs/sdlc/review-process.md` ("a change MUST NOT be merged
+until a human reviewer approves it") and constitution XII, **008-realtime-sync is not Done
+and must not merge** until these two findings are resolved (fix + re-review) or explicitly
+and knowingly overridden by the feature owner with reasoning recorded here. Phase 7's own
+tasks (T031–T033) are individually complete as recorded above; the phase-level Done status
+is what remains blocked.
 
 ---
 
