@@ -277,3 +277,166 @@ cooling-off period is expected before merge on top of this approval.
   shortcut; the review still re-read the whole diff from scratch, ran the type-check and
   lint itself, and pushed back on the one unresolved uncertainty in the self-review rather
   than rubber-stamping "APPROVE."
+
+---
+
+# Human PR Review — 008 Realtime Sync & Concurrency (Polish/Phase 7)
+
+**Reviewer**: Second-model adversarial review (OpenAI Codex, `gpt-5.x`-class, read-only) —
+solo-developer substitute for independent human review, per
+`docs/sdlc/critical-delivery.md` item 5.
+**Date**: 2026-08-31
+**AI review**: `specs/008-realtime-sync/ai-code-review.md`, final section ("AI Code Review
+— 008 Realtime Sync & Concurrency (Polish/Phase 7)") — read first as the self-review under
+audit. Its APPROVE verdict is disputed on two grounds: the FR-007 tooling-artifact
+diagnosis is plausible but not sufficiently demonstrated to exclude a delivery race, and
+the corrected rollback document still contains factually incorrect frontend statements.
+**Scope reviewed**:
+- `flowboard`: Phase 7 commits `439a19d` (`tasks.md`, `rollback.md`) and `53324f9`
+  (`ai-code-review.md`).
+- `flowboard-api`: `src/Flowboard.Api/Program.cs`, `Services/BoardEventPublisher.cs`,
+  `Services/BoardConnectionTracker.cs`, `Hubs/BoardHub.cs`,
+  `Services/BoardMembershipService.cs`, and
+  `tests/Flowboard.Api.Tests/{BoardHubTests.cs,BoardsEndpointTests.cs}`; relevant history
+  through tip `0640924`.
+- `flowboard-web`: `src/lib/realtime/use-board-realtime.ts`,
+  `src/components/layout/realtime-status-indicator.tsx`,
+  `src/components/board/board-realtime-context.tsx`, and the Phase 5/6 diffs affecting
+  `page.tsx`, `top-bar.tsx`, and `board-canvas.tsx`; tip `52b7338`.
+
+## Process note
+
+One adversarial round reviewed the documentation diff and independently traced every
+material claim into current source and repository history:
+
+| Round | Repo | Verdict | Finding(s) |
+|---|---|---|---|
+| 1 | `flowboard` + cross-repo verification | **CHANGES REQUESTED** | (1) The FR-007 browser-throttling account is consistent with the code but not proven as the exclusive root cause: the uncommitted instrumentation cannot be inspected, `SendAsync` completion does not prove browser receipt, and a real disconnect/eviction race remains plausible. (2) `rollback.md` still incorrectly says no existing frontend component's rendering logic changed, despite `top-bar.tsx` adding the status indicator and `board-canvas.tsx` adding a new no-access render branch. (3) The reported golden-fixture failure is genuinely outside 008 history, although this sandbox could not independently reproduce its test output. |
+
+No files were edited. `git status --short` remained clean in `flowboard-api`;
+`flowboard-web` retained only its pre-existing untracked `web-run.log` and `web-run2.log`.
+
+## Business Review
+
+- [ ] FR-007 cannot yet be treated as fully confirmed from the retained evidence. The
+  stable-connection integration test does prove the intended happy path:
+  `BoardHubTests.cs:383-422` starts a real connection, joins the board, removes the
+  member, waits up to ten seconds for `access.revoked`, then verifies that a subsequent
+  `card.created` event is not received.
+- [x] Server-side authorization remains correctly enforced independently of live UI state:
+  `BoardHub.cs:18-36` validates the token's board scope, re-resolves current access,
+  aborts unauthorized joins, and tracks only a successfully joined connection;
+  `BoardMembershipService.cs:214-244` commits membership removal before invoking eviction.
+- [ ] The self-review overstates the §7 conclusion. `tasks.md:493-518` records three
+  failed browser observations, while the claimed diagnostic output was never committed and
+  therefore could not be independently inspected. The current code supports the proposed
+  explanation, but it also permits this plausible race:
+  - `BoardEventPublisher.cs:43-52` snapshots tracked connection IDs.
+  - `BoardEventPublisher.cs:67-77` calls `SendAsync` and only afterward removes group
+    membership.
+  - `BoardHub.cs:55-58` can concurrently remove a timed-out connection from the tracker.
+  - `BoardConnectionTracker.cs:47-54` deliberately returns a copied snapshot, so a
+    connection can disappear after lookup while the publisher still sends to its stale ID.
+
+  In that ordering, `SendAsync` may complete without proving that a client received or
+  processed the event, followed immediately by disconnect cleanup. That is consistent with
+  the reported logs but does not distinguish "Chrome throttling caused the miss" from the
+  more general real delivery-boundary race.
+- [ ] Before FR-007 is called fully confirmed, retain a reproducible verification that
+  observes the client handler, server connection lifecycle, and eviction ordering
+  together. At minimum: repeat in a foreground, non-CDP-controlled browser; deliberately
+  reproduce background throttling; and add or run an integration test that forces
+  disconnect immediately before/during eviction and verifies the required
+  reconnect/invalidate recovery. The current stable-connection test does not exercise that
+  boundary.
+
+## Technical Review
+
+- [x] Phase scope is documentation-only. `git show --stat 439a19d` reports only
+  `rollback.md` and `tasks.md` (102 insertions, 18 deletions); `git show --stat 53324f9`
+  reports only `ai-code-review.md` (202 insertions). Backend and frontend tips contain no
+  Phase 7 commit.
+- [x] The CORS correction is accurate: `Program.cs:34-48` registers SignalR and the
+  `"Realtime"` policy using `Cors:RealtimeOrigin` with the documented
+  `http://localhost:3000` default; `Program.cs:160` applies it specifically to
+  `/hubs/board`. This matches `rollback.md:32-36,72-81,92-94`.
+- [x] The three specifically named frontend files exist and their roles are substantially
+  described correctly:
+  - `use-board-realtime.ts:81-110` invalidates board content on events and after
+    join/rejoin.
+  - `realtime-status-indicator.tsx:11-27` renders connection state.
+  - `board-realtime-context.tsx:12-30` owns and shares the single hook status.
+- [ ] `rollback.md` is nevertheless not fully accurate. Its statements at lines 47-52 that
+  neither existing component's rendering logic changed and that the hook "only ever"
+  invalidates content conflict with the actual Phase 5 diff:
+  - `top-bar.tsx` added `<RealtimeStatusIndicator />`, changing rendered output.
+  - `board-canvas.tsx` added `boardError` handling and a new "You don't have access…"
+    render branch.
+  - `page.tsx` changed its component tree to wrap `TopBar` and `BoardCanvas` in
+    `BoardRealtimeProvider`.
+
+  Consequently T032's claim at `tasks.md:520-532` that rollback drift was corrected
+  against what was actually built is incomplete.
+- [x] The tracker itself is lock-protected: all dictionary/set mutation and reads in
+  `BoardConnectionTracker.cs:12-100` occur under `_lock`, and reads return arrays. No
+  ordinary collection-corruption race was found.
+- [ ] Lock safety does not provide delivery atomicity across tracker lookup, SignalR send,
+  disconnect cleanup, and group removal. Those actions occur in separate critical domains
+  with no shared ordering guarantee (`BoardEventPublisher.cs:43-77`; `BoardHub.cs:55-58`).
+  This is the residual race the self-review did not adequately rule out.
+- [x] F1 is unrelated to 008. `git log --all -- tests/Flowboard.Api.Tests/BoardsEndpointTests.cs`
+  shows only `e39d718` (003), `246bd72` (006), and `511e738` (007); no 008 commit touched
+  the file. The failing assertion is at `BoardsEndpointTests.cs:243-273`, including
+  literal `"soon"` at line 271. Production computes `"overdue"` when `dueAt < now` and
+  otherwise `"soon"` only within two days (`CardDueStatus.cs:8-25`), while the migration
+  seeded dates relative to migration application time
+  (`20260827165840_AddBoardContent.cs:324-333`). The date-dependent failure mechanism is
+  therefore credible and outside 008.
+- [x] No migration or package change exists in the Phase 7 diff.
+
+## Gate Result
+
+- [ ] Backend gate could not be independently executed in this read-only sandbox. `dotnet
+  build flowboard-api/Flowboard.slnx --warnaserror` and `dotnet test
+  flowboard-api/Flowboard.slnx` both terminated before compilation with
+  `System.UnauthorizedAccessException` creating
+  `C:\Users\anas.m\AppData\Local\Temp\MSBuildTemp...`; both recorded exit code
+  `-532462766`. Therefore the self-review's claimed 125/126 result was not independently
+  reproduced.
+- [x] Frontend lint independently passed: `npm --prefix flowboard-web run lint` —
+  **EXIT: 0**, no lint findings.
+- [ ] Frontend build could not complete in the read-only sandbox: `npm --prefix
+  flowboard-web run build` reached Next.js startup, then failed opening
+  `flowboard-web\.next\trace` with `EPERM`; **EXIT: 1**. This is a filesystem restriction,
+  not evidence of a source failure, but it does not independently confirm the self-review's
+  clean build.
+- [x] The recorded user gate remains `tasks.md:534-542`, which states both repository
+  gates exited 0. This review does not replace or invalidate that human-executed gate, but
+  its outputs could not be fully independently reproduced here.
+
+## Approval
+
+**Decision**: **CHANGES REQUESTED.** The documentation-only phase does not introduce a
+production-code regression, and F1 is correctly classified as unrelated to 008. Approval
+is withheld because T032 did not actually make `rollback.md` accurate, and the
+highest-stakes §7 conclusion is presented as a proven tooling artifact when the retained
+evidence supports only "plausible and consistent with the code." The missing
+instrumentation and untested disconnect/eviction boundary are material given three failed
+live observations.
+
+## Comments
+
+- Correct `rollback.md:47-52` to acknowledge the actual `top-bar.tsx`, `board-canvas.tsx`,
+  and `page.tsx` rendering/tree changes. A rollback plan should describe what must
+  disappear, not merely list the newly added modules.
+- Revise the §7 evidence language unless a reproducible focused verification is retained.
+  "Tracker contained the expected ID; `SendAsync` completed; disconnect followed with
+  client-timeout" does not establish browser receipt and does not by itself prove timer
+  throttling caused the miss.
+- The most useful additional FR-007 check is not another ordinary happy-path run. Force
+  the connection into the timeout/disconnect boundary while removal executes, then verify
+  either immediate `access.revoked` handling or deterministic reconnect/invalidate
+  convergence to the no-access state.
+- Route the date-dependent golden-fixture issue separately. Repository history
+  conclusively excludes it from every 008 commit, but the project-wide gate will remain
+  time-sensitive until that fixture is repaired.
