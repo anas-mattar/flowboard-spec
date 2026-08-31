@@ -52,7 +52,7 @@ Status flow: `idea → specified → in progress → shipped → dropped`
 | 006-board-list-management (board/list CRUD, star, archive, WIP limit, sort by due date) | B-02…B-04, B-06; L-01, L-02, L-04…L-06 | P2 | shipped | anas.m | `specs/006-board-list-management/` |
 | 007-search-filter (live search, label/member/due filters, chips, empty state) | INV-003; F-01…F-04 | P3 | shipped | anas.m | `specs/007-search-filter/` |
 | 008-realtime-sync (websocket layer, concurrency rules) | INV-015 realtime part; INV-016 | P3 | shipped | anas.m | `specs/008-realtime-sync/` |
-| 009-attachments (file attachments on cards, object storage) | v1.1 release plan (`FUNCTIONAL_SPEC.md §10`) | P1 | idea | anas.m | — |
+| 009-card-attachments (attach/list/download/remove files on a card, activity + realtime) | v1.1 release plan (`FUNCTIONAL_SPEC.md §10`) | P1 | shipped | anas.m | `specs/009-card-attachments/` |
 
 ## Decisions log *(authored)*
 
