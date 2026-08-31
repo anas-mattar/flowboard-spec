@@ -467,18 +467,82 @@ exit 0. Phase 6 (US4) is Done.
 **Purpose**: Critical Delivery addendum close-out (`docs/sdlc/critical-delivery.md`) and
 final validation across all stories.
 
-- [ ] T031 [P] Run the full quickstart.md walkthrough end-to-end (§1–§7) in one pass;
+- [x] T031 [P] Run the full quickstart.md walkthrough end-to-end (§1–§7) in one pass;
   retain the results in this directory as the audit evidence Critical Delivery item 3
-  requires.
+  requires. **Results** (real `dotnet run` + `npm run dev`, fresh accounts/boards seeded
+  per section): §1 (services running) — confirmed, both processes healthy. §2 (token
+  endpoint) — confirmed, minted token's `sub`/`boardId`/`purpose`/`exp` matched a live
+  board and caller. §3 (live propagation) — confirmed: card create/move, comment add, and
+  list rename from a second (invited BoardMember) session each appeared in the first
+  session's open tab with no reload; a second, unrelated board confirmed per-board scoping
+  (no cross-board leakage). §4 (concurrency) — confirmed: a stale-`If-Match` save was
+  rejected with the "changed by someone else" toast and the current data, never a silent
+  overwrite; two near-simultaneous card moves converged to one final position with no
+  duplicate/phantom card. §5 (reconnect/catch-up) — confirmed: indicator moved
+  Live→Reconnecting→Offline during an outage, board stayed fully usable throughout, and a
+  manual reload after recovery caught up with no data loss (one recovery pass was slowed
+  by an unrelated Next.js dev-server fetch-keep-alive artifact after a backend restart on
+  the same port — environmental, not a code defect, and self-resolved). §6 (graceful
+  degradation) — confirmed: with the hub URL pointed at an unreachable port, the board
+  stayed fully usable (create, search/filter both worked), indicator showed "● Offline"
+  throughout, and a manual refresh picked up a REST-driven change made "from another
+  window" with the hub still unreachable. §7 (access revocation) — **see investigation
+  below**; the underlying mechanism is confirmed correct, but the manual walkthrough itself
+  needed a second pass to establish that.
 
-- [ ] T032 Re-read `specs/008-realtime-sync/rollback.md` against what was actually built in
+  **§7 investigation**: three manual removal attempts (the first two possibly confounded
+  by browser-tab session staleness, the third in a deliberately fresh, isolated tab/session
+  confirmed genuinely "Live" and receiving ordinary broadcasts) did not show a live,
+  no-reload transition to the "no access" state within ~10 seconds of a confirmed
+  `DELETE /v1/boards/{id}/members/{userId}` (204) — only a manual reload revealed the
+  correct state each time, meaning the access-control removal itself (invariant 5) was
+  never in doubt, only the *live push*. Root-caused with temporary, since-reverted
+  `Console.WriteLine` instrumentation in `BoardEventPublisher.EvictUserAsync`,
+  `BoardHub.JoinBoard`, and `BoardHub.OnDisconnectedAsync` (confirmed removed again via
+  `git diff` before this write-up): on a clean repro, the tracker held exactly the one
+  correct live `connectionId`, `SendAsync` completed with no exception — and
+  `OnDisconnectedAsync` fired for that same connection immediately after with
+  `System.OperationCanceledException: Client hasn't sent a message/ping within the
+  configured ClientTimeoutInterval`. That is: the CDP-automated browser tab, sitting idle
+  across the multi-second gaps between tool calls, was never the OS-focused window, so
+  Chrome throttled its JS timers enough to suppress the SignalR client's periodic
+  keep-alive pings — the server's own 30-second `ClientTimeoutInterval` then closed the
+  connection right around when eviction landed. This is a testing-tool artifact, not an
+  application defect: `BoardHubTests.RemoveMember_EvictsConnectedConnection_NoFurtherBoardEvents`
+  (a real, non-mocked `HubConnection` against the actual server code, no tab-backgrounding
+  involved) was re-run in isolation during this investigation and passed. **Residual edge
+  case worth recording, not fixing**: a genuinely backgrounded/suspended real user tab
+  could hit the same client-timeout window and similarly miss the instant push — but it
+  self-heals via the existing `onreconnected → joinAndSync → invalidate` path the moment
+  the tab becomes active again, and invariant 5 is enforced at the API layer regardless of
+  what the live UI shows in the meantime. No code change made in response.
+
+- [x] T032 Re-read `specs/008-realtime-sync/rollback.md` against what was actually built in
   Phases 2–6 and correct any step that has drifted from the implementation (Critical
-  Delivery item 1).
+  Delivery item 1). **Found and fixed**: the Deployment Rollback section claimed "No
+  permission grant, feature flag, or infrastructure change is introduced," which was
+  already untrue as of T007's amendment (the `"Realtime"` CORS policy /
+  `Cors:RealtimeOrigin` config key) but had never been carried over into this file —
+  corrected, with a note that the config key is inert (nothing reads it) once `Program.cs`'s
+  registration is reverted but should be cleaned up anyway, and a matching new item added
+  to the Verification After Rollback checklist. Also updated the Changed Areas section's
+  placeholder frontend file list (`lib/realtime/board-connection.ts (or equivalent hook)`,
+  no status-indicator/context filenames) to name the files Phase 5 actually landed on
+  (`use-board-realtime.ts`, `realtime-status-indicator.tsx`, `board-realtime-context.tsx`,
+  per the T026 amendment).
 
-- [ ] T033 Run the gate slice — `dotnet build --warnaserror && dotnet test` in
+- [x] T033 Run the gate slice — `dotnet build --warnaserror && dotnet test` in
   `flowboard-api/`, `npm run lint && npm run build` in `flowboard-web/`
   (`docs/sdlc/gate-command.md`). Per CLAUDE.md's Strict Rules, this must be user-executed;
-  do not mark this phase Done until the user confirms the exit code.
+  do not mark this phase Done until the user confirms the exit code. **Confirmed by the
+  user: both repos, exit 0.**
+
+**Gate**: Backend and frontend gates both run and confirmed exit 0 by the user
+(`docs/sdlc/gate-command.md`; per `docs/sdlc/critical-delivery.md` item 4, this is the only
+gate run that counts toward Done for this Critical feature). Phase 7 (Polish) is Done —
+all four user stories plus cross-cutting polish are complete. **008-realtime-sync is
+Done**, pending AI review, human/second-model adversarial review, and merge
+(`docs/sdlc/review-process.md`).
 
 ---
 
