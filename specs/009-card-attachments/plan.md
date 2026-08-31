@@ -75,7 +75,13 @@ per card (spec.md Assumptions) — the list scrolls within the modal.
 `lib/api/attachments-client.ts`, two new Route Handlers (`app/api/attachments/route.ts`,
 `app/api/attachments/[attachmentPublicId]/route.ts`), one new tRPC procedure
 (`cards.removeAttachment`) plus its Zod schema, `CardDetail`'s type extended with
-`attachments`.
+`attachments`. One existing file gets a one-line addition: `lib/realtime/use-board-realtime.ts`
+also invalidates `cards.getDetail` on every `BoardEvent` (research.md R-8) — closing a real
+gap where an open card detail modal does not currently live-update at all. One more existing
+file gets two new `switch` cases: `card-activity-feed.tsx`'s `describe()` function must map
+`attachment.added`/`attachment.removed` to a display line the same way every other event type
+already is — its `default` case returns `null` (a blank description) for any unmapped type,
+so this is required for US3, not optional polish.
 
 ## Constitution Check
 
@@ -219,12 +225,15 @@ flowboard-api/tests/Flowboard.Api.Tests/
 flowboard-web/src/
 ├── components/board/card-detail/
 │   ├── card-attachments-panel.tsx        # NEW
-│   └── card-detail-modal.tsx             # MODIFIED — mounts the new panel
+│   ├── card-detail-modal.tsx             # MODIFIED — mounts the new panel
+│   └── card-activity-feed.tsx            # MODIFIED — + attachment.added/attachment.removed cases in describe()
 ├── lib/
 │   ├── api/
 │   │   └── attachments-client.ts         # NEW — server-only client for contracts/attachments-api.md
-│   └── cards/
-│       └── schemas.ts                    # MODIFIED — + removeAttachmentInputSchema
+│   ├── cards/
+│   │   └── schemas.ts                    # MODIFIED — + removeAttachmentInputSchema
+│   └── realtime/
+│       └── use-board-realtime.ts         # MODIFIED — + cards.getDetail.invalidate() on BoardEvent (research.md R-8)
 ├── server/api/routers/
 │   └── cards.ts                          # MODIFIED — + removeAttachment procedure
 └── app/api/attachments/
@@ -265,6 +274,13 @@ upload; a new, narrower `CanRemoveAttachment` governs removal, per spec.md FR-00
 
 **ADR-43 — Attachment add/remove reuse the existing `ActivityEvent`/realtime broadcast path
 verbatim; no new event-type category or broadcast mechanism**: research.md R-6, 008's ADR-35.
+
+**ADR-44 — `use-board-realtime.ts`'s `BoardEvent` handler is extended to also invalidate
+`cards.getDetail` (no input filter), closing a pre-existing gap where an open card detail
+modal never live-updated**: research.md R-8. One line in one existing file, applying 008's own
+ADR-36 invalidate-and-refetch philosophy to a second query type rather than inventing a new
+mechanism; no second hub connection (consistent with `board-realtime-context.tsx`'s existing
+one-connection-per-board-page reasoning).
 
 ## Complexity Tracking
 

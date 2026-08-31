@@ -135,6 +135,39 @@ with an ownership check.
 reusing `CanMutate` unchanged for removal too) — rejected, contradicts spec.md FR-006/US2
 acceptance scenario 3 directly.
 
+## R-8: Closing a real gap — the open card detail modal does not currently live-update
+
+**Finding**: Inspecting `lib/realtime/use-board-realtime.ts` (008) shows its `BoardEvent`
+handler invalidates only `boards.getContent` — never `cards.getDetail`. This is correct and
+sufficient for everything 008 shipped (the board canvas), but it means a card detail modal
+left open today does NOT live-update on another user's edit to that same card (checklist,
+comments, labels — this gap already existed before this feature; it was simply never
+exercised by a spec.md acceptance scenario until now). Spec.md's US3 acceptance scenario 3 and
+FR-011 require the attachment list specifically to update live in an open card view, which
+does not hold today without a change.
+
+**Decision**: Extend `use-board-realtime.ts`'s existing `connection.on("BoardEvent", ...)`
+handler to also call `utils.cards.getDetail.invalidate()` (no input filter — invalidates every
+active `getDetail` query, i.e. whichever single card modal happens to be open on that board;
+tRPC/React Query only refetches queries that are actually mounted, so this is a no-op when no
+card modal is open). One line added to one existing file; no new hook, no new connection, no
+change to `BoardRealtimeProvider`'s one-connection-per-board-page shape (research.md context:
+`board-realtime-context.tsx`'s ADR already rejected a second hub connection just for a status
+indicator — the same reasoning argues against a second connection here).
+
+**Rationale**: Matches ADR-36's existing philosophy exactly (every `BoardEvent` is an
+invalidate-and-refetch signal, never a payload-applied-to-cache signal) — this is applying
+that same philosophy to a second query type, not inventing a new one. Scoped narrowly: this
+plan does not attempt to fix every other card-detail field's live-update gap as a side effect,
+it only makes the one behavior spec.md's US3 actually requires true.
+
+**Alternatives considered**: A second, card-scoped hub subscription opened by the modal itself
+— rejected, adds a second connection per 008's own established reasoning against exactly that
+shape. Leaving the gap and scoping FR-011/US3's acceptance scenario 3 down to "canvas-only" —
+rejected, spec.md is explicit that the attachment list itself (which only renders inside the
+modal, never on the card front) must update live; scoping it down would silently fail to
+deliver what was specified rather than making a small, justified fix.
+
 ## R-6: Activity and realtime plumbing — reuse, not new infrastructure
 
 **Decision**: Add two constants to `Domain/ActivityEventType.cs` (`AttachmentAdded =
