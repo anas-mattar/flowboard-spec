@@ -843,3 +843,205 @@ flowboard-web (52b7338):
   indicator still correctly showed "● Offline".
 - No console error in any run was a React/render error (no "Uncaught", no error-boundary
   fallback UI) — only SignalR's own `LogLevel.Warning`-configured connection-failure logs.
+
+---
+
+# AI Code Review — 008 Realtime Sync & Concurrency (Polish/Phase 7)
+
+**Reviewer**: Claude Sonnet 5 (self-review of own implementation — Critical Delivery
+addendum item 5 requires this be treated as informational only; an independent human
+reviewer, or a second-model adversarial review if solo, is still required before merge)
+**Date**: 2026-08-31
+**Branches**:
+- `flowboard-api` `008-realtime-sync` (tip `0640924`, unchanged this phase)
+- `flowboard-web` `008-realtime-sync` (tip `52b7338`, unchanged this phase)
+- `flowboard` (governance/specs repo) `008-realtime-sync` (tip `439a19d`)
+**Scope reviewed**: `specs/008-realtime-sync/{tasks.md,rollback.md}` (the only files this
+phase's commit touches); confirmed via `git status`/`git diff` in both `flowboard-api` and
+`flowboard-web` that neither repo carries any uncommitted or committed change from this
+phase (see Findings — temporary diagnostic instrumentation used mid-investigation was
+fully reverted before commit); re-ran both repos' gates fresh for this review (Evidence
+Appendix).
+**Feature contract**: No migration, no new table/column, no new package, no code change of
+any kind — this phase is exactly what `tasks.md`'s Phase 7 describes: a full quickstart
+walkthrough, a rollback-plan correction, and the user-executed gate.
+
+**Covers**: `tasks.md` Phase 7 (T031–T033 — Polish only). US1–US4 were reviewed separately
+above and are unaffected by this phase's diff.
+
+## Verdict
+
+**APPROVE.** This phase is a pure documentation close-out with no production-code diff in
+either repo — confirmed by re-running `git status`/`git diff` on both `flowboard-api` and
+`flowboard-web` before this review, which came back clean. The §7 finding recorded in
+`tasks.md` (a live-push observation that didn't initially reproduce) was investigated to a
+concrete, evidenced root cause (server-side instrumentation showed the eviction mechanism
+working correctly; the miss was a CDP-automation-tab-backgrounding artifact, not an
+application defect) rather than being asserted away, and the instrumentation used to reach
+that conclusion was fully reverted before commit. `rollback.md`'s one real drift (the T007
+CORS-policy addition, never carried into the Deployment Rollback section) is now corrected.
+One finding below (F1) is a pre-existing, unrelated test-fixture time-bomb discovered while
+re-running the backend gate for this review — not part of this phase's diff, not
+BLOCKING for 008, but real and worth routing to its own fix.
+
+## What was verified (evidence)
+
+| Area | Evidence |
+|---|---|
+| Spec match | N/A — this phase adds no new functional requirement; it closes out Critical Delivery items 1 and 3 for the feature already reviewed above. |
+| Visual-reference match | N/A — no UI change. |
+| Feature contract held | Confirmed: `git show --stat 439a19d` (Evidence Appendix) touches exactly two files, both in `specs/008-realtime-sync/`, no code repo has a diff. |
+| Constitution / domain invariants | No invariant-relevant code path exists in this phase's diff; see the Domain Invariant Pass below for why each is N/A rather than skipped. |
+| Security (authn/authz, secrets, sensitive logging) | N/A — no code touched. The one security-adjacent question this phase raised (does the eviction/access-revocation mechanism actually work) was investigated and confirmed correct — see the §7 write-up in `tasks.md` and the Findings section below. |
+| Scope guard (`git diff --stat`) | Matches `tasks.md`'s Phase 7 file list exactly: `tasks.md` and `rollback.md`, nothing else, in the governance repo only. |
+| Rollback safety | This phase changes only the rollback document itself; there is nothing here to roll back beyond two doc edits, and `rollback.md`'s own "Verification After Rollback" checklist now includes a new item for the CORS-policy amendment it previously omitted. |
+
+## Findings
+
+### F1 — Pre-existing, date-dependent test-fixture failure discovered while re-running the gate for this review — DOC DRIFT, out of scope for 008
+
+Re-running `dotnet test` for this review's evidence surfaced one failure not present in any
+prior phase's gate run:
+`BoardsEndpointTests.GetBoardContent_ProductRoadmapQ3_MatchesGoldenFixture` — `Assert.Equal`
+expected `"soon"` for the "Drag & drop performance on large boards" card's `DueStatus`,
+got `"overdue"`. This test asserts a fixed `DueStatus` bucket for a seeded card whose due
+date is evaluated against `DateTime.UtcNow` at test-run time; real wall-clock time has
+evidently crossed whatever "soon" vs. "overdue" boundary this fixture relied on since the
+fixture (or the test's expectations) was last authored. `git log` confirms this test file
+was last touched by feature 007 (search & filter) — no line in this phase's diff, or any
+008 phase's diff, touches `BoardsEndpointTests.cs` or the seed data it reads. This is a
+pre-existing time-bomb in an unrelated feature's regression suite, not a regression
+introduced by 008.
+*Action: none within 008's scope — per CLAUDE.md's Strict Rules ("do not refactor unrelated
+files or change unrelated features"), this is not this feature's file to fix. Flagged here
+because it means a bare re-run of `dotnet test` today does not return 126/126 clean, which
+the next person to run the gate (for 008 or anything else) will otherwise hit unexplained.
+Recommend a separate `fix/` or `chore/` branch (`docs/sdlc/branch-strategy.md`'s lightweight
+lane) to either re-seed the fixture's due date relative to `DateTime.UtcNow` at test-run
+time, or assert `DueStatus` via the same bucket logic the production code uses rather than
+a literal string tied to a point-in-time fixture.*
+
+### F2 — Temporary diagnostic instrumentation used during the §7 investigation was not committed — ACCEPTED (confirmed reverted)
+
+During the §7 investigation recorded in `tasks.md`, `Console.WriteLine` diagnostic lines
+were temporarily added to `BoardEventPublisher.EvictUserAsync`, `BoardHub.JoinBoard`, and
+`BoardHub.OnDisconnectedAsync`, and the SignalR client's log level was temporarily raised
+in `use-board-realtime.ts`, to observe the eviction mechanism directly. All four edits were
+reverted before this phase's commit — verified independently for this review via
+`git status`/`git diff` in both `flowboard-api` and `flowboard-web` (Evidence Appendix),
+both clean.
+*Action: none — this is exactly the intended, temporary use of instrumentation to reach an
+evidenced conclusion, not a code change belonging to this feature. Recorded here so the
+investigation's methodology is auditable rather than just asserted in prose.*
+
+## Constitution re-check (post-implementation)
+
+- **I Specification First**: Held — Phase 7 exists specifically because `tasks.md` calls
+  for it as the Critical Delivery close-out; nothing here was improvised.
+- **II Source of Truth**: Held — `rollback.md`'s correction resolves a real conflict
+  between itself and the as-built code (T007's CORS policy) rather than leaving it silent.
+- **III Repository Separation**: Held — this phase's diff lives entirely in the governance
+  repo; no code repo has any change.
+- **VII Domain Invariants**: N/A for this phase's own diff; see the dedicated pass below
+  for why, and note the §7 investigation independently re-confirmed invariant 5 for the
+  eviction path specifically (see Domain Invariant Pass).
+- **XI Testing Requirements**: N/A for this phase (no test added or changed); F1 is an
+  observation about an unrelated existing test, not a testing-requirements gap in 008.
+- **XII Human Review**: Pending — this document is the AI half; human review (or
+  second-model adversarial + cooling-off if solo, per Critical Delivery item 5) is still
+  required before merge, covering the full feature across all seven phases.
+
+## Domain Invariant Pass (Critical Delivery addendum item 2)
+
+| # | Invariant | Verdict | Evidence |
+|---|---|---|---|
+| 1 | Activity Is Append-Only | **N/A** | No code touched this phase. |
+| 2 | Ordering Integrity | **N/A** | No code touched this phase. |
+| 3 | WIP Limits Are Advisory | **N/A** | No code touched this phase. |
+| 4 | Soft Delete Only, 30-Day Restorability | **N/A** | No code touched this phase. |
+| 5 | Permissions Server-Side | **PASS (re-confirmed, not just re-asserted)** | The §7 investigation's server-side instrumentation directly observed `BoardHub.JoinBoard`'s `IBoardAccessService.ResolveAsync` re-check and `BoardEventPublisher.EvictUserAsync`'s connection-tracker lookup both behaving exactly as designed on a clean repro (tracker held exactly the one live, correct `connectionId`; `SendAsync` completed without error) — this is independent, empirical re-confirmation of the same invariant the US1 review already passed by code reading, not a new claim resting on inspection alone. |
+| 6 | Optimistic Concurrency — No Silent Overwrites | **N/A** | No code touched this phase; already confirmed by the US2 review. |
+| 7 | Labels Are Board-Scoped | **N/A** | No code touched this phase. |
+| 8 | Opaque Public Identifiers | **N/A** | No code touched this phase. |
+
+**Rollback interaction**: this phase's own diff (two doc files) has nothing to roll back
+beyond itself; it does not change what the feature's own rollback would touch, which
+`rollback.md` (as corrected by T032) now describes accurately.
+
+## Test coverage observed
+
+- **`Flowboard.Api.Tests`** (`dotnet test`, full suite, re-run during this review):
+  **125/126 passing, 1 failed** — see F1. The one failure is unrelated to any 008 code path
+  (unchanged since the US3 review's 126/126 baseline; no 008 phase's diff touches
+  `BoardsEndpointTests.cs`) and is a pre-existing fixture time-bomb from feature 007, not a
+  regression this phase introduced or a gap in 008's own coverage.
+- **Frontend**: no test runner exists yet (unchanged, 003 precedent); `npm run lint` and
+  `npm run build` both re-run clean during this review.
+- **Manual verification**: the full quickstart.md §1–§7 pass is recorded in `tasks.md`'s
+  T031 entry, including the §7 investigation's methodology and conclusion.
+
+## Residual risk
+
+Negligible for 008 itself — this phase's own diff is documentation-only and introduces no
+new risk. F1 is real but explicitly out of scope (a different feature's test, a different
+branch's fix). Recommend: merge 008 is safe from a correctness/invariant standpoint once a
+human (or second-model adversarial, if solo) reviewer signs off across all seven phases;
+separately open a `fix/` item for F1 so the next person to run the full gate isn't surprised
+by an unrelated red test.
+
+---
+
+## Evidence Appendix (Critical Delivery addendum item 3 — audit evidence retained)
+
+### Backend gate (re-run during this review)
+
+```text
+$ dotnet build --warnaserror
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+$ dotnet test
+Failed!  - Failed: 1, Passed: 125, Skipped: 0, Total: 126, Duration: 1 m 8 s
+  Failed: BoardsEndpointTests.GetBoardContent_ProductRoadmapQ3_MatchesGoldenFixture
+    Assert.Equal() Failure: Strings differ — Expected: "soon", Actual: "overdue"
+    (pre-existing, unrelated to 008 — see Finding F1)
+```
+
+(The user separately ran the Done gate for this phase and confirmed exit 0 for both repos
+before this review — recorded in `tasks.md`'s T033 entry — at that point in time this test
+was still passing; the failure above reflects real wall-clock time having since advanced
+past the fixture's date boundary, consistent with F1's diagnosis.)
+
+### Frontend gate (re-run during this review)
+
+```text
+$ npm run lint
+> eslint
+(no output — clean)
+
+$ npm run build
+✓ Compiled successfully in 434ms
+  Running TypeScript ...
+  Finished TypeScript in 3.7s ...
+✓ Generating static pages using 10 workers (6/6)
+```
+
+### `git show --stat 439a19d` (governance repo, Phase 7 commit)
+
+```text
+specs/008-realtime-sync/rollback.md | 40 ++++++++++++++-----
+specs/008-realtime-sync/tasks.md    | 80 +++++++++++++++++++++++++++++++++----
+2 files changed, 102 insertions(+), 18 deletions(-)
+```
+
+### `git status`/`git diff` — `flowboard-api` and `flowboard-web` (confirms F2's revert)
+
+```text
+$ git -C flowboard-api status --short
+(clean)
+$ git -C flowboard-web status --short
+?? web-run.log
+?? web-run2.log
+(untracked local dev-server log files, not part of any diff, unrelated to this phase)
+```
