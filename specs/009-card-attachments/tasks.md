@@ -34,17 +34,21 @@ US3 activity and realtime). See "Delivery Mapping" below.
 **⚠️ CRITICAL**: No user-story work (Phase 2+) may begin until this phase is complete. No new
 package this feature (plan.md Technical Context) — nothing to add in a separate Setup phase.
 
-- [ ] T001 [P] Create `Attachment` entity (`Id`, `PublicId`, `CardId`, `FileName`, `SizeBytes`, `ContentType`, `StorageKey`, `UploadedById`, `CreatedDate`, `CreatedBy`) in flowboard-api/src/Flowboard.Api/Domain/Entities/Attachment.cs (data-model.md Attachment)
-- [ ] T002 [P] Add `AttachmentAdded = "attachment.added"` and `AttachmentRemoved = "attachment.removed"` constants in flowboard-api/src/Flowboard.Api/Domain/ActivityEventType.cs (data-model.md ActivityEvent extension, research.md R-6)
-- [ ] T003 [P] Create `IAttachmentStorage` interface (`SaveAsync(Stream content, CancellationToken) -> storageKey`, `OpenReadAsync(string storageKey, CancellationToken) -> Stream`, `DeleteAsync(string storageKey, CancellationToken)`) in flowboard-api/src/Flowboard.Api/Services/IAttachmentStorage.cs (research.md R-1)
-- [ ] T004 Create `LocalDiskAttachmentStorage` implementing `IAttachmentStorage` — writes under a configured root directory keyed by a generated opaque filename (`Guid.NewGuid()`-based), never the caller-supplied filename — in flowboard-api/src/Flowboard.Api/Services/LocalDiskAttachmentStorage.cs (depends on T003; research.md R-1)
-- [ ] T005 Create `AttachmentConfiguration` (`PublicId` unique index, FK `CardId` → `Card` `Restrict` + index, FK `UploadedById` → `User` `Restrict`, `FileName`/`ContentType`/`StorageKey` max lengths, `HasQueryFilter(x => !x.Card.IsDeleted)`) in flowboard-api/src/Flowboard.Api/Data/Configurations/AttachmentConfiguration.cs (depends on T001; data-model.md)
-- [ ] T006 Register `DbSet<Attachment>` in flowboard-api/src/Flowboard.Api/Data/FlowboardDbContext.cs and add the `Attachments` navigation collection to flowboard-api/src/Flowboard.Api/Domain/Entities/Card.cs (depends on T001, T005)
-- [ ] T007 Generate the `AddCardAttachments` migration (`dotnet ef migrations add`, repo-local tool) — purely additive `Attachment` table, no existing table/column touched — in flowboard-api/src/Flowboard.Api/Migrations/ (depends on T005, T006)
-- [ ] T008 Register `IAttachmentStorage` → `LocalDiskAttachmentStorage` in DI (singleton, matching `TokenService`'s stateless-singleton shape) and add the storage root path to configuration (`appsettings.Development.json` for a local dev path; read via `IConfiguration`, no hardcoded path) in flowboard-api/src/Flowboard.Api/Program.cs, flowboard-api/src/Flowboard.Api/appsettings.Development.json (depends on T004)
+- [x] T001 [P] Create `Attachment` entity (`Id`, `PublicId`, `CardId`, `FileName`, `SizeBytes`, `ContentType`, `StorageKey`, `UploadedById`, `CreatedDate`, `CreatedBy`) in flowboard-api/src/Flowboard.Api/Domain/Entities/Attachment.cs (data-model.md Attachment)
+- [x] T002 [P] Add `AttachmentAdded = "attachment.added"` and `AttachmentRemoved = "attachment.removed"` constants in flowboard-api/src/Flowboard.Api/Domain/ActivityEventType.cs (data-model.md ActivityEvent extension, research.md R-6)
+- [x] T003 [P] Create `IAttachmentStorage` interface (`SaveAsync(Stream content, CancellationToken) -> storageKey`, `OpenReadAsync(string storageKey, CancellationToken) -> Stream`, `DeleteAsync(string storageKey, CancellationToken)`) in flowboard-api/src/Flowboard.Api/Services/IAttachmentStorage.cs (research.md R-1)
+- [x] T004 Create `LocalDiskAttachmentStorage` implementing `IAttachmentStorage` — writes under a configured root directory keyed by a generated opaque filename (`Guid.NewGuid()`-based), never the caller-supplied filename — in flowboard-api/src/Flowboard.Api/Services/LocalDiskAttachmentStorage.cs (depends on T003; research.md R-1)
+- [x] T005 Create `AttachmentConfiguration` (`PublicId` unique index, FK `CardId` → `Card` `Restrict` + index, FK `UploadedById` → `User` `Restrict`, `FileName`/`ContentType`/`StorageKey` max lengths, `HasQueryFilter(x => !x.Card.IsDeleted)`) in flowboard-api/src/Flowboard.Api/Data/Configurations/AttachmentConfiguration.cs (depends on T001; data-model.md)
+- [x] T006 Register `DbSet<Attachment>` in flowboard-api/src/Flowboard.Api/Data/FlowboardDbContext.cs and add the `Attachments` navigation collection to flowboard-api/src/Flowboard.Api/Domain/Entities/Card.cs (depends on T001, T005)
+- [x] T007 Generate the `AddCardAttachments` migration (`dotnet ef migrations add`, repo-local tool) — purely additive `Attachment` table, no existing table/column touched — in flowboard-api/src/Flowboard.Api/Migrations/ (depends on T005, T006)
+- [x] T008 Register `IAttachmentStorage` → `LocalDiskAttachmentStorage` in DI (singleton, matching `TokenService`'s stateless-singleton shape) in flowboard-api/src/Flowboard.Api/Program.cs. No `appsettings.Development.json` entry added — `LocalDiskAttachmentStorage` itself defaults the root path to `ContentRootPath/App_Data/attachments` when `Attachments:StorageRootPath` is absent, matching `Program.cs`'s existing `Cors:RealtimeOrigin` precedent (config key optional, code carries the dev default) rather than requiring every environment file to set one explicitly (depends on T004)
 
 **Checkpoint**: Foundation ready — schema, migration, and storage abstraction exist. Backend
 endpoint work (Phase 2) can now begin.
+
+**Gate**: `dotnet build --warnaserror && dotnet test` in flowboard-api — EXIT 0, 138 passed, no
+regressions. User-confirmed. Committed as flowboard-api `9c7e149` on branch `009-card-attachments`
+(created off `main`, per `repository-strategy.md`'s cross-repository rule).
 
 ---
 
