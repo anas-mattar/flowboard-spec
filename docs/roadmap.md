@@ -37,8 +37,8 @@ Story-level detail lives in the spec's own IDs (B-*, L-*, C-*, F-*, X-*) — cit
 ## Roadmap *(authored — humans only, never regenerated)*
 
 Thin vertical slices toward v1.0 (spec §10): foundations first, reads before writes.
-v1.1+ scope (attachments, notifications, calendar/table views, automation) stays out of
-this table until v1.0 ships.
+v1.0 shipped as of 008-realtime-sync (2026-08-31). v1.1 scope (attachments, notifications,
+@mentions, richer activity) is now open for specing, one thin slice at a time.
 
 Status flow: `idea → specified → in progress → shipped → dropped`
 
@@ -52,6 +52,7 @@ Status flow: `idea → specified → in progress → shipped → dropped`
 | 006-board-list-management (board/list CRUD, star, archive, WIP limit, sort by due date) | B-02…B-04, B-06; L-01, L-02, L-04…L-06 | P2 | shipped | anas.m | `specs/006-board-list-management/` |
 | 007-search-filter (live search, label/member/due filters, chips, empty state) | INV-003; F-01…F-04 | P3 | shipped | anas.m | `specs/007-search-filter/` |
 | 008-realtime-sync (websocket layer, concurrency rules) | INV-015 realtime part; INV-016 | P3 | shipped | anas.m | `specs/008-realtime-sync/` |
+| 009-attachments (file attachments on cards, object storage) | v1.1 release plan (`FUNCTIONAL_SPEC.md §10`) | P1 | idea | anas.m | — |
 
 ## Decisions log *(authored)*
 
