@@ -82,11 +82,15 @@ prior + 9 new), no regressions. User-confirmed. Committed as flowboard-api `90f9
 
 **Independent Test**: `AttachmentsEndpointsTests.cs`'s removal-permission coverage (T018).
 
-- [ ] T016 [US2] `CardService.CanRemoveAttachment(BoardRole role, bool isUploader)` (`role == BoardRole.BoardAdmin || isUploader`) and `RemoveAttachmentAsync(attachmentPublicId, callerPublicId, ct)` — deletes the `Attachment` row, calls `IAttachmentStorage.DeleteAsync` after the row is committed, writes an `attachment.removed` `ActivityEvent` (`{ fileName }`) — in flowboard-api/src/Flowboard.Api/Services/CardService.cs (cite contracts/attachments-api.md; research.md R-5)
-- [ ] T017 [US2] `DELETE /v1/attachments/{attachmentPublicId}` — `204` on success, `403` when the caller is neither the uploader nor a board admin — in flowboard-api/src/Flowboard.Api/Endpoints/AttachmentsEndpoints.cs (depends on T016)
-- [ ] T018 [P] [US2] Integration test: removal succeeds for the uploader and for a board admin removing someone else's attachment; fails `403` for a non-uploading board member and for `Observer`; a follow-up download of a removed attachment returns `404` — in flowboard-api/tests/Flowboard.Api.Tests/AttachmentsEndpointsTests.cs
+- [x] T016 [US2] `CardService.CanRemoveAttachment(BoardRole role, bool isUploader)` (`role == BoardRole.BoardAdmin || isUploader`) and `RemoveAttachmentAsync(attachmentPublicId, callerPublicId, ct)` — deletes the `Attachment` row, calls `IAttachmentStorage.DeleteAsync` after the row is committed, writes an `attachment.removed` `ActivityEvent` (`{ fileName }`) — in flowboard-api/src/Flowboard.Api/Services/CardService.cs (cite contracts/attachments-api.md; research.md R-5)
+- [x] T017 [US2] `DELETE /v1/attachments/{attachmentPublicId}` — `204` on success, `403` when the caller is neither the uploader nor a board admin — in flowboard-api/src/Flowboard.Api/Endpoints/AttachmentsEndpoints.cs (depends on T016)
+- [x] T018 [P] [US2] Integration test: removal succeeds for the uploader and for a board admin removing someone else's attachment; fails `403` for a non-uploading board member and for `Observer`; a follow-up download of a removed attachment returns `404` — in flowboard-api/tests/Flowboard.Api.Tests/AttachmentsEndpointsTests.cs
 
-**Checkpoint**: US2 backend verifiable independently via T018.
+**Checkpoint**: US2 backend verifiable independently via T018. ✅ Done.
+
+**Gate**: `dotnet build --warnaserror && dotnet test` in flowboard-api — EXIT 0, 153 passed (147
+prior + 6 new), no regressions. User-confirmed. Committed as flowboard-api `d48a380` on branch
+`009-card-attachments`.
 
 ---
 
