@@ -161,16 +161,18 @@ as flowboard-web `ab61875` on branch `009-card-attachments`.
 
 **Independent Test**: `quickstart.md` §6.
 
-- [ ] T029 [US3] Add `attachment.added` → `` `attached "${payload.fileName}"` `` and `attachment.removed` → `` `removed "${payload.fileName}"` `` cases to `describe()` (its `default` case currently renders a blank description for any unmapped type) in flowboard-web/src/components/board/card-detail/card-activity-feed.tsx
-- [ ] T030 [US3] Extend `use-board-realtime.ts`'s `connection.on("BoardEvent", ...)` handler to also call `utils.cards.getDetail.invalidate()` (no input filter — refetches whichever card modal is currently open, a no-op when none is) alongside its existing `boards.getContent.invalidate(...)`, closing the pre-existing gap where an open card detail modal never live-updated — in flowboard-web/src/lib/realtime/use-board-realtime.ts (research.md R-8, plan.md ADR-44)
+- [x] T029 [US3] Add `attachment.added` → `` `attached "${payload.fileName}"` `` and `attachment.removed` → `` `removed "${payload.fileName}"` `` cases to `describe()` (its `default` case currently renders a blank description for any unmapped type) in flowboard-web/src/components/board/card-detail/card-activity-feed.tsx
+- [x] T030 [US3] Extend `use-board-realtime.ts`'s `connection.on("BoardEvent", ...)` handler to also call `utils.cards.getDetail.invalidate()` (no input filter — refetches whichever card modal is currently open, a no-op when none is) alongside its existing `boards.getContent.invalidate(...)`, closing the pre-existing gap where an open card detail modal never live-updated — in flowboard-web/src/lib/realtime/use-board-realtime.ts (research.md R-8, plan.md ADR-44)
 
 **Checkpoint**: US3 verifiable end-to-end — activity feed shows both event types, and a second
-open window sees an attachment add/remove without a manual reload.
+open window sees an attachment add/remove without a manual reload. ✅ Done.
 
-**Checkpoint — Phase B gate**: STOP. User runs `npm run lint && npm run build` in
-flowboard-web and confirms EXIT 0. AI review AND human review (no Visual Compliance Loop —
-spec.md has no screenshots; FR-013's "follow the existing visual language" is checked as part
-of ordinary human review instead). Commit Phase B.
+**Gate**: `npm run lint && npm run build` in flowboard-web — EXIT 0 (confirmed twice: once
+before, once after an upload-restriction fix found during AI review prep — see ai-code-review.md
+F1). User-confirmed both times. Committed as flowboard-web `a4c591c` on branch
+`009-card-attachments`.
+
+**Checkpoint — Phase B gate**: AI review complete (`ai-code-review.md`). Human review pending.
 
 ---
 

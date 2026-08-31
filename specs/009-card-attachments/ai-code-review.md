@@ -159,3 +159,150 @@ Phase B's own review: when the frontend (T022/T023) proxies the download respons
 `Content-Disposition: attachment` header set here is preserved end-to-end and never rewritten
 to `inline` — that is what keeps F1's benign-by-construction upload surface benign once a real
 browser is in the loop.
+
+---
+
+# AI Code Review — 009 Card Attachments (Phase B — Frontend)
+
+**Reviewer**: Claude (Sonnet 5)
+**Date**: 2026-08-31
+**Branches**: flowboard-web `009-card-attachments` (tip `a4c591c`, off `main` `018b56f`)
+**Scope reviewed**: `src/lib/api/cards-client.ts` (attachments additions), `src/lib/api/attachments-client.ts`
+(new), `src/lib/cards/schemas.ts` (attachments addition), `src/server/api/routers/cards.ts`
+(`removeAttachment`), `src/app/api/attachments/route.ts` (new), `src/app/api/attachments/[attachmentPublicId]/route.ts`
+(new), `src/components/board/card-detail/card-attachments-panel.tsx` (new),
+`src/components/board/card-detail/card-detail-modal.tsx`, `src/components/board/board-canvas.tsx`,
+`src/components/board/card-detail/card-activity-feed.tsx`, `src/lib/realtime/use-board-realtime.ts`
+— every file plan.md's Project Structure section lists for Phase B (T020–T030). Not reviewed:
+flowboard-api (Phase A, already reviewed and merged as `65dcf75`).
+**Feature contract**: no new npm package; upload/download bypass tRPC via two Route Handlers
+(ADR-41), everything else stays on tRPC; no new UI library; attachments panel follows the
+existing card-detail-modal panels' visual language (FR-013, no screenshots exist for this
+feature).
+
+## Verdict
+
+**APPROVE with follow-ups** (F2–F4, none blocking). Phase B adds an attachments panel to the
+card detail modal — upload (gated to non-Observers), a listed attachment (filename, size,
+uploader) with a download link open to every role, and a remove control gated to the uploader
+or a board admin — wired to the Phase A backend exactly as its contract specifies. One real gap
+(F1, missing client-side upload restrictions against `frontend-security.md` §6) was found
+during this review and fixed before this document was finalized; the gate was re-run and
+re-confirmed by the user after the fix. Residual risk is concentrated in the lack of an
+automated or manual browser walkthrough for this phase (see Residual risk) — code-level
+verification is solid, but no one has yet clicked through the feature in a live browser.
+
+## What was verified (evidence)
+
+| Area | Evidence |
+|---|---|
+| Spec match (FRs implemented as specified) | FR-001 (upload gated to non-Observer via `canMutate`, `card-attachments-panel.tsx:113`), FR-003 (list shows filename/size/uploader, same file lines 156–166), FR-004 (download link `href={`/api/attachments/${attachment.publicId}`}` rendered unconditionally — no role gate — matching "any viewer including Observer"), FR-005/FR-006 (remove control `canRemove = isBoardAdmin \|\| attachment.uploadedBy.publicId === currentUserPublicId`, hidden entirely otherwise), acceptance scenario 3 (pending/uploading row, `pending` state), acceptance scenario 4 (failed upload never invalidates the query — no partial row — and shows a `toast.error`, retryable by re-selecting the file) — read end-to-end in the final file. |
+| Feature contract held (no unapproved package/permission/library) | `package.json` diff: none (not modified in this diff). No new UI library import — `lucide-react` (`Paperclip`, `X`) and shadcn `Button` were already dependencies used elsewhere (`card-checklist-panel.tsx`, `board-title-bar.tsx`). |
+| ADR-41 (Route Handlers bypass tRPC only for the two byte-carrying operations) | `app/api/attachments/route.ts` and `.../[attachmentPublicId]/route.ts` are the only two backend calls outside `lib/api/*-client.ts` + tRPC in this diff; `removeAttachment` (no bytes) correctly stays on tRPC (`cards.ts:185-192`). |
+| Data Flow rule (`frontend-rules.md`): browser never holds the backend token | `getBackendSession()` (existing helper, unmodified) is the only place either new Route Handler reads the token; both attach it server-side to the outbound `fetch` in `attachments-client.ts`. The browser's own `fetch("/api/attachments", ...)` call in the panel carries no `Authorization` header — it hits the same-origin Route Handler, which is exactly the BFF-hop pattern used everywhere else. |
+| Permission UI matches spec §6 / invariant 5 (UX only, backend authoritative) | `isBoardAdmin`/`currentUserPublicId` are derived in `board-canvas.tsx` from `boardMembers.list` + session, the same source `board-title-bar.tsx` already uses for its own `isBoardAdmin` — no new authorization decision invented; the panel's `canRemove` check purely controls a button's visibility, the actual mutation still runs through `cards.removeAttachment` → `DELETE /v1/attachments/{id}`, which `contracts/attachments-api.md` confirms is re-checked server-side. |
+| Realtime (ADR-44) | `use-board-realtime.ts`'s `BoardEvent` handler now calls `utilsRef.current.cards.getDetail.invalidate()` with no input filter, exactly as ADR-44 specifies — verified this doesn't touch `joinAndSync`'s existing sequencing (it's a second statement in the same handler, not a new subscription). |
+| Security (`frontend-security.md` checklist) | Walked all 9 items in §12: no secrets exposed (✓, no new env var reaches client code — `FLOWBOARD_API_URL` is read only in the two server-only `*-client.ts` files); protected routes unaffected; permission UI matches §6 matrix (✓, above); forms validate input — N/A (no React Hook Form here, this isn't a data-entry form per se, it's a file picker + Zod-validated tRPC input for removal); no unsafe HTML; upload UI restrictions — **initially missing (F1), fixed during this review**; error messages safe (✓ — toast text is either a fixed string or the backend's own validation message, e.g. "A file is required.", never a stack trace); external links — N/A (attachment links are same-origin); sensitive data not logged — ✓ (no `console.log` added). |
+| Scope guard (`git diff --stat`) | `git diff main...009-card-attachments --stat` (flowboard-web) shows exactly the files plan.md's Project Structure lists for Phase B, plus the two Route Handler files and the panel — no unrelated file touched. |
+| Rollback safety | Purely additive frontend code; no schema/migration involved on this side. Reverting this branch removes the panel and both routes with no data-loss concern (attachments still exist server-side, just not reachable from this UI). |
+| Phase A carry-forward (its Residual risk section asked that `Content-Disposition: attachment` survive the frontend proxy unrewritten) | Confirmed — `[attachmentPublicId]/route.ts` reads `result.response.headers.get("content-disposition")` and passes it through verbatim (falling back to the literal string `"attachment"` only if the backend ever omitted it, never to `"inline"`). |
+
+## Findings
+
+### F1 — Missing client-side upload restrictions — MINOR (found and fixed during this review)
+
+`card-attachments-panel.tsx`'s initial version (commit `0ee5137`) had no client-side file-size
+or extension check and no visible size-limit text, despite `frontend-security.md` §6 explicitly
+requiring "restrict accepted file types in UI," "show file size limits," and "validate before
+upload" for attachment UI, and §12's completion checklist listing "Upload UI has restrictions if
+relevant." The backend (`CardService.AddAttachmentAsync`) already enforces the 25 MB cap and
+blocked-extension list authoritatively, so this was a UX gap, not a security hole — but a real
+one against a named binding rule.
+*Action: fixed in commit `a4c591c` — added `findUploadRejectionReason()` (mirrors the backend's
+25 MB cap and `.exe`/`.bat`/`.sh`/`.cmd`/`.msi` block-list exactly) called before any upload
+request is sent, plus visible helper text ("Up to 25 MB per file. Executable files aren't
+allowed.") next to the upload control. Gate re-run and re-confirmed by the user after the fix.
+No further action.*
+
+### F2 — Hidden file input loses focus after a selection — MINOR
+
+The native `<input type="file" className="hidden">` is triggered via `fileInputRef.current?.click()`
+from the visible "Attach" `Button`. After the OS file picker closes, browsers return focus to the
+(hidden, off-screen) file input rather than back to the triggering button, which is a minor
+keyboard/screen-reader UX rough edge (the visibly-focused element and the input value the user
+just set become disconnected). This does not block any acceptance scenario — the upload still
+proceeds correctly, and the same pattern is not used elsewhere in this codebase to compare
+against.
+*Action: none required for merge; worth a follow-up if a future accessibility pass covers file
+inputs specifically. Not spec-mandated for this feature.*
+
+### F3 — `removeAttachmentInputSchema` is the only schema using `.uuid()` — MINOR / DOC DRIFT
+
+Every sibling schema in `lib/cards/schemas.ts` (`cardPublicId`, `labelPublicId`, `userPublicId`,
+etc.) uses a plain `z.string()`, while `removeAttachmentInputSchema` uses `z.string().uuid()` —
+an inconsistency in strictness, not a defect. This exact shape was specified verbatim in
+`tasks.md` T026, so it's a deliberate deviation, not an oversight.
+*Action: none — matches the approved task spec. Worth noting if a future feature normalizes all
+public-ID schemas to `.uuid()` for consistency, but out of scope here.*
+
+### F4 — No fetch timeout on upload/download — ACCEPTED
+
+`attachments-client.ts` omits the `AbortSignal.timeout(...)` that `cards-client.ts`'s
+`callCardsApi` applies to every JSON call. This is explicitly reasoned in the file's own header
+comment: a JSON call hanging past 5s signals a dead connection, but a 25 MB transfer's duration
+is a function of file size and the client's network, not a health signal, so a fixed timeout
+would incorrectly abort slow-but-healthy transfers.
+*Action: none — documented, deliberate deviation from the sibling client's pattern.*
+
+## Constitution re-check (post-implementation)
+
+**PASS.**
+
+- **Specification First (I) / Source of Truth (II)**: No screenshots exist for this feature
+  (unchanged since plan.md); FR-013's "follow the existing visual language" was satisfied by
+  reusing `card-checklist-panel.tsx`'s exact structural pattern (section header, `hover:bg-muted/60`
+  rows, hover-reveal destructive icon button) rather than inventing new layout — final visual
+  confirmation is a human-review item (`review-process.md`'s Human Review checklist), not an
+  AI-review one, since there's no reference screenshot for the AI to compare against.
+- **Repository Separation (III)**: Held — no flowboard-api file touched in this diff.
+- **Architecture Consistency (IV)**: ADR-41's Route Handler exception used correctly and only
+  for the two byte-carrying operations; no new pattern introduced beyond what plan.md approved.
+- **Security (VIII)**: See the security checklist row above; F1 closed the one real gap.
+- **Performance Responsibility (X)**: Download response body is passed through
+  (`new Response(result.response.body, ...)`), never buffered into memory or re-serialized —
+  matches plan.md's "streams the file rather than buffering it fully in memory."
+- **Testing Requirements (XI)**: No frontend test runner exists yet (003–008 precedent,
+  unchanged); this phase's verification is code review + the lint/build gate. The
+  `quickstart.md` manual walkthrough is explicitly a Polish-phase task (T031), not yet run —
+  see Residual risk.
+- **Human Review (XII)**: Not yet performed — required before merge, next step.
+- **Controlled Delivery (XIII)**: Held — Phase A (backend) was gated, AI-reviewed,
+  human-reviewed, and merged to flowboard-api's `main` (`65dcf75`) before any Phase B (frontend)
+  code was written.
+
+## Test coverage observed
+
+No automated frontend test suite exists in this repository (unchanged from every prior
+feature 003–008). Verification for this phase is: (1) `npm run lint && npm run build` — EXIT 0,
+user-confirmed twice (before and after the F1 fix), which includes the full TypeScript type
+check across every new/modified file; (2) this code review, reading every touched file in full
+against `spec.md`'s acceptance scenarios and `contracts/attachments-api.md`. No one has yet
+manually clicked through the feature in a running browser — that walkthrough
+(`quickstart.md` §2/§3/§5/§6) is scheduled as Polish-phase task T031, per tasks.md's own
+Implementation Strategy ("Polish → full quickstart pass").
+
+## Residual risk
+
+The main residual risk is that this phase has had zero live-browser verification — everything
+above is static review plus a successful type-check/build. Concretely un-exercised paths worth
+the human reviewer's attention: (1) the actual multipart upload round-trip through the Route
+Handler to the real backend (the code path is correct by inspection, but `FormData`/`File`
+forwarding across a Route Handler boundary is exactly the kind of thing that can have a runtime
+surprise a type checker can't catch); (2) the download link's `Content-Disposition` behavior in
+an actual browser (does it prompt "Save As" or silently download, per file type); (3) the
+realtime cross-tab update (`cards.getDetail.invalidate()` firing correctly when a second
+session adds/removes an attachment while a card modal is open elsewhere). None of these are
+blocking findings — they're exactly the kind of thing `quickstart.md`'s walkthrough (T031) and
+human review together are supposed to catch before this ships. Recommend the human reviewer
+spend a few minutes actually exercising US1/US2/US3 in the browser rather than relying solely on
+this document, given that gap.
