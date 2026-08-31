@@ -182,8 +182,12 @@ full Phase B diff. Merged to `main` in flowboard-web as `77959ec`
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T031 [P] Walk `quickstart.md` end-to-end (all sections) and fix any doc drift in specs/009-card-attachments/quickstart.md
-- [ ] T032 Write phase review notes (backend + frontend compliance checklist results, gate evidence, the domain-invariant pass) in specs/009-card-attachments/review-notes.md; write specs/009-card-attachments/human-pr-review.md; on merge, set roadmap row 009 → shipped in docs/roadmap.md
+- [x] T031 [P] Walk `quickstart.md` end-to-end (all sections) and fix any doc drift in specs/009-card-attachments/quickstart.md — no drift found (see review-notes.md's "quickstart.md walkthrough" section); commands/paths verified against the actual project structure, and §2–§6's described behaviors were live-verified by the human reviewer during Phase B's review
+- [x] T032 Write phase review notes (backend + frontend compliance checklist results, gate evidence, the domain-invariant pass) in specs/009-card-attachments/review-notes.md; human-pr-review.md already written per-phase (Phase A + Phase B sections, both APPROVED); roadmap row 009 → shipped in docs/roadmap.md
+
+**Feature complete**: All phases (Foundational, Phase A backend, Phase B frontend, Polish)
+done. Merged to `main` in both `flowboard-api` (`65dcf75`) and `flowboard-web` (`77959ec`),
+neither pushed to a remote. Roadmap row 009 marked shipped.
 
 ---
 
