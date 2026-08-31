@@ -42,15 +42,24 @@ shared migration to worry about (this feature adds no migration at all).
   hub connection is shared between the board page's `top-bar.tsx` (status indicator) and
   `board-canvas.tsx` (cache invalidation) via a small client Context Provider,
   `components/board/board-realtime-context.tsx` — `use-board-realtime` is called there,
-  not directly in `board-canvas.tsx`. The board page
-  (`app/(app)/boards/[boardPublicId]/page.tsx`) wraps `<TopBar>` and `<BoardCanvas>` in
-  this provider; neither component's own props or rendering logic otherwise changes, and
-  the hook only ever calls `utils.boards.getContent.invalidate(...)`, a function every
-  mutation already calls today.
-- No existing endpoint's request/response contract changes. No existing frontend
-  component's props or rendering logic changes — the realtime hook only ever calls
-  `utils.boards.getContent.invalidate(...)`, a function every mutation already calls
-  today.
+  not directly in `board-canvas.tsx`.
+  **Correction (human-pr-review.md, second-model adversarial review, 2026-08-31): the
+  claim below that no existing component's rendering logic changes was wrong — three
+  existing components' render trees do change, and a revert must undo each:**
+  - `app/(app)/boards/[boardPublicId]/page.tsx` — its component tree changes to wrap
+    `<TopBar>` and `<BoardCanvas>` in the new `BoardRealtimeProvider`.
+  - `components/layout/top-bar.tsx` — now renders the new
+    `<RealtimeStatusIndicator />` as part of its own JSX, not just an added sibling file.
+  - `components/board/board-canvas.tsx` — gained a new conditional render branch for the
+    "no access" state (FR-007's live-revocation UI), in addition to calling
+    `utils.boards.getContent.invalidate(...)` on incoming events (the latter reuses a
+    function every mutation already calls today; the former is new rendering logic).
+
+  Reverting the feature must restore all three files to their pre-008 JSX, not just
+  delete the newly-added files — a plain `git revert` of the phase commits does this
+  correctly (per the Rollback Method above), but a partial/manual revert must not skip
+  them.
+- No existing endpoint's request/response contract changes.
 
 ## Database Rollback
 

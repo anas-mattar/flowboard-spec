@@ -507,15 +507,29 @@ final validation across all stories.
   across the multi-second gaps between tool calls, was never the OS-focused window, so
   Chrome throttled its JS timers enough to suppress the SignalR client's periodic
   keep-alive pings — the server's own 30-second `ClientTimeoutInterval` then closed the
-  connection right around when eviction landed. This is a testing-tool artifact, not an
-  application defect: `BoardHubTests.RemoveMember_EvictsConnectedConnection_NoFurtherBoardEvents`
-  (a real, non-mocked `HubConnection` against the actual server code, no tab-backgrounding
-  involved) was re-run in isolation during this investigation and passed. **Residual edge
-  case worth recording, not fixing**: a genuinely backgrounded/suspended real user tab
-  could hit the same client-timeout window and similarly miss the instant push — but it
-  self-heals via the existing `onreconnected → joinAndSync → invalidate` path the moment
-  the tab becomes active again, and invariant 5 is enforced at the API layer regardless of
-  what the live UI shows in the meantime. No code change made in response.
+  connection right around when eviction landed. This is the most likely explanation for
+  what was observed manually, and it is consistent with everything the instrumentation
+  showed — but, as the second-model adversarial review below correctly pushed back on,
+  a completed `SendAsync` does not by itself prove the browser received anything, and the
+  diagnostic instrumentation was reverted before this write-up, so the claim that this
+  "excludes" a real race was an overclaim. **Residual edge case worth recording, not
+  fixing on its own**: a genuinely backgrounded/suspended real user tab could hit the same
+  client-timeout window and similarly miss the instant push — but it self-heals via the
+  existing `onreconnected → joinAndSync → invalidate` path the moment the tab becomes
+  active again, and invariant 5 is enforced at the API layer regardless of what the live UI
+  shows in the meantime.
+
+  **Remediation (post-review)**: rather than re-litigate whether the exact interleaving
+  observed manually was tooling throttling or a genuine tracker-snapshot/disconnect race,
+  `BoardHubTests.RemoveMember_ConcurrentDisconnectAtEvictionBoundary_ConvergesToNoAccessRegardlessOfRaceOutcome`
+  was added to force that race deliberately (`connection.StopAsync()` run concurrently with
+  the removal `DELETE`, via `Task.WhenAll`) and assert the property that actually matters
+  for FR-007: the eviction call never throws/500s under the race, and a reconnect
+  afterwards is always rejected by `JoinBoard`'s independent access re-resolution — so the
+  member can never end up with working board access again, regardless of which side of the
+  race wins or why. Passed 6/6 runs (5 standalone + 1 in the full suite); full suite
+  otherwise unchanged (126 passed, only the pre-existing unrelated F1 golden-fixture
+  failure below).
 
 - [x] T032 Re-read `specs/008-realtime-sync/rollback.md` against what was actually built in
   Phases 2–6 and correct any step that has drifted from the implementation (Critical
@@ -530,6 +544,15 @@ final validation across all stories.
   no status-indicator/context filenames) to name the files Phase 5 actually landed on
   (`use-board-realtime.ts`, `realtime-status-indicator.tsx`, `board-realtime-context.tsx`,
   per the T026 amendment).
+
+  **Remediation (post-review)**: the second-model adversarial review found this
+  correction itself still incomplete — it still claimed "no existing frontend component's
+  rendering logic changed," which is false (`top-bar.tsx` now renders
+  `<RealtimeStatusIndicator />`, `board-canvas.tsx` gained a new "no access" render
+  branch, `page.tsx`'s component tree changed to wrap things in the new provider). Fixed:
+  the Changed Areas section now names all three files and their actual rendering changes
+  explicitly, and notes that a revert must restore each one's pre-008 JSX, not just delete
+  the new files.
 
 - [x] T033 Run the gate slice — `dotnet build --warnaserror && dotnet test` in
   `flowboard-api/`, `npm run lint && npm run build` in `flowboard-web/`
@@ -559,6 +582,29 @@ and must not merge** until these two findings are resolved (fix + re-review) or 
 and knowingly overridden by the feature owner with reasoning recorded here. Phase 7's own
 tasks (T031–T033) are individually complete as recorded above; the phase-level Done status
 is what remains blocked.
+
+**Both findings remediated (2026-08-31), re-review pending.** See the "Remediation
+(post-review)" notes under T031 and T032 above:
+1. T031 — added `BoardHubTests.RemoveMember_ConcurrentDisconnectAtEvictionBoundary_ConvergesToNoAccessRegardlessOfRaceOutcome`,
+   which forces the disputed race deliberately and proves the property FR-007 actually
+   depends on (no crash, and access can never be regained regardless of interleaving) —
+   independent of whether the manually-observed non-delivery was tooling throttling or a
+   genuine race. The §7 write-up's overclaim ("this excludes a real race") was also walked
+   back to "this is the most likely explanation, and the new test makes the outcome safe
+   either way."
+2. T032 — `rollback.md`'s Changed Areas section corrected to name the three existing
+   frontend files whose rendering logic actually changed (`top-bar.tsx`, `board-canvas.tsx`,
+   `page.tsx`) instead of claiming none did.
+
+Gate re-run after these changes: `dotnet build --warnaserror` — 0 warnings/errors;
+`dotnet test` — 127 total (126 passed, 1 pre-existing unrelated F1 golden-fixture
+failure, up from 126 total/125 passed before the new test was added), confirmed stable
+across 5 standalone re-runs of the new test. Frontend was not touched by this remediation
+(rollback.md is documentation-only), so the previously-confirmed frontend gate exit-0
+still stands. **Still required before Done**: the user must re-run and confirm the gate
+per Critical Delivery item 4 (a re-run by me does not count), and a fresh AI review +
+second-model adversarial review pass over this remediation diff, per
+`docs/sdlc/review-process.md`.
 
 ---
 
