@@ -50,10 +50,17 @@ shared migration to worry about (this feature adds no migration at all).
     `<TopBar>` and `<BoardCanvas>` in the new `BoardRealtimeProvider`.
   - `components/layout/top-bar.tsx` — now renders the new
     `<RealtimeStatusIndicator />` as part of its own JSX, not just an added sibling file.
-  - `components/board/board-canvas.tsx` — gained a new conditional render branch for the
-    "no access" state (FR-007's live-revocation UI), in addition to calling
-    `utils.boards.getContent.invalidate(...)` on incoming events (the latter reuses a
-    function every mutation already calls today; the former is new rendering logic).
+  - `components/board/board-canvas.tsx` — gained a new conditional render branch (a
+    `boardError?.data?.code === "NOT_FOUND"` early return) for the "no access" state
+    (FR-007's live-revocation UI), and now calls the new `useBoardRealtime(boardPublicId)`
+    hook (via `board-realtime-context.tsx`) at the top of the component.
+    **Second correction (re-review, 2026-08-31): the previous version of this paragraph
+    wrongly attributed the realtime `utils.boards.getContent.invalidate(...)` call
+    (the one that runs on every incoming BoardEvent) to `board-canvas.tsx` itself — that
+    call actually lives in `lib/realtime/use-board-realtime.ts`, not in `board-canvas.tsx`.
+    `board-canvas.tsx` does call `getContent.invalidate(...)` itself, but only from its own
+    pre-existing (pre-008) mutation `onSettled` handlers — an unrelated, already-existing
+    call site.
 
   Reverting the feature must restore all three files to their pre-008 JSX, not just
   delete the newly-added files — a plain `git revert` of the phase commits does this

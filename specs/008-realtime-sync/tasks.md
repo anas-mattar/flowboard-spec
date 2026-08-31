@@ -519,17 +519,43 @@ final validation across all stories.
   active again, and invariant 5 is enforced at the API layer regardless of what the live UI
   shows in the meantime.
 
-  **Remediation (post-review)**: rather than re-litigate whether the exact interleaving
-  observed manually was tooling throttling or a genuine tracker-snapshot/disconnect race,
-  `BoardHubTests.RemoveMember_ConcurrentDisconnectAtEvictionBoundary_ConvergesToNoAccessRegardlessOfRaceOutcome`
-  was added to force that race deliberately (`connection.StopAsync()` run concurrently with
-  the removal `DELETE`, via `Task.WhenAll`) and assert the property that actually matters
-  for FR-007: the eviction call never throws/500s under the race, and a reconnect
-  afterwards is always rejected by `JoinBoard`'s independent access re-resolution — so the
-  member can never end up with working board access again, regardless of which side of the
-  race wins or why. Passed 6/6 runs (5 standalone + 1 in the full suite); full suite
-  otherwise unchanged (126 passed, only the pre-existing unrelated F1 golden-fixture
-  failure below).
+  **Remediation, round 1 (post-review)**: `BoardHubTests.RemoveMember_ConcurrentDisconnectAtEvictionBoundary_ConvergesToNoAccessRegardlessOfRaceOutcome`
+  was added, racing `connection.StopAsync()` against the removal `DELETE` via
+  `Task.WhenAll`. **Re-review found this test weaker than claimed**: running two async
+  operations concurrently over TestServer's in-memory transport has no synchronization
+  barrier, so passing 6/6 runs proves the outcome is *stable*, not that the disputed
+  tracker-snapshot/disconnect interleaving was actually exercised. Worse, the reconnect
+  assertion it relies on passes for an unrelated reason — `JoinBoard` independently
+  re-resolves access against the database regardless of whether `access.revoked` was ever
+  sent (`BoardMembershipService.RemoveMemberAsync` commits the removal before
+  `EvictUserAsync` even runs), so this test would still pass even if delivery were removed
+  entirely. It's kept as legitimate crash-safety/reconnect-rejection coverage (a
+  DELETE racing a client disconnect must never 500, and a stale token must never regain
+  access), but it does not settle the disputed race and its docstring's "forces the
+  disputed race deliberately" claim was withdrawn as inaccurate.
+
+  **Remediation, round 2**: added `BoardEventPublisherTests.cs`
+  (`EvictUserAsync_ConnectionDisappearsFromTrackerDuringSend_StillAttemptsDeliveryAndCleansUpConsistently`),
+  a unit test that fakes `IHubContext<BoardHub>` so the disputed interleaving — a
+  connection vanishing from `BoardConnectionTracker` between `EvictUserAsync`'s snapshot
+  and its `SendAsync`/`RemoveFromGroupAsync` calls — is forced deterministically (the
+  fake's `SendAsync` callback synchronously removes the connection from the tracker,
+  simulating `BoardHub.OnDisconnectedAsync` firing mid-send) instead of hoped for via
+  wall-clock timing. Verified with a negative control: temporarily commented out the real
+  `SendAsync` call in `BoardEventPublisher.EvictConnectionsAsync`, confirmed the new test
+  fails (collection-equality failure on the expected connection id), then reverted
+  (confirmed clean via `git diff`) — so this is confirmed to have real teeth, not a
+  vacuous pass. It proves `BoardEventPublisher`'s own code still attempts delivery to the
+  exact connection id that was live at snapshot time, and still runs group cleanup and
+  ends in a consistent tracker state, even under this exact race. What remains explicitly
+  out of scope, and stated as such rather than implied away: whether the real ASP.NET Core
+  SignalR transport actually flushes bytes to a socket that's simultaneously closing is a
+  framework guarantee, not application code, and isn't something a unit test of this
+  service can prove — same trust boundary this project already extends to EF Core's SQL
+  execution. Both new/kept tests plus a rerun of the full backend suite: 129 total, 128
+  passed, only the pre-existing unrelated F1 golden-fixture failure (this branch predates
+  F1's fix, merged separately to `main` via `flowboard-api`'s
+  `fix/golden-fixture-due-status-date-drift`, commit `5b8c061`).
 
 - [x] T032 Re-read `specs/008-realtime-sync/rollback.md` against what was actually built in
   Phases 2–6 and correct any step that has drifted from the implementation (Critical
@@ -545,7 +571,7 @@ final validation across all stories.
   (`use-board-realtime.ts`, `realtime-status-indicator.tsx`, `board-realtime-context.tsx`,
   per the T026 amendment).
 
-  **Remediation (post-review)**: the second-model adversarial review found this
+  **Remediation, round 1 (post-review)**: the second-model adversarial review found this
   correction itself still incomplete — it still claimed "no existing frontend component's
   rendering logic changed," which is false (`top-bar.tsx` now renders
   `<RealtimeStatusIndicator />`, `board-canvas.tsx` gained a new "no access" render
@@ -553,6 +579,13 @@ final validation across all stories.
   the Changed Areas section now names all three files and their actual rendering changes
   explicitly, and notes that a revert must restore each one's pre-008 JSX, not just delete
   the new files.
+
+  **Remediation, round 2**: re-review found the round-1 fix still misattributed which
+  file calls `utils.boards.getContent.invalidate(...)` on incoming realtime events — it
+  said `board-canvas.tsx`, but that call actually lives in `lib/realtime/use-board-realtime.ts`
+  (invoked via `board-realtime-context.tsx`); `board-canvas.tsx` does call `.invalidate(...)`
+  itself, but only from its own pre-existing (pre-008), unrelated mutation `onSettled`
+  handlers. Verified against `flowboard-web`'s actual source and corrected in place.
 
 - [x] T033 Run the gate slice — `dotnet build --warnaserror && dotnet test` in
   `flowboard-api/`, `npm run lint && npm run build` in `flowboard-web/`
@@ -583,28 +616,31 @@ and knowingly overridden by the feature owner with reasoning recorded here. Phas
 tasks (T031–T033) are individually complete as recorded above; the phase-level Done status
 is what remains blocked.
 
-**Both findings remediated (2026-08-31), re-review pending.** See the "Remediation
-(post-review)" notes under T031 and T032 above:
-1. T031 — added `BoardHubTests.RemoveMember_ConcurrentDisconnectAtEvictionBoundary_ConvergesToNoAccessRegardlessOfRaceOutcome`,
-   which forces the disputed race deliberately and proves the property FR-007 actually
-   depends on (no crash, and access can never be regained regardless of interleaving) —
-   independent of whether the manually-observed non-delivery was tooling throttling or a
-   genuine race. The §7 write-up's overclaim ("this excludes a real race") was also walked
-   back to "this is the most likely explanation, and the new test makes the outcome safe
-   either way."
-2. T032 — `rollback.md`'s Changed Areas section corrected to name the three existing
-   frontend files whose rendering logic actually changed (`top-bar.tsx`, `board-canvas.tsx`,
-   `page.tsx`) instead of claiming none did.
+**Round 1 remediation (2026-08-31) re-reviewed; CHANGES REQUESTED again.** The
+second-model adversarial review re-reviewed both round-1 fixes (`flowboard-api` commit
+`4471479`, `flowboard` commit `cfe0535`) and found: the new hub-level race test didn't
+reliably force the disputed interleaving and was redundant with pre-existing coverage
+(see "Remediation, round 1" under T031 above); and `rollback.md`'s round-1 correction
+had a fresh factual error — misattributing the realtime `invalidate(...)` call to
+`board-canvas.tsx` (see "Remediation, round 2" under T032 above).
 
-Gate re-run after these changes: `dotnet build --warnaserror` — 0 warnings/errors;
-`dotnet test` — 127 total (126 passed, 1 pre-existing unrelated F1 golden-fixture
-failure, up from 126 total/125 passed before the new test was added), confirmed stable
-across 5 standalone re-runs of the new test. Frontend was not touched by this remediation
-(rollback.md is documentation-only), so the previously-confirmed frontend gate exit-0
-still stands. **Still required before Done**: the user must re-run and confirm the gate
-per Critical Delivery item 4 (a re-run by me does not count), and a fresh AI review +
-second-model adversarial review pass over this remediation diff, per
-`docs/sdlc/review-process.md`.
+**Round 2 remediation (2026-08-31).** Both addressed — see the "Remediation, round 2"
+notes under T031 and T032 above:
+1. T031 — added `BoardEventPublisherTests.cs`, a unit test faking `IHubContext<BoardHub>`
+   to force the disputed tracker-snapshot/disconnect race deterministically rather than
+   via wall-clock timing, verified to have real teeth via a negative-control sabotage/
+   revert. The round-1 hub test's docstring/claims were corrected to describe what it
+   actually proves (crash-safety and reconnect-rejection, not the disputed race).
+2. T032 — `rollback.md`'s `invalidate(...)` attribution corrected to
+   `use-board-realtime.ts`/`board-realtime-context.tsx`.
+
+Gate re-run after round 2: `dotnet build --warnaserror` — 0 warnings/errors; `dotnet
+test` — 129 total, 128 passed, 1 pre-existing unrelated F1 golden-fixture failure (this
+branch predates F1's fix on `main`). Frontend untouched by either round (both are
+backend-tests + governance-docs changes). **Still required before Done**: the user must
+re-run and confirm the gate per Critical Delivery item 4 (a re-run by me does not count),
+and a fresh AI review + second-model adversarial review pass (round 3) over this diff,
+per `docs/sdlc/review-process.md`.
 
 ---
 
