@@ -79,3 +79,7 @@ Status flow: `idea → specified → in progress → shipped → dropped`
   removed). Adopted with them: the tRPC BFF pattern (browser → tRPC → server-only client →
   .NET API) as the frontend data flow — 001's plan.md ratifies it ADR-style per
   constitution IV.
+- 2026-08-31 009-card-attachments shipped — first v1.1 slice. File bytes live on local disk
+  behind a new `IAttachmentStorage` interface (ADR-40), not SQL Server and not yet a real
+  cloud object store; upload/download are the frontend's first Route Handler exception to the
+  tRPC-only data flow rule (ADR-41), justified the same way 008's realtime exception was.
