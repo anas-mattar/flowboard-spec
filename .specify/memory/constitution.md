@@ -1,7 +1,28 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 0.2.0 → 1.0.0 (RATIFIED as the FlowBoard constitution, 2026-08-27)
+Version change: 1.0.0 → 2.0.0 (FlowBoard, 2026-09-01)
+Bump rationale: MAJOR — adoption of the upstream kit's delivery-core amendments (kit
+  constitution 0.3.0 and 0.4.0):
+  1. Former V (Data Standards) and VI (Auditability) demoted to conventions in
+     `docs/rulebooks/database-rules.md`, which already carries all their content in
+     richer form (PK + PublicId rule, audit/soft-delete fields, append-only activity
+     events) — no law lost, only relocated. Former X (Performance Responsibility)
+     deleted outright (unfalsifiable; kit feature 001 finding #15). Remaining principles
+     renumbered contiguously: VII→V (Domain Invariants), VIII→VI (Security), IX→VII
+     (External Integration Governance), XI→VIII (Testing), XII→IX (Human Review),
+     XIII→X (Controlled Delivery).
+  2. Principle X gains the kit 0.4.0 **Batched gates** clause: Lite/Standard features
+     may declare up to 3 consecutive phases sharing one certifying user-run gate
+     (declared in plan.md before the batch); per-phase commits, scope checks, and AI
+     reviews unchanged; Critical never batches (scripts/enforcement-pack.ps1 enforces).
+  Swept in the same change: principle citations across docs/ and rulebooks;
+  plan/spec/tasks templates replaced with kit 0.4.0 versions; definition-of-done.md now
+  applies human review once per feature at merge (gates 1–5 per phase); new kit surface
+  adopted (flow.md, claim-feature.ps1, territory-check.ps1, enforcement-pack.ps1 + CI
+  workflow, branch-protection.md, team-workflow pipelining clause).
+
+Prior version history entry — 0.2.0 → 1.0.0 (RATIFIED as the FlowBoard constitution, 2026-08-27):
 Bump rationale: MAJOR — ratification. All slots filled and TODOs resolved:
   II  rung 2 → docs/product/prototype/flowboard-prototype.html (project-wide UI reference)
   V   PK = Id INT IDENTITY(1,1); API-exposed entities MUST carry an opaque public identifier
@@ -17,20 +38,21 @@ Prior version history:
   (template / unversioned) → 0.1.0: initial extraction of the portable constitution from a
   production deployment of this framework.
 
-Principles defined (13):
+Principles defined (10):
   I.    Specification First
   II.   Source of Truth Hierarchy
   III.  Repository Separation            (retained — multi-repo)
   IV.   Architecture Consistency
-  V.    Data Standards                   (parameterized)
-  VI.   Auditability                     (parameterized)
-  VII.  Domain Invariants                (slot — see modules/)
-  VIII. Security
-  IX.   External Integration Governance
-  X.    Performance Responsibility
-  XI.   Testing Requirements
-  XII.  Human Review Requirement
-  XIII. Controlled Delivery
+  V.    Domain Invariants                (docs/domain/flowboard-invariants.md)
+  VI.   Security
+  VII.  External Integration Governance
+  VIII. Testing Requirements
+  IX.   Human Review Requirement
+  X.    Controlled Delivery
+
+Retired: former V (Data Standards) and VI (Auditability) — demoted to
+  docs/rulebooks/database-rules.md, 2.0.0. Former X (Performance Responsibility) —
+  deleted outright, 2.0.0, no replacement.
 
 Templates requiring updates when this file changes:
   - .specify/templates/plan-template.md (Constitution Check gate must mirror the principles 1:1)
@@ -101,31 +123,7 @@ team. Without the bootstrap clause, "follow the existing architecture" is undefi
 repository — the clause anchors the rule to an approved plan instead of leaving the agent to
 improvise one.
 
-### V. Data Standards
-
-The default primary key MUST be `Id INT IDENTITY(1,1) PRIMARY KEY` (SQL Server). Deviations
-are prohibited unless explicitly approved in the technical plan. Every API-exposed entity
-MUST additionally carry an opaque public identifier (unique, indexed, non-sequential); the
-API addresses entities by it, and internal primary keys MUST NOT be exposed
-(domain invariant 8). Other externally-exposed identifiers (correlation IDs, integration
-references, idempotency keys) MAY use opaque values such as GUIDs, but these are not
-primary keys.
-
-**Rationale**: A uniform key strategy keeps indexes compact and joins predictable while still
-allowing opaque identifiers where external exposure genuinely requires them.
-
-### VI. Auditability
-
-Business entities MUST support auditing with the fields `CreatedDate`, `CreatedBy`,
-`UpdatedDate`, `UpdatedBy`. Soft-delete entities MUST additionally include `IsDeleted`,
-`DeletedDate`, `DeletedBy`. Business master data MUST use soft delete; physical deletion is
-prohibited unless explicitly approved. Activity events are append-only and are the audit
-trail for card history (domain invariant 1).
-
-**Rationale**: Systems of record require a verifiable trail of who changed what and when, and
-master data referenced by history must never disappear from under it.
-
-### VII. Domain Invariants
+### V. Domain Invariants
 
 The non-negotiable rules of this project's domain are defined in
 `docs/domain/flowboard-invariants.md` and carry constitutional force. Agents
@@ -135,7 +133,7 @@ and reviewers MUST treat a domain-invariant violation exactly like a violation o
 postings, consent trails, order-state machines). Naming them once, with constitutional force,
 stops an agent from "creatively" violating them.
 
-### VIII. Security
+### VI. Security
 
 Authentication is required for protected functionality. Authorization is required for protected
 operations. Secrets MUST NEVER be stored in source code. Sensitive information MUST NOT be
@@ -143,7 +141,7 @@ logged. All external integrations MUST use secure authentication mechanisms.
 
 **Rationale**: Security controls are non-negotiable architecture concerns, not cleanup tasks.
 
-### IX. External Integration Governance
+### VII. External Integration Governance
 
 All external integrations require documented contracts. Each contract MUST define purpose,
 authentication, endpoints, request schema, response schema, error schema, timeout policy, retry
@@ -151,16 +149,7 @@ policy, idempotency strategy, and audit requirements. Undocumented integrations 
 
 **Rationale**: Documented contracts make integrations testable, recoverable, and safe to change.
 
-### X. Performance Responsibility
-
-Performance MUST be considered during design. Solutions MUST avoid unnecessary database queries,
-unnecessary data transfer, unnecessary API calls, and unnecessary client rendering. Scalability
-MUST be considered for all production features.
-
-**Rationale**: Performance designed in is cheaper and more reliable than performance retrofitted
-after release.
-
-### XI. Testing Requirements
+### VIII. Testing Requirements
 
 Business-critical functionality requires automated tests. Business-critical calculations require
 deterministic validation (golden fixtures where outputs must be exact). Changes affecting
@@ -169,7 +158,7 @@ business-critical logic require regression coverage.
 **Rationale**: Deterministic, regression-covered tests are the only credible guarantee that
 critical logic remains correct across changes — especially changes made by an AI agent.
 
-### XII. Human Review Requirement
+### IX. Human Review Requirement
 
 AI review alone is insufficient. Human review is required before merge. Human reviewers MUST
 verify business requirements, domain correctness, security implications, visual-reference
@@ -178,15 +167,26 @@ compliance (where visual references exist), and architectural compliance.
 **Rationale**: Business and architectural correctness require human accountability that
 automated review cannot replace.
 
-### XIII. Controlled Delivery
+### X. Controlled Delivery
 
 Work MUST be delivered incrementally. Only one approved phase MAY be implemented at a time.
 Unrelated changes MUST NOT be included in the same feature implementation. Every completed phase
 MUST pass project gates — run by the user, with the exit code confirmed by the user — before
 proceeding. An AI agent MUST NOT claim success without that confirmation.
 
+**Batched gates**: for a Lite or Standard feature, the approved plan MAY declare — before the
+batch's first phase is implemented, as `**Gate Batching**: phases N-M` in `plan.md` — that a
+run of at most **3 consecutive phases** shares one certifying user-run gate at the end of the
+batch. Within a batch, every phase still requires its own commit, its own scope check, and its
+own AI review, and the agent still runs the gate per phase for feedback; only the user-run
+certification moves to batch end. Critical features MUST NOT declare batches — their per-phase
+user-run gate obligation is unchanged. Absent a declaration, the per-phase user-run gate above
+applies in full.
+
 **Rationale**: Small, gated increments keep changes reviewable, reversible, and low-risk; the
-user-held exit code keeps the trust boundary human.
+user-held exit code keeps the trust boundary human. Batching trades gate frequency — never
+per-phase revertibility or review — for fewer owner interruptions on low-risk work, and only
+when declared in an approved plan.
 
 ## Governance
 
@@ -211,4 +211,4 @@ evaluated before Phase 0 research and re-evaluated after Phase 1 design. Any vio
 justified in the plan's Complexity Tracking section or the work MUST stop and be reported. Use
 `CLAUDE.md` and the `docs/` guidance files for runtime development guidance.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-27 | **Last Amended**: 2026-08-27
+**Version**: 2.0.0 | **Ratified**: 2026-08-27 | **Last Amended**: 2026-09-01

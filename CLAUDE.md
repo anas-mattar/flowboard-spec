@@ -77,6 +77,9 @@ install so the user can finish it (see `adoption/`, step 0).
 
 ## Workflow
 
+The whole ritual on one page: `docs/sdlc/flow.md` (summary only — the documents it
+links to prevail).
+
 1. Check current branch and working tree; stop if unrelated uncommitted changes exist.
 2. Run the baseline gate on untouched code.
 3. One feature branch per feature (`docs/sdlc/branch-strategy.md`).
@@ -103,6 +106,7 @@ Read the pack that matches what you are about to touch — not everything, every
 | Touching… | Read first |
 |---|---|
 | Any phase (always) | This file + `docs/sdlc/definition-of-done.md` |
+| New to the project / need the big picture | `docs/sdlc/flow.md` |
 | Branching / starting a feature | `docs/sdlc/branch-strategy.md`, `docs/sdlc/repository-strategy.md` |
 | Project with more than one developer | `docs/sdlc/team-workflow.md` |
 | Backend / service logic | `docs/rulebooks/backend-rules.md` |

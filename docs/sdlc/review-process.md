@@ -60,7 +60,7 @@ Complete `specs/_templates/ai-code-review-template.md`. Check:
 ## Human Review
 
 AI review alone is insufficient. **Human review is required before merge**, and a
-change MUST NOT be merged until a human reviewer approves it (constitution XII).
+change MUST NOT be merged until a human reviewer approves it (constitution IX).
 
 Human reviewer checks (record in `specs/_templates/human-pr-review-template.md`):
 

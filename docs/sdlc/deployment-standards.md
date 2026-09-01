@@ -10,7 +10,7 @@
 
 - CI/CD gate enforcement (the user-run gate's automated twin)
 - Environment promotion (dev → staging → production)
-- Secrets handling (never in source — constitution VIII; define the injection mechanism)
+- Secrets handling (never in source — constitution VI; define the injection mechanism)
 - Migration/rollback alignment (`docs/sdlc/rollback-process.md`)
 - Repository separation at deploy time (`docs/sdlc/repository-strategy.md`)
 

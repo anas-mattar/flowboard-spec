@@ -40,7 +40,7 @@ limit added in code silently changes the product.
 
 ## 4. Soft Delete Only, 30-Day Minimum Restorability
 
-Boards, lists and cards MUST use soft delete / archive (constitution VI fields). Physical
+Boards, lists and cards MUST use soft delete / archive (audit fields, `docs/rulebooks/database-rules.md`). Physical
 deletion is prohibited unless explicitly approved in the technical plan. Archived and
 soft-deleted items MUST remain restorable for at least 30 days (B-06, C-13 — a MINIMUM:
 extending retention is an amendment, shortening it is a breach). Deleting a list archives
@@ -85,7 +85,7 @@ board-scoped model; widening scope is a product decision, not an implementation 
 
 ## 8. Opaque Public Identifiers
 
-Internal primary keys (constitution V: `INT IDENTITY`) MUST NEVER appear in API URLs,
+Internal primary keys (`docs/rulebooks/database-rules.md`: `INT IDENTITY`) MUST NEVER appear in API URLs,
 response bodies, WebSocket events, or logs visible to clients. Every API-exposed entity
 carries an opaque public identifier (unique, indexed, non-sequential); all §7 endpoints
 address entities by it. Cross-tenant enumeration by identifier MUST be impossible.

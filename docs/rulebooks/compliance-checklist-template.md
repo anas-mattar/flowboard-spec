@@ -6,7 +6,7 @@
 >
 > **Adopted**: [YYYY-MM-DD, feature NNN]. Code merged before this date is grandfathered:
 > it is brought into compliance only when a feature touches it, never as a drive-by refactor
-> (constitution XIII).
+> (constitution X).
 
 <!--
 HOW TO WRITE THIS CHECKLIST (then delete this comment):
@@ -45,7 +45,7 @@ HOW TO WRITE THIS CHECKLIST (then delete this comment):
 
 - [ ] No new packages beyond those approved in the feature's `plan.md` (constitution IV)
 - [ ] Only the approved phase's files changed (`git diff --stat` reviewed)
-- [ ] Gate run by the user with confirmed exit code 0 (constitution XIII)
+- [ ] Gate run by the user with confirmed exit code 0 (constitution X)
 
 ---
 

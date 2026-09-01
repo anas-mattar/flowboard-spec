@@ -1,0 +1,20 @@
+name: enforcement-pack
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  enforcement-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check delivery-level non-negotiables for this branch
+        shell: pwsh
+        # pull_request checks out a detached-HEAD merge commit, where `git rev-parse
+        # --abbrev-ref HEAD` returns the literal string "HEAD" instead of the source
+        # branch name — pass it explicitly (github.head_ref is empty on a push event,
+        # where github.ref_name is already the correct branch name).
+        run: ./scripts/enforcement-pack.ps1 -Branch "${{ github.head_ref || github.ref_name }}"

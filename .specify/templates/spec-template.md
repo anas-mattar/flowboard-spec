@@ -3,6 +3,10 @@
 **Feature Branch**: `[###-feature-name]`  
 **Created**: [DATE]  
 **Status**: Draft  
+**Delivery Level**: [Lite | Standard | Critical] <!-- REQUIRED. See docs/sdlc/critical-delivery.md
+  for the level definitions and when a feature MUST be Critical. Lite features use the
+  lightweight branch lane and skip this template entirely — this field applies to numbered
+  (`NNN-`) features, so it will almost always be Standard or Critical here. -->
 **Input**: User description: "$ARGUMENTS"
 
 ## User Scenarios & Testing *(mandatory)*

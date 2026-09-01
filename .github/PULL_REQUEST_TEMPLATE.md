@@ -1,9 +1,17 @@
-# Human PR Review — [NNN Feature Name]
+<!--
+Embeds specs/_templates/human-pr-review-template.md's checklist so the review layer is
+visible on every PR instead of relying on memory (specs/002-enforcement-pack, FR-009).
+Keep this in sync by hand if that template changes — no templating engine exists in this kit
+(see specs/002-enforcement-pack/research.md §7).
+-->
 
-**Reviewer**: [name]
-**Date**: [YYYY-MM-DD]
-**AI review**: [link/path to the completed ai-code-review.md — read it first; verify its
-BLOCKING/CONFIRM findings were resolved, don't re-derive them]
+## Summary
+
+[What does this PR do, in one or two sentences?]
+
+**Feature/branch**: `[NNN-name | fix/name | chore/name | docs/name]`
+**Spec / plan / tasks**: [link, if this is a numbered `NNN-` feature]
+**AI review**: [link to the completed ai-code-review.md — read it first]
 
 ## Business Review
 
@@ -11,7 +19,7 @@ BLOCKING/CONFIRM findings were resolved, don't re-derive them]
 - [ ] Domain correctness verified for business-critical outputs (spot-check real figures/cases)
 - [ ] Open questions / CONFIRM findings from the AI review are answered or explicitly deferred
 
-## UI Review *(delete if no UI in this feature)*
+## UI Review *(delete if no UI in this PR)*
 
 - [ ] Actual rendered UI compared against the visual references (not just the code)
 - [ ] Loading / empty / error states behave sensibly
@@ -25,7 +33,9 @@ BLOCKING/CONFIRM findings were resolved, don't re-derive them]
 
 ## Gate Result
 
-- [ ] Gate run **by the reviewer or user** (not the AI); exit code: `EXIT: ___`
+- [ ] Gate run **by the reviewer or user** (not the AI)
+
+**Gate exit code**: `EXIT: ___`
 
 ## Approval
 
