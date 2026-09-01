@@ -4,7 +4,7 @@
 
 This file defines standard integration patterns for FlowBoard. No integration exists in
 v1.0; each pattern activates when its feature is specced (contract first —
-constitution IX).
+constitution VII).
 
 ## Pattern 1: Outbound Query API
 

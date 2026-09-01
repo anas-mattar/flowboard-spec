@@ -68,6 +68,22 @@ as that confirmation, and MUST NOT skip asking the user to run the gate because 
 passed. **Critical** features go further: agent-run gates are not used at all
 (`docs/sdlc/critical-delivery.md`).
 
+## Batched gates (Lite/Standard only)
+
+A Lite or Standard feature MAY declare, in its approved `plan.md` **before the batch's
+first phase is implemented**, that up to **3 consecutive phases** share one certifying
+user-run gate: `**Gate Batching**: phases N-M` (constitution X, Batched gates;
+`docs/sdlc/definition-of-done.md`, item 3). What changes and what doesn't:
+
+- The **owner runs the gate once**, at the end of the batch, and confirms the exit code.
+- The **agent still runs the gate after every phase** for feedback and reports the output;
+  a mid-batch agent-run failure pauses the batch at that phase boundary — the owner is
+  asked to gate what is committed so far, not to push on.
+- Every phase in the batch still gets its **own commit, `git diff --stat` scope check,
+  and AI review** — a failed batch-end gate localizes to a phase via the per-phase commits.
+- **Critical features never batch** (`docs/sdlc/critical-delivery.md`);
+  `scripts/enforcement-pack.ps1` fails a Critical branch whose plan declares a batch.
+
 ## Minimum Gate
 
 When the full gate is too slow for a quick sanity check, define a minimum gate (typically the

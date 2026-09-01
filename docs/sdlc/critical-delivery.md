@@ -26,7 +26,7 @@ grew into a feature.
 
 Declare Critical when the feature touches any of:
 
-- rules in the domain-invariants pack (constitution VII) — postings, balances, consent
+- rules in the domain-invariants pack (constitution V) — postings, balances, consent
   trails, state machines;
 - irreversible or destructive data operations (migrations that drop or rewrite data);
 - authentication, authorization, or payment flows;
@@ -40,21 +40,33 @@ Declare Critical when the feature touches any of:
    filled for this feature **before phase 1 begins**, not at review time.
    **Why**: a rollback plan written after the change is a description, not a plan.
 2. **Domain-invariant review** — the AI review and the human review each include an explicit
-   pass over the domain-invariants pack (constitution VII), item by item, recorded in the
+   pass over the domain-invariants pack (constitution V), item by item, recorded in the
    review document.
    **Why**: invariant violations are the one class of defect the gate cannot catch.
 3. **Audit evidence retained** — the gate command + exit code, the `git diff --stat` output,
    and both completed review checklists are kept in the feature directory.
    **Why**: "we reviewed it" must be demonstrable later, not remembered.
-4. **Human-executed gates only** — the agent-run gate feedback loop
-   (`docs/sdlc/gate-command.md`) does not apply. Every gate run that counts toward Done is
-   executed by a human.
+4. **Human-executed gates only, one per phase** — the agent-run gate feedback loop
+   (`docs/sdlc/gate-command.md`) does not apply, and neither does gate batching
+   (constitution X, Batched gates): a Critical feature MUST NOT declare
+   `**Gate Batching**` in its `plan.md` — `scripts/enforcement-pack.ps1` fails the branch
+   if it does. Every phase's gate run that counts toward Done is executed by a human.
    **Why**: for Critical work, even the fast-feedback loop stays on the human side of the
-   trust boundary.
+   trust boundary, and gate frequency is part of that boundary.
 5. **Independent approval** — the human reviewer MUST NOT be the feature's owner
-   (`docs/sdlc/team-workflow.md`). A solo developer substitutes a second-model adversarial
-   review (`adoption/existing-system.md`, step 6) plus a cooling-off period before merge.
-   **Why**: the person who drove the agent is the person least able to see its blind spots.
+   (`docs/sdlc/team-workflow.md`). A solo developer substitutes:
+   - a written **second-model adversarial review**, recorded as
+     `specs/NNN-name/second-model-review.md`, structured like
+     `specs/_templates/ai-code-review-template.md` but performed by a model different from
+     the one that implemented the feature, explicitly instructed to probe for the
+     implementer's likely blind spots (not to re-confirm its work); and
+   - a minimum **24-hour cooling-off period** between that review being recorded and the
+     feature being merged, during which the developer does not act further on the feature.
+
+   **Honesty**: this substitute is a mitigation for the solo-developer case, not a claim of
+   true independence — it does not provide the independence an external human reviewer would.
+   **Why**: the person who drove the agent is the person least able to see its blind spots,
+   and an undefined substitute ("some review, some time") is not falsifiable.
 
 ## What this addendum is NOT
 

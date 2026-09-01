@@ -31,7 +31,7 @@ Use `INT IDENTITY` because it gives:
 
 ### Public Identifiers (MANDATORY for API-exposed entities)
 
-Every API-exposed entity carries an opaque public identifier (constitution V, domain
+Every API-exposed entity carries an opaque public identifier (docs/rulebooks/database-rules.md, domain
 invariant 8):
 
 ```sql
@@ -80,7 +80,7 @@ the optimistic concurrency of spec §7.1 (domain invariant 6).
 
 ## 3. Audit Fields
 
-Required for business tables (constitution VI):
+Required for business tables (docs/rulebooks/database-rules.md):
 
 ```text
 CreatedDate DATETIME2 NOT NULL

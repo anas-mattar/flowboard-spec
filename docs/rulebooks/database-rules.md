@@ -8,12 +8,12 @@
 
 ## Schema Standards
 
-- Primary keys: `Id INT IDENTITY(1,1) PRIMARY KEY` (constitution V). GUID primary keys are
+- Primary keys: `Id INT IDENTITY(1,1) PRIMARY KEY` (this rulebook is the owning rule since constitution 2.0.0). GUID primary keys are
   prohibited unless approved in `plan.md`.
 - Every API-exposed entity additionally carries
   `PublicId UNIQUEIDENTIFIER NOT NULL UNIQUE` — the only identifier the API ever exposes
   (invariant 8). Foreign keys are integer (`AccountId`-style), pointing at internal `Id`.
-- Audit fields on every business table (constitution VI): `CreatedDate DATETIME2 NOT NULL`,
+- Audit fields on every business table (owning rule here since constitution 2.0.0): `CreatedDate DATETIME2 NOT NULL`,
   `CreatedBy NVARCHAR(100) NOT NULL`, `UpdatedDate/UpdatedBy` nullable. Soft-delete
   entities add `IsDeleted BIT NOT NULL DEFAULT(0)`, `DeletedDate`, `DeletedBy`.
   System-generated rows stamp `SYSTEM` / `MIGRATION` as the actor.

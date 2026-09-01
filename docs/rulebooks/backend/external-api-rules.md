@@ -5,7 +5,7 @@
 FlowBoard v1.0 has no external integrations; they arrive later (email/notification
 delivery, billing/subscription provider for the paid tiers, SSO/SCIM on Enterprise,
 export/document services). When the first one is specced, its contract comes before
-implementation (constitution IX) and this file governs the implementation pattern.
+implementation (constitution VII) and this file governs the implementation pattern.
 
 ## 1. Integration Layer
 
