@@ -31,9 +31,9 @@ under ~20 principles — a constitution that says everything governs nothing.
 
 ## 2. Fill CLAUDE.md
 
-Complete the Stack Profile (author it from `docs/rulebooks/stack-profile-template.md` — one
+Complete the Stack Profile (author it from **docs/rulebooks/stack-profile-template.md** — one
 short, checkable block per tier) and the `{{..._PATH}}` slots in `CLAUDE.md`. Then **pick your
-tiers** from the menu in `docs/rulebooks/README.md` — backend, frontend, mobile, database,
+tiers** from the menu in **docs/rulebooks/README.md** — backend, frontend, mobile, database,
 integration are templates, not requirements. Instantiate a rulebook only for each tier your
 project actually has (copy the template to **docs/rulebooks/[tier]-rules.md**, keep only the
 baseline rules that are true for your stack) and delete the Task-Scoped Reading rows for
@@ -101,7 +101,8 @@ reviews it.
 - **Read-only slices before write slices** for each domain area: a view/report over data
   teaches the agent (and validates the model) at zero risk before the first mutation ships.
   When planning the first write slice, run the dedicated-database check in
-  `docs/rulebooks/database-rules-template.md` (Setup) before its first migration.
+  **docs/rulebooks/database-rules-template.md** (Setup) — or in the project's instantiated
+  database rulebook — before its first migration.
 - One deliverable per feature; one phase per commit.
 
 ## 6. Grow the rulebooks reactively
@@ -110,7 +111,7 @@ The tier templates in `docs/rulebooks/` seed each rulebook with structure and un
 baseline rules only — don't write project-specific rules up front. When review catches a
 class of mistake **twice**, it becomes: (a) a MUST/MUST NOT rule in that tier's rulebook,
 (b) a binary item in that tier's compliance checklist
-(`docs/rulebooks/compliance-checklist-template.md`), and (c) where possible, a lint rule or
+(**docs/rulebooks/compliance-checklist-template.md**), and (c) where possible, a lint rule or
 analyzer — machine enforcement beats prose. The checklist item can be deleted once the linter
 owns it.
 
