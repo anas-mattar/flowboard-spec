@@ -18,7 +18,12 @@
 
     Authoring convention this enforces: backticked paths MUST resolve in the kit; paths
     that exist only after adoption (files the adopter creates, e.g. docs/roadmap.md) are
-    written in **bold** or wrapped in [brackets] so they are not linted.
+    written in **bold** or wrapped in [brackets] so they are not linted. The same bold
+    rule applies to kit files an adopter may legitimately delete — the docs/rulebooks
+    tier templates and menu (init-kit.ps1 offers their deletion) — because VERBATIM kit
+    docs are re-applied wholesale by every update-kit.ps1 run: a backticked reference to
+    a deletable file inside a verbatim doc re-breaks the adopted project's doc-lint on
+    every update (GAP-007, first observed in the 005 flow-down).
 
     Unfilled {{SLOT}}s and TODO(...) markers are counted and reported as information.
     Pass -FailOnSlots to make them errors — adopting projects should turn this on once
