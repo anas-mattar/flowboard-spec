@@ -89,3 +89,27 @@ user-run gate: `**Gate Batching**: phases N-M` (constitution X, Batched gates;
 When the full gate is too slow for a quick sanity check, define a minimum gate (typically the
 build step alone, e.g. `yarn build` or `dotnet build`) — but a phase is only **Done** against
 the full gate (`docs/sdlc/definition-of-done.md`).
+
+## Strict-build flags vs transitive-dependency vulnerabilities
+
+This project's backend gate uses `--warnaserror`; ESLint's zero-warning default in
+`npm run lint` is the frontend equivalent. Such a gate will sometimes go red through no code
+of ours: a **transitive** dependency (pulled in by a template or framework, pinned nowhere in
+our files) gets a published vulnerability advisory, and the build fails on a warning nobody
+wrote — exactly how the 001 scaffold's transitive `Microsoft.OpenApi` 2.0.0 failed
+`--warnaserror` on GHSA-v5pm-xwqc-g5wc (resolved by pinning 2.12.2).
+
+Triage in this order — the strict flag itself is never the thing that yields:
+
+1. **Upgrade the direct dependency** to a version whose dependency graph includes the
+   patched transitive version.
+2. **Pin the patched transitive version directly** (an explicit `PackageReference` /
+   `package.json` override that beats the transitive resolution) when no fixed direct
+   release exists yet.
+3. **Record a narrowly-scoped, reasoned suppression** — the single advisory ID, the single
+   package, a written why, and a removal condition — in the feature's `plan.md` or the
+   relevant rulebook, when neither of the above is possible.
+
+Blanket-disabling the strict flag to get past one advisory is prohibited: it silently
+removes the gate's ability to catch every future warning, which is the opposite of a
+narrowly-scoped fix.

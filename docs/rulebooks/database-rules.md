@@ -6,6 +6,17 @@
 > together with `docs/sdlc/rollback-process.md`, never alone. Detailed rule pack:
 > `docs/rulebooks/backend/database-standards.md`.
 
+## Setup
+
+- Before the FIRST migration runs against any database (project, test, or a new
+  environment), the connection string's target database MUST be confirmed as dedicated to
+  this project — not silently inherited from another project's local-dev setup and not a
+  shared/production database. Deliberately sharing a database across services is permitted
+  only as an explicit, plan-approved decision: the rule is confirmation, not a ban on
+  reuse. **Why**: a connection string silently reused from another project points the
+  first migration at an existing database, mixing schemas the moment it runs (kit
+  field lesson, `Spc` incident class).
+
 ## Schema Standards
 
 - Primary keys: `Id INT IDENTITY(1,1) PRIMARY KEY` (this rulebook is the owning rule since constitution 2.0.0). GUID primary keys are
