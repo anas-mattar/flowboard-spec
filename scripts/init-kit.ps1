@@ -155,7 +155,44 @@ if ($Tiers -contains 'mobile') {
 [IO.File]::WriteAllLines($claudeMd, $lines)
 Write-Host 'wire:   CLAUDE.md Task-Scoped Reading table (rows match selected tiers)'
 
-# --- 3. Fill the mechanical slots across the kit-owned governance docs ----------------------
+# --- 3. Fill the mechanical slots across the project-owned governance docs ------------------
+# GAP-006: only files the project OWNS get slot fills. Verbatim kit files (adoption/,
+# specs/_templates/, the fixed docs/sdlc pages) mention {{SLOT}}s in prose and are replaced
+# wholesale by update-kit.ps1 — filling them makes them look locally modified and produces
+# false conflicts on the first update run. Classification comes from kit-manifest.json
+# (same glob semantics as doc-lint's completeness sweep); files the manifest does not
+# classify are project-authored and therefore fillable.
+function ConvertTo-GlobRegex {
+    param([string]$Pattern)
+    $e = [regex]::Escape($Pattern)
+    $e = $e -replace '\\\*\\\*', '@@DBLSTAR@@'
+    $e = $e -replace '\\\*', '[^/]*'
+    $e = $e -replace '@@DBLSTAR@@', '.*'
+    return "^$e`$"
+}
+function Get-PatternSpecificity {
+    param([string]$Pattern)
+    $starIdx = $Pattern.IndexOf('*')
+    if ($starIdx -lt 0) { return 1000000 + $Pattern.Length }
+    return $starIdx
+}
+$manifestPath = Join-Path $Root 'kit-manifest.json'
+$manifestEntries = (Test-Path $manifestPath) ? @((Get-Content $manifestPath -Raw | ConvertFrom-Json).entries) : $null
+if (-not $manifestEntries) {
+    Write-Host 'WARN:   kit-manifest.json missing (partial install?) — slot fill skips only adoption/ and specs/_templates/'
+}
+function Test-FillableDoc {
+    param([string]$RelPath)
+    if ($manifestEntries) {
+        $hits = @($manifestEntries | Where-Object { $RelPath -match (ConvertTo-GlobRegex $_.path) })
+        if ($hits.Count -eq 0) { return $true }   # unclassified — project-authored, the project's own file
+        $maxSpec = ($hits | ForEach-Object { Get-PatternSpecificity $_.path } | Measure-Object -Maximum).Maximum
+        $classes = @(@($hits | Where-Object { (Get-PatternSpecificity $_.path) -eq $maxSpec }).class | Select-Object -Unique)
+        return $classes -notcontains 'verbatim'
+    }
+    return $RelPath -notmatch '^(adoption|specs/_templates)/'
+}
+
 $docFiles = @(
     @('CLAUDE.md', 'AGENTS.md', 'README.md', '.specify/memory/constitution.md') |
         ForEach-Object { Join-Path $Root $_ } | Where-Object { Test-Path $_ }
@@ -163,7 +200,9 @@ $docFiles = @(
         $p = Join-Path $Root $dir
         if (Test-Path $p) { Get-ChildItem $p -Recurse -Filter *.md -File | ForEach-Object FullName }
     }
-)
+) | Where-Object {
+    Test-FillableDoc (([IO.Path]::GetRelativePath($Root, $_)) -replace '\\', '/')
+}
 
 $repositoryList = $Topology -eq 'single' `
     ? 'This repository is the only repository.' `

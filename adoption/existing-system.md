@@ -50,8 +50,8 @@ For business-critical calculations, add characterization tests first: feed real 
 pin the current outputs as exact expected values (to the cent, to the row). These tests
 define "unchanged" — without them, an agent's silent behavioral drift is invisible until
 production. Do this at feature 001, not after the first incident. Before the first migration
-in this track, run the dedicated-database check in `docs/rulebooks/database-rules-template.md`
-(Setup).
+in this track, run the dedicated-database check in **docs/rulebooks/database-rules-template.md**
+(Setup) — or in the project's instantiated database rulebook once one exists.
 
 ## 5. First agent features are read-only derivations
 
@@ -70,8 +70,8 @@ periodically; the audit → numbered-remediation loop is how the reference deplo
 ## 7. Grandfather deliberately
 
 Adopt each compliance checklist with an explicit date and grandfathering rule (see
-`docs/rulebooks/compliance-checklist-template.md`), and instantiate a rulebook for each tier
-the system actually has — pick from the menu in `docs/rulebooks/README.md` —
+**docs/rulebooks/compliance-checklist-template.md**), and instantiate a rulebook for each tier
+the system actually has — pick from the menu in **docs/rulebooks/README.md** —
 **descriptively**: codifying the conventions the code
 already has, exactly like the constitution (step 2): old code is brought into compliance only
 when a feature touches it. This keeps "adopt the framework" from mutating into "rewrite the
