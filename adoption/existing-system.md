@@ -49,7 +49,9 @@ conflict" against a source of truth that exists in writing.
 For business-critical calculations, add characterization tests first: feed real inputs,
 pin the current outputs as exact expected values (to the cent, to the row). These tests
 define "unchanged" — without them, an agent's silent behavioral drift is invisible until
-production. Do this at feature 001, not after the first incident.
+production. Do this at feature 001, not after the first incident. Before the first migration
+in this track, run the dedicated-database check in `docs/rulebooks/database-rules-template.md`
+(Setup).
 
 ## 5. First agent features are read-only derivations
 
@@ -79,6 +81,18 @@ Machine assist: `pwsh -File scripts/init-kit.ps1` handles the mechanical part �
 the selected tier rulebooks, wires CLAUDE.md's rows, fills the name/repository slots — and
 prints what remains for a human. The descriptive content of each rulebook is still yours to
 write.
+
+If this adoption scaffolds a new component or repo into the existing system (rather than only
+wrapping governance around code that already exists), run it past
+`adoption/greenfield.md` step 3's scaffolding-tool traps checklist (env-file gitignore swallow,
+skipped `git init`) before the first commit of that new component.
+
+**Normalizing externally authored rulebook content**: rulebooks in this track are often seeded
+from material written outside this kit (a prior project's rule pack, a team wiki export).
+Normalize it before it lands, or doc-lint fails on paths that don't resolve here: write paths
+that refer to the adopter's code (not kit governance files) in **bold**, not backticks, and
+fill or remove anything that looks like a `{{SLOT}}` placeholder. The authoring convention is
+documented in `scripts/doc-lint.ps1`'s header comment.
 
 ## 8. Keep the framework honest
 

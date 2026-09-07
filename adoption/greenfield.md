@@ -26,7 +26,7 @@ exist and exits non-zero on a partial install.
 Copy the kit, then fill every `{{SLOT}}` and `TODO(...)` in `.specify/memory/constitution.md`:
 project name, PK standard, audit fields, repository names (or delete principle III for
 single-repo). Write the domain-invariants pack (`modules/finance/finance-invariants.md` is the
-model) and point principle VII at it. Bump to v1.0.0 with today's ratification date. Keep it
+model) and point principle V at it. Bump to v1.0.0 with today's ratification date. Keep it
 under ~20 principles — a constitution that says everything governs nothing.
 
 ## 2. Fill CLAUDE.md
@@ -43,8 +43,15 @@ the file thin; rules live in rulebooks, CLAUDE.md holds pointers.
 
 Machine assist: `pwsh -File scripts/init-kit.ps1` does the mechanical part of steps 1–2 —
 instantiates the selected tier rulebooks, wires the Task-Scoped Reading rows, fills
-`FlowBoard` and the repository slots — then prints the judgment slots that remain
+`{{PROJECT_NAME}}` and the repository slots — then prints the judgment slots that remain
 yours. It never writes rulebook content or ratifies the constitution.
+
+**Normalizing externally authored rulebook content**: when a rulebook is seeded from material
+written outside this kit (a prior project's rule pack, a team wiki export), normalize it
+before it lands, or doc-lint fails on paths that don't resolve here: write paths that refer to
+the adopter's code (not kit governance files) in **bold**, not backticks, and fill or remove
+anything that looks like a `{{SLOT}}` placeholder. The authoring convention is documented in
+`scripts/doc-lint.ps1`'s header comment.
 
 ## 3. Define and PROVE the gate
 
@@ -52,6 +59,24 @@ Fill the gate slots in `docs/sdlc/gate-command.md`, scaffold the empty project(s
 gate until it exits 0 on the empty scaffold. **A gate that has never been green is not a
 gate.** Do this before any feature — otherwise the first feature debugs the toolchain and the
 feature at once.
+
+**Scaffolding-tool traps** — check these immediately after each scaffolding CLI runs, before
+the first commit:
+
+- **Env-file gitignore swallow**: some scaffolding tools (e.g. `create-next-app`) generate a
+  `.gitignore` with a blanket `.env*` pattern that also excludes `.env.example`, silently
+  dropping it from every commit. Run `git status --ignored` right after scaffolding and
+  confirm `.env.example` is not listed as ignored; if it is, add a `!.env.example` negation
+  line.
+- **Skipped or re-initialized `git init`**: some scaffolding CLIs skip `git init` when run
+  inside a directory that is already part of a git repository — or worse, initialize a stray
+  nested repo. Run `git status` and `git rev-parse --show-toplevel` right after scaffolding and
+  confirm new files appear as untracked additions at the expected parent-repo root, not inside
+  a stray nested `.git`.
+- **Strict-build flag fails on a transitive vulnerability**: if proving the gate trips a
+  strict-build flag on a dependency the scaffold pulled in transitively, triage per
+  `docs/sdlc/gate-command.md` ("Strict-build flags vs transitive-dependency
+  vulnerabilities") — never by disabling the flag.
 
 ## 4. Ship `001-solution-scaffold` as a real feature
 
@@ -75,6 +100,8 @@ reviews it.
 - Foundations before domain logic: auth, core entities, permissions, reference data.
 - **Read-only slices before write slices** for each domain area: a view/report over data
   teaches the agent (and validates the model) at zero risk before the first mutation ships.
+  When planning the first write slice, run the dedicated-database check in
+  `docs/rulebooks/database-rules-template.md` (Setup) before its first migration.
 - One deliverable per feature; one phase per commit.
 
 ## 6. Grow the rulebooks reactively

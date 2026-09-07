@@ -136,6 +136,8 @@ Given that feature description, do this:
       - [ ] Focused on user value and business needs
       - [ ] Written for non-technical stakeholders
       - [ ] All mandatory sections completed
+      - [ ] `Delivery Level` header is filled with one of Lite, Standard, or Critical
+        (`docs/sdlc/critical-delivery.md`) — not left as a placeholder
       
       ## Requirement Completeness
       
