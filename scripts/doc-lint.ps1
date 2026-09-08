@@ -44,6 +44,8 @@ $Root = (Resolve-Path $Root).Path
 
 # --- Kit integrity: a partial install (dot-directories skipped during copy) makes the
 # agent lose the /speckit.* commands and improvise its own structure. Fail fast.
+# Keep in sync with scripts/verify-kit.ps1 $requiredKitPaths (007 research D2: same
+# paths, different fix pointers — doc-lint speaks for the kit, the doctor for the adoption).
 $requiredKitPaths = @(
     'CLAUDE.md'
     'AGENTS.md'

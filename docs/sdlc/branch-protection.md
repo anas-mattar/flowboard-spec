@@ -1,13 +1,21 @@
 # Branch Protection Recipe
 
-Makes `.github/workflows/enforcement-pack.yml` an actual merge gate on GitHub, not just an
-informative CI run — completing the enforcement pack (kit feature 002).
-Without this, the checks in `scripts/enforcement-pack.ps1` run but nothing stops a PR that
-fails them from being merged anyway.
+Makes `.github/workflows/ritual-checks.yml` an actual merge gate on GitHub, not just an
+informative CI run — completing the enforcement pack (kit feature 002) and the
+verification pack (kit feature 006). Without this, the checks in
+`scripts/ritual-checks.ps1` (doc-lint + enforcement-pack + scope-check, plus the adoption
+doctor in adopted projects — kit feature 007) run but nothing stops a PR that fails them
+from being merged anyway.
+
+> **Migrating from the 002-era checks**: `ritual-checks` supersedes the separate
+> `doc-lint` and `enforcement-pack` workflows/check names. A repository that already
+> requires those two must add `ritual-checks` to the required list and remove the two
+> old names once the new workflow has run — a required check that no workflow produces
+> blocks every merge.
 
 ## Prerequisite
 
-The `enforcement-pack` workflow (`.github/workflows/enforcement-pack.yml`) must have run
+The `ritual-checks` workflow (`.github/workflows/ritual-checks.yml`) must have run
 at least once on this repository (any push or PR) — GitHub only lists a check as available
 to require after it has appeared at least once.
 
@@ -18,9 +26,8 @@ to require after it has appeared at least once.
    existing rule for `main`, if one exists).
 3. **Branch name pattern**: `main`.
 4. Enable **Require status checks to pass before merging**.
-5. In the status-check search box, find and select **enforcement-pack** (the job name from
-   `.github/workflows/enforcement-pack.yml`). Also select **doc-lint** if it isn't already
-   required.
+5. In the status-check search box, find and select **ritual-checks** (the job name from
+   `.github/workflows/ritual-checks.yml`).
 6. Enable **Require branches to be up to date before merging** — so the check re-runs
    against the latest `main`, matching `docs/sdlc/team-workflow.md` §6 ("Rebase before
    gate").
@@ -39,7 +46,7 @@ cat > branch-protection.json <<'JSON'
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": ["enforcement-pack", "doc-lint"]
+    "contexts": ["ritual-checks"]
   },
   "enforce_admins": true,
   "required_pull_request_reviews": null,
@@ -57,8 +64,17 @@ Replace `{owner}/{repo}` with this repository's path.
 ## Verifying it worked
 
 Open a PR from a branch you know will fail a check (e.g. a `NNN-*` branch missing
-`plan.md`). The PR page should show the `enforcement-pack` check as failing/red, and the
-merge button should be disabled with a message naming the required check.
+`plan.md`, or a phase commit touching a file outside its declared territory). The PR page
+should show the `ritual-checks` check as failing/red, and the merge button should be
+disabled with a message naming the required check.
+
+## Recommended addition: the project gate (adopted projects)
+
+Where the project-gate workflow is wired (**.github/workflows/project-gate.yml**, copied
+from the kit's template — `docs/sdlc/gate-command.md`, "Wiring the project gate in CI"),
+also select **project-gate** as a required status check in step 5. Recommended, never
+mandated by the kit: it makes the CI-held evidence (constitution X) a merge gate too, but
+projects whose gates cannot run in CI keep the user-run gate as their lawful path.
 
 ## What this does NOT cover
 

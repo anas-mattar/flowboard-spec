@@ -21,9 +21,13 @@ non-zero on a partial install.
 Your first "feature" writes documents only:
 
 - Inventory the stack, repositories, build/test commands, environments.
-- Get the gate green **on untouched code** and record the command + exit code. If the gate
-  can't go green as-is, fixing that is the first (and only) code change — nothing else ships
-  over a red baseline.
+- Get the gate green **on untouched code** and record the command + exit code as a
+  `gateProof` entry in **kit-adoption.json** (shape in `adoption/updating.md`; create the
+  file by hand if `init-kit.ps1` hasn't run yet — init preserves an existing record, so
+  your attestation survives; never paste secrets into the recorded command) — the
+  adoption doctor (`scripts/verify-kit.ps1`) fails until at least one exit-0 proof exists. If the
+  gate can't go green as-is, fixing that is the first (and only) code change — nothing
+  else ships over a red baseline.
 - Write down the architecture as it actually is (a short technical-handover doc), including
   the parts you don't like.
 
@@ -96,6 +100,11 @@ documented in `scripts/doc-lint.ps1`'s header comment.
 
 ## 8. Keep the framework honest
 
-Same as greenfield step 7: doc-lint in CI (every referenced path exists), CI gate as second
-witness, and institutional knowledge (deploy residuals, protected data registers, open
-sign-offs) in the repo — not in one person's chat memory.
+Same as greenfield step 7: the ritual checks in CI — the kit's
+`.github/workflows/ritual-checks.yml` runs `scripts/ritual-checks.ps1` (doc-lint +
+enforcement-pack + scope-check + the adoption doctor) on every governed-branch push, and
+finishing adoption includes requiring the `ritual-checks` status check
+(`docs/sdlc/branch-protection.md`);
+on other CI hosts, invoke the same wrapper for identical verdicts — plus the CI gate as
+second witness, and institutional knowledge (deploy residuals, protected data registers,
+open sign-offs) in the repo — not in one person's chat memory.

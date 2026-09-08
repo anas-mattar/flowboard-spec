@@ -26,5 +26,5 @@ permission grants, feature flags, environment variables.]
 
 ## Verification After Rollback
 
-- [ ] Gate passes on the reverted state (user-confirmed exit code)
+- [ ] Gate passes on the reverted state (user-confirmed exit code — or, on a `ci-held` feature, the owner's recorded approval on CI evidence for the reverted state)
 - [ ] [Feature-specific check that the pre-feature behavior is actually restored]

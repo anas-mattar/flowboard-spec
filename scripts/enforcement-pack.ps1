@@ -3,7 +3,7 @@
     Enforcement pack: mechanically checks the kit's delivery-level non-negotiables.
 
 .DESCRIPTION
-    Converts five previously-prose rules into CI-agnostic checks, run against the current
+    Converts previously-prose rules into CI-agnostic checks, run against the current
     branch's diff versus main:
 
       - Structure       (NNN-* branches): spec.md/plan.md/tasks.md exist; Delivery Level
@@ -18,6 +18,19 @@
                          and was first committed at least $Config.CoolingOffHours ago.
       - PhaseSizeWarning (NNN-* branches): non-blocking warning when a single commit's
                          diff exceeds the configured line/file thresholds.
+      - GateCertification (NNN-* branches): the plan.md '**Gate Certification**'
+                         declaration, when present, must be 'user-run' or 'ci-held', and
+                         'ci-held' is prohibited on Critical features (constitution X,
+                         CI-held certification; docs/sdlc/critical-delivery.md item 4).
+                         An absent line means 'user-run' — plans from before the clause
+                         remain valid.
+      - ReviewProvenance (all recognized lanes): every specs/**/ai-code-review*.md ADDED
+                         (or arriving as a rename target) in the branch's diff must carry
+                         a '## Reviewer Provenance' section whose OWN Reviewer line is
+                         filled and is neither the implementer nor an unfilled
+                         placeholder, plus the verbatim non-implementer attestation
+                         (DoD gate 5, feature 006). Pre-existing reviews at their
+                         historical paths are grandfathered by construction.
       - GateBatching     (NNN-* branches): the plan.md '**Gate Batching**' declaration,
                          when present, must be 'none' or 'phases N-M' spanning at most
                          $Config.MaxBatchPhases consecutive phases, and is prohibited
@@ -38,6 +51,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# git emits UTF-8 paths (quotepath is disabled where needed); align pwsh's native-output
+# decoding so non-ASCII filenames round-trip on Windows consoles too (phase 2 review, F2).
+try { [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new() } catch {}
 $Root = (Resolve-Path $Root).Path
 Push-Location $Root
 try {
@@ -80,6 +96,18 @@ function Get-ChangedFiles {
     param([string]$Base)
     if (-not $Base) { return @() }
     (git diff --name-only $Base HEAD 2>$null) | Where-Object { $_ }
+}
+
+# Plan-header declarations must be parsed from VISIBLE text only: a declaration hidden in
+# an HTML comment block must never win first-match over the rendered one (008 phase 2
+# review, F1 — a commented-out decoy could otherwise defeat the Critical exclusions of
+# both Gate Batching and Gate Certification). Closed comment blocks are removed wholesale;
+# the per-line trailing strip in each parser still handles the template's own same-line
+# comment openings.
+function Get-VisiblePlanLines {
+    param([string]$PlanPath)
+    $raw = "$(Get-Content -LiteralPath $PlanPath -Raw)"
+    return ([regex]::Replace($raw, '(?s)<!--.*?-->', '')) -split "`r?`n"
 }
 
 function Test-GlobAny {
@@ -182,7 +210,7 @@ function Invoke-GateBatchingCheck {
     $planPath = Join-Path $dir 'plan.md'
     if (-not (Test-Path $planPath)) { return }   # missing plan.md is StructureCheck's failure
 
-    $line = (Get-Content $planPath | Where-Object { $_ -match '^\*\*Gate Batching\*\*:' } | Select-Object -First 1)
+    $line = (Get-VisiblePlanLines -PlanPath $planPath | Where-Object { $_ -match '^\*\*Gate Batching\*\*:' } | Select-Object -First 1)
     if (-not $line) { return }                   # absent line means 'none' (backward compatible)
 
     # Strip any trailing HTML comment (the template ships one) before parsing the value.
@@ -208,6 +236,88 @@ function Invoke-GateBatchingCheck {
         $level = (Get-Content $specPath | Where-Object { $_ -match '^\*\*Delivery Level\*\*:' } | Select-Object -First 1)
         if ($level -match '^\*\*Delivery Level\*\*:\s*Critical\b') {
             $script:failures += "GateBatching: $dir declares a gate batch on a Critical feature — Critical features never batch; every phase keeps its own human-executed gate (docs/sdlc/critical-delivery.md item 4)"
+        }
+    }
+}
+
+# --- Gate-certification check (008: constitution X, CI-held certification) ---
+# Legal values are constitutional constants (sync-listed): 'user-run' | 'ci-held'.
+# Absent line means 'user-run' (plans from before the clause remain valid). Critical
+# features MUST NOT declare ci-held (constitution X; docs/sdlc/critical-delivery.md item 4).
+function Invoke-GateCertificationCheck {
+    param([string]$Branch)
+    if ($Branch -notmatch '^\d{3}-') { return }
+    $dir = "specs/$Branch"
+    $planPath = Join-Path $dir 'plan.md'
+    if (-not (Test-Path $planPath)) { return }   # missing plan.md is StructureCheck's failure
+
+    $line = (Get-VisiblePlanLines -PlanPath $planPath | Where-Object { $_ -match '^\*\*Gate Certification\*\*:' } | Select-Object -First 1)
+    if (-not $line) { return }                   # absent line means 'user-run' (backward compatible)
+
+    # Strip any trailing HTML comment (the template ships one) before parsing the value.
+    $value = ($line -replace '^\*\*Gate Certification\*\*:\s*', '' -replace '<!--.*$', '').Trim()
+    if ($value -eq '' -or $value -eq 'user-run') { return }
+
+    if ($value -ne 'ci-held') {
+        $script:failures += "GateCertification: $dir/plan.md declares '**Gate Certification**: $value' — must be 'user-run' or 'ci-held' (constitution X, CI-held certification)"
+        return
+    }
+
+    $specPath = Join-Path $dir 'spec.md'
+    if (Test-Path $specPath) {
+        $level = (Get-Content $specPath | Where-Object { $_ -match '^\*\*Delivery Level\*\*:' } | Select-Object -First 1)
+        if ($level -match '^\*\*Delivery Level\*\*:\s*Critical\b') {
+            $script:failures += "GateCertification: $dir declares '**Gate Certification**: ci-held' on a Critical feature — Critical features MUST NOT use CI-held certification; every certifying gate stays human-executed, locally (constitution X, CI-held certification; docs/sdlc/critical-delivery.md item 4)"
+        }
+    }
+}
+
+# --- Review-provenance check (006 FR-006: DoD gate 5, reviewer separation) ---
+# Inspects only AI-review files ADDED in the branch's diff vs base (--diff-filter=A), so
+# reviews shipped before the verification pack — and every adopted project's history —
+# are grandfathered automatically (006 research D4). Templates are exempt.
+function Invoke-ReviewProvenanceCheck {
+    param([string]$Branch, [string]$Base)
+    if (-not $Base) { return }
+    # Runs on every recognized lane (self-scoping via the diff filter) so a review file
+    # cannot be smuggled in through fix/chore/docs branches (phase 2 review, F7).
+    # AR filter: rename TARGETS are inspected like additions — moving a grandfathered
+    # review into the feature is not legitimate grandfathering (phase 2 review, F3).
+    # quotepath=off so non-ASCII filenames cannot dodge the pattern (phase 2 review, F2).
+    $rows = git -c core.quotepath=off diff --name-status --diff-filter=AR $Base HEAD 2>$null
+    $candidates = @()
+    foreach ($row in $rows) {
+        if (-not $row) { continue }
+        $parts = $row -split "`t"
+        if ($parts.Count -lt 2) { continue }
+        $target = if ($parts[0] -match '^R' -and $parts.Count -ge 3) { $parts[2] } else { $parts[1] }
+        if ($target -match '^specs/' -and $target -notmatch '^specs/_templates/' -and $target -match 'ai-code-review[^/]*\.md$') {
+            $candidates += $target
+        }
+    }
+    $attestation = 'This reviewer did not produce the diff under review.'
+    foreach ($file in $candidates) {
+        if (-not (Test-Path -LiteralPath $file)) {
+            $script:failures += "ReviewProvenance: $file is in the branch diff but missing from the working tree — cannot verify provenance (fail-closed)"
+            continue
+        }
+        $content = Get-Content -LiteralPath $file -Raw
+        if ($content -notmatch '(?m)^##\s+Reviewer Provenance') {
+            $script:failures += "ReviewProvenance: $file has no '## Reviewer Provenance' section — the AI review must be produced by a fresh-context agent or second model and say so (DoD gate 5; specs/_templates/ai-code-review-template.md)"
+            continue
+        }
+        # Inspect ONLY the provenance section: the template's document header also carries
+        # a '**Reviewer**:' field, which must never shadow the block's (phase 2 review, F1).
+        $slice = if ($content -match '(?ms)^##\s+Reviewer Provenance\s*$(.*?)(?=^##\s|\z)') { $matches[1] } else { '' }
+        $reviewerLine = $slice -split "`n" | Where-Object { $_ -match '^\s*[-*]?\s*\*\*Reviewer\*\*:\s*(\S.*)$' } | Select-Object -First 1
+        $reviewerValue = if ($reviewerLine -match '\*\*Reviewer\*\*:\s*(.+)$') { $matches[1].Trim() } else { '' }
+        if (-not $reviewerValue) {
+            $script:failures += "ReviewProvenance: $file has no filled '**Reviewer**:' line inside its Reviewer Provenance section"
+        } elseif ($reviewerValue -match '^(?i)implementer\b' -or $reviewerValue -match '^\[') {
+            $script:failures += "ReviewProvenance: $file attests '$reviewerValue' as reviewer — the implementing agent must not review its own diff, and template placeholders must be filled (DoD gate 5)"
+        }
+        if ($content -notmatch [regex]::Escape($attestation)) {
+            $script:failures += "ReviewProvenance: $file is missing the verbatim attestation sentence '$attestation'"
         }
     }
 }
@@ -250,11 +360,15 @@ if ($Branch -in @('main', 'master')) {
     Invoke-StructureCheck -Branch $Branch
     Invoke-CriticalEvidenceCheck -Branch $Branch
     Invoke-GateBatchingCheck -Branch $Branch
+    Invoke-GateCertificationCheck -Branch $Branch
+    Invoke-ReviewProvenanceCheck -Branch $Branch -Base $diffBase
     Invoke-PhaseSizeWarningCheck -Branch $Branch -Base $diffBase
 } elseif ($Branch -match '^(fix|chore)/') {
     Invoke-LiteAndAbuseCheck -Branch $Branch -ChangedFiles $changedFiles
+    Invoke-ReviewProvenanceCheck -Branch $Branch -Base $diffBase
 } elseif ($Branch -match '^docs/') {
-    Write-Host "enforcement-pack: '$Branch' is the lightweight docs/ lane — no scripted checks apply"
+    Invoke-ReviewProvenanceCheck -Branch $Branch -Base $diffBase
+    Write-Host "enforcement-pack: '$Branch' is the lightweight docs/ lane — review-provenance is the only scripted check that applies"
 } else {
     $script:failures += "Branch naming: '$Branch' does not match a known taxonomy (NNN-*, fix/*, chore/*, docs/*) — see docs/sdlc/branch-strategy.md"
 }

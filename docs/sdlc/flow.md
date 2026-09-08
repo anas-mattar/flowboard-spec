@@ -22,10 +22,13 @@ owning document, the owning document prevails — and the constitution
 │ 3 PHASE LOOP   one approved phase at a time                         │
 │                                                                     │
 │      implement one phase (UI + visual refs → compliance loop)       │
-│         → owner runs the GATE, confirms the exit code               │
-│         → SCOPE CHECK: git diff --stat = this phase's files only    │
-│         → AI REVIEW checklist                                       │
-│         → commit the phase                                          │
+│         → owner certifies the GATE (exit code — or, plan-declared   │
+│           ci-held, evidence approval AFTER the phase commit below)  │
+│         → commit the phase ('phase N' in the subject)               │
+│         → SCOPE CHECK: scope-check.ps1 = declared territory only    │
+│         → AI REVIEW by a fresh-context reviewer (provenance block)  │
+│                                                                     │
+│      ritual-checks CI re-runs the machine checks on every push      │
 │                                                                     │
 │      more approved phases? ── yes ──► loop                          │
 └───────────────────────────────┬─────────────────────────────────────┘
@@ -48,10 +51,10 @@ owning document, the owning document prevails — and the constitution
 | 1 | Claim | Branch `NNN-name` maps to `specs/NNN-name/`; push immediately — the remote branch is the claim | `docs/sdlc/branch-strategy.md`, `docs/sdlc/team-workflow.md` (rules 2–3) |
 | 2 | Specify | **Specification approved**: `spec.md`, then `plan.md`, then `tasks.md`, approved before implementation | `.specify/memory/constitution.md` (I), `docs/sdlc/definition-of-done.md` (gate 1) |
 | 3a | Implement | Exactly one approved phase; UI with visual references runs the Visual Compliance Loop | `.specify/memory/constitution.md` (X), `docs/sdlc/review-process.md` |
-| 3b | Gate | **User-run gate**: the owner runs it and confirms the exit code — agent runs are feedback only | `docs/sdlc/gate-command.md`, `docs/sdlc/definition-of-done.md` (gate 3) |
-| 3c | Scope check | **Diff review**: `git diff --stat` shows only this phase's intended files; revert anything else | `docs/sdlc/review-process.md`, `docs/sdlc/definition-of-done.md` (gate 4) |
-| 3d | AI review | **AI review checklist** completed from `specs/_templates/ai-code-review-template.md` | `docs/sdlc/definition-of-done.md` (gate 5) |
-| 3e | Commit | One commit per phase, so a bad phase reverts cleanly | `docs/sdlc/branch-strategy.md`, `docs/sdlc/rollback-process.md` |
+| 3b | Gate | **Certifying gate**: the owner runs it and confirms the exit code — or, when the approved plan declares `**Gate Certification**: ci-held` (Lite/Standard only), records approval on the CI evidence triplet; agent runs are feedback only in either mode | `docs/sdlc/gate-command.md`, `docs/sdlc/definition-of-done.md` (gate 3) |
+| 3c | Commit | One commit per phase (`phase N` in the subject) after the owner's `git diff --stat` intent review, so a bad phase reverts cleanly and the scope check can attribute it; `ritual-checks` CI re-runs the machine checks on every push | `docs/sdlc/branch-strategy.md`, `docs/sdlc/rollback-process.md`, `docs/sdlc/branch-protection.md` |
+| 3d | Scope check | **Machine scope check**: `scripts/scope-check.ps1` verifies the committed phase against its declared **Territory** in `tasks.md` (PASS required; a failing commit is remediated and redone) | `docs/sdlc/review-process.md`, `docs/sdlc/definition-of-done.md` (gate 4) |
+| 3e | AI review | **AI review** completed from `specs/_templates/ai-code-review-template.md` by a **fresh-context agent or second model** (never self-graded), with the Reviewer Provenance block | `docs/sdlc/definition-of-done.md` (gate 5), `docs/sdlc/review-process.md` |
 | 4 | Feature review | **Human review**, once per feature at merge — in a team the reviewer is never the owner | `.specify/memory/constitution.md` (IX), `docs/sdlc/definition-of-done.md` (gate 6), `specs/_templates/human-pr-review-template.md` |
 | 5 | Merge | Push the branch, merge `--no-ff` into protected `main`; CI on `main` is the cross-feature referee | `docs/sdlc/branch-strategy.md`, `docs/sdlc/team-workflow.md` (rule 8) |
 
@@ -69,6 +72,11 @@ feature**, at merge.
 - **Batched gates**: a Lite/Standard plan may declare up to 3 consecutive phases sharing
   one certifying user-run gate at batch end (`docs/sdlc/gate-command.md`, constitution X)
   — per-phase commits, scope checks, and AI reviews stay; Critical never batches.
+- **CI-held certification**: a Lite/Standard plan may declare `**Gate Certification**:
+  ci-held` — certification becomes the owner's recorded approval on the CI evidence
+  triplet (run URL + green conclusion + exact phase-commit sha) instead of a live
+  user-run gate (`docs/sdlc/gate-command.md`, constitution X). The agent still never
+  claims success; Critical never uses it; absent the declaration, `user-run` is the value.
 - **Teams**: ownership, claims, territory, cross-review, and parallel work are governed
   by `docs/sdlc/team-workflow.md`; single-developer projects can ignore it.
 - **Pipelining**: while a feature sits in step 4 (awaiting review), its owner may claim

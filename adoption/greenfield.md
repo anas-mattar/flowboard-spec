@@ -43,8 +43,12 @@ the file thin; rules live in rulebooks, CLAUDE.md holds pointers.
 
 Machine assist: `pwsh -File scripts/init-kit.ps1` does the mechanical part of steps 1–2 —
 instantiates the selected tier rulebooks, wires the Task-Scoped Reading rows, fills
-`{{PROJECT_NAME}}` and the repository slots — then prints the judgment slots that remain
-yours. It never writes rulebook content or ratifies the constitution.
+`{{PROJECT_NAME}}` and the repository slots, and writes **kit-adoption.json** (the durable
+record of your name/topology/tier choices — the adoption doctor's source of truth,
+owner-editable if tiers change later) — then prints the judgment slots that remain yours
+and finishes by running `scripts/verify-kit.ps1`, whose red verdict at that moment is your
+remaining to-do list, not a failure. It never writes rulebook content or ratifies the
+constitution.
 
 **Normalizing externally authored rulebook content**: when a rulebook is seeded from material
 written outside this kit (a prior project's rule pack, a team wiki export), normalize it
@@ -59,6 +63,12 @@ Fill the gate slots in `docs/sdlc/gate-command.md`, scaffold the empty project(s
 gate until it exits 0 on the empty scaffold. **A gate that has never been green is not a
 gate.** Do this before any feature — otherwise the first feature debugs the toolchain and the
 feature at once.
+
+**Record the proof** in **kit-adoption.json** (written by `init-kit.ps1`; shape documented in
+`adoption/updating.md`): add a `gateProof` entry with the exact command, its exit code (0),
+the date, and who ran it — never paste secrets into the command line. This is your
+attestation; no tool writes it for you, and `scripts/verify-kit.ps1` (the adoption doctor)
+fails until at least one exit-0 proof exists.
 
 **Scaffolding-tool traps** — check these immediately after each scaffolding CLI runs, before
 the first commit:
@@ -119,10 +129,17 @@ owns it.
 
 From the first week:
 
-- **Doc-lint**: a CI step (or scheduled check) asserting every path referenced by CLAUDE.md
-  and the constitution exists. Drift between docs and reality is the disease that kills
-  rule-based frameworks.
-- **CI gate as second witness**: run the gate on every push. The user-run gate remains the
-  trust ritual; CI catches the day someone skips it.
+- **Ritual checks in CI**: the kit ships `.github/workflows/ritual-checks.yml`, which runs
+  `scripts/ritual-checks.ps1` (doc-lint + enforcement-pack + scope-check + the adoption
+  doctor in adopted projects) on every push to a governed branch. **Finishing adoption includes wiring `ritual-checks` as a required status
+  check** (`docs/sdlc/branch-protection.md`); until then, or on a CI host other than GitHub
+  Actions, run the same single command locally or from your CI:
+  `pwsh -File scripts/ritual-checks.ps1` — the wrapper and CI produce identical verdicts by
+  construction. Drift between docs and reality is the disease that kills rule-based
+  frameworks; a check that runs only by discipline eventually doesn't run.
+- **CI gate as second witness**: run the gate on every push. The owner-held certifying
+  gate (user-run — or plan-declared `ci-held`, where the CI run itself becomes the
+  approved evidence; `docs/sdlc/gate-command.md`) remains the trust ritual; CI catches
+  the day someone skips it.
 - **Institutional knowledge lives in the repo**, not in one person's chat memory: deployment
   residuals, protected test data, open sign-offs get a home under `docs/`.

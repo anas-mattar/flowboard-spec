@@ -21,6 +21,8 @@
       "reason": "projects customize; citations swept per amendment" },
     { "path": "docs/rulebooks/**", "class": "surgical",
       "reason": "tier templates are instantiated with project-specific rules" },
+    { "path": ".github/workflows/project-gate.yml.template", "class": "surgical",
+      "reason": "gate-slot-bearing template (tier-rulebook pattern): the adopter copies it to project-gate.yml and fills the slots; deletable like the tier menu" },
     { "path": "modules/**", "class": "surgical",
       "reason": "worked examples; projects replace with their own domain modules" },
     { "path": "docs/sdlc/branch-protection.md", "class": "verbatim" },

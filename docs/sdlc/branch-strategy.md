@@ -67,8 +67,10 @@ project.
 
 - `main` is **protected**. No direct commits to `main`.
 - **One branch per feature.** Do not bundle unrelated work onto a single branch.
-- Merge to `main` only **after the gate passes (user-confirmed exit code) and human
-  review is approved** (see `docs/sdlc/review-process.md`, constitution IX–X).
+- Merge to `main` only **after the gate is certified (user-confirmed exit code — or,
+  under a plan-declared `ci-held`, the owner's recorded approval on the CI evidence
+  triplet) and human review is approved** (see `docs/sdlc/review-process.md`,
+  `docs/sdlc/gate-command.md`, constitution IX–X).
 - **Push the feature branch to `origin` before merging.** Once a feature is complete
   (gate green + human review approved), push the feature branch to its remote
   (`git push -u origin <branch>`) so the branch and its per-phase history are

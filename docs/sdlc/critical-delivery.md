@@ -43,16 +43,19 @@ Declare Critical when the feature touches any of:
    pass over the domain-invariants pack (constitution V), item by item, recorded in the
    review document.
    **Why**: invariant violations are the one class of defect the gate cannot catch.
-3. **Audit evidence retained** — the gate command + exit code, the `git diff --stat` output,
+3. **Audit evidence retained** — the gate command + exit code, the `scope-check.ps1`
+   verdict and the `git diff --stat` output,
    and both completed review checklists are kept in the feature directory.
    **Why**: "we reviewed it" must be demonstrable later, not remembered.
 4. **Human-executed gates only, one per phase** — the agent-run gate feedback loop
    (`docs/sdlc/gate-command.md`) does not apply, and neither does gate batching
-   (constitution X, Batched gates): a Critical feature MUST NOT declare
-   `**Gate Batching**` in its `plan.md` — `scripts/enforcement-pack.ps1` fails the branch
-   if it does. Every phase's gate run that counts toward Done is executed by a human.
+   (constitution X, Batched gates) nor CI-held certification (constitution X, CI-held
+   certification): a Critical feature MUST NOT declare `**Gate Batching**` or
+   `**Gate Certification**: ci-held` in its `plan.md` — `scripts/enforcement-pack.ps1`
+   fails the branch on either. Every phase's gate run that counts toward Done is executed
+   by a human, locally.
    **Why**: for Critical work, even the fast-feedback loop stays on the human side of the
-   trust boundary, and gate frequency is part of that boundary.
+   trust boundary, and both gate frequency and gate *execution* are part of that boundary.
 5. **Independent approval** — the human reviewer MUST NOT be the feature's owner
    (`docs/sdlc/team-workflow.md`). A solo developer substitutes:
    - a written **second-model adversarial review**, recorded as

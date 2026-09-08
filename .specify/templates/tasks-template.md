@@ -22,6 +22,41 @@ rather than silently dropping the tests section.
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
 
+## Phase Territory (machine scope check)
+
+Every phase heading MUST be followed by a `**Territory**:` list — the complete set of
+repo-relative paths and/or glob patterns the phase is allowed to touch:
+
+```markdown
+**Territory**:
+
+- `src/services/billing/**`
+- `docs/api/billing.md`
+```
+
+`scripts/scope-check.ps1` compares every phase commit's diff against its phase's territory
+and fails on any undeclared file (Definition of Done gate 4). Rules:
+
+- Entries must be **backtick-wrapped** list items containing only a path or glob. The list
+  ends at the first blank line (or non-entry line) after the entries begin — task
+  checklists that follow are never part of the territory. Exactly one `**Territory**:`
+  marker per phase; a duplicated marker or an empty entry list fails the check.
+- Wildcards use PowerShell `-like` semantics; `*` (and the conventional `**`) matches across
+  path separators. `[`, `]`, and `?` are matched **literally** (so `src/app/[id]/page.tsx`
+  declares itself), a trailing `/` means the whole subtree, and matching is
+  case-insensitive by design. Entries must be repo-relative — no absolute paths, no `..`.
+- The feature's own spec directory (`specs/NNN-name/**`) is always implicitly in territory —
+  never declare it.
+- Overlap between phases is legal. A rename touches both paths; a delete touches the deleted
+  path — all must be in territory.
+- Territory may be amended only with owner approval and only in a commit made **before** the
+  phase commit that relies on it: the check reads the declaration from the commit's parent,
+  so a stray file can never be legalized in the commit that introduces it.
+- Phase commits MUST carry a `phase N` token in the commit subject (e.g. `phase 2: entry
+  form`) so the check can attribute them.
+- A phase with no declaration produces a non-blocking warning (compatibility with features
+  specified before the verification pack); new features MUST declare territory per phase.
+
 ## Path Conventions
 
 - **Single project**: `src/`, `tests/` at repository root
@@ -52,6 +87,10 @@ rather than silently dropping the tests section.
 
 **Purpose**: Project initialization and basic structure
 
+**Territory**:
+
+- `[paths/this/phase/may/touch/**]`
+
 - [ ] T001 Create project structure per implementation plan
 - [ ] T002 Initialize [language] project with [framework] dependencies
 - [ ] T003 [P] Configure linting and formatting tools
@@ -63,6 +102,10 @@ rather than silently dropping the tests section.
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
+
+**Territory**:
+
+- `[paths/this/phase/may/touch/**]`
 
 Examples of foundational tasks (adjust based on your project):
 
@@ -82,6 +125,11 @@ Examples of foundational tasks (adjust based on your project):
 **Goal**: [Brief description of what this story delivers]
 
 **Independent Test**: [How to verify this story works on its own]
+
+**Territory**:
+
+- `[src/path/this/phase/may/touch/**]`
+- `[docs/specific-file.md]`
 
 ### Tests for User Story 1 (required for business-critical logic — constitution VIII) ⚠️
 
@@ -109,6 +157,10 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
+**Territory**:
+
+- `[paths/this/phase/may/touch/**]`
+
 ### Tests for User Story 2 (required for business-critical logic — constitution VIII) ⚠️
 
 - [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
@@ -130,6 +182,10 @@ Examples of foundational tasks (adjust based on your project):
 **Goal**: [Brief description of what this story delivers]
 
 **Independent Test**: [How to verify this story works on its own]
+
+**Territory**:
+
+- `[paths/this/phase/may/touch/**]`
 
 ### Tests for User Story 3 (required for business-critical logic — constitution VIII) ⚠️
 
@@ -153,6 +209,10 @@ Examples of foundational tasks (adjust based on your project):
 ## Phase N: Polish & Cross-Cutting Concerns
 
 **Purpose**: Improvements that affect multiple user stories
+
+**Territory**:
+
+- `[paths/this/phase/may/touch/**]`
 
 - [ ] TXXX [P] Documentation updates in docs/
 - [ ] TXXX Code cleanup and refactoring
@@ -248,6 +308,8 @@ With multiple developers:
 
 - [P] tasks = different files, no dependencies
 - [Story] label maps task to specific user story for traceability
+- Every phase declares its **Territory** (see "Phase Territory" above); `scope-check.ps1`
+  fails phase commits that touch undeclared files
 - Each user story should be independently completable and testable
 - Verify tests fail before implementing
 - Commit after each task or logical group

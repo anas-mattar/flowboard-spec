@@ -21,8 +21,10 @@
     differences never count as a change. A file that fails to read as text falls back
     to a raw-byte comparison.
 
-    Exit codes: 0 clean · 2 attention needed (conflicts and/or pending surgical work) ·
-    1 execution error / preflight refusal.
+    Exit codes: 0 clean · 2 attention needed (conflicts, pending surgical work, and/or a
+    red adoption-doctor verdict on the target) · 1 execution error / preflight refusal.
+    A non-DryRun, non-Json apply run ends with the target's scripts/verify-kit.ps1
+    verdict (007 FR-006); -Json callers run the doctor themselves.
 
     Contract: specs/004-kit-update-channel/contracts/update-kit-cli.md
 
@@ -292,5 +294,22 @@ if ($Json) {
     }
 }
 
-if ($conflicts.Count -gt 0 -or $surgicalReport.Count -gt 0) { exit 2 }
+# --- Adoption doctor verdict (007 FR-006) --------------------------------------------------
+# An apply run ends with the target's integrity verdict so flow-down damage surfaces in
+# the same terminal session that caused it. Child process: verify-kit terminates with
+# `exit`. Red doctor = "attention needed" (exit 2 — the documented meaning, unchanged).
+# Skipped in -DryRun (nothing changed to audit) and -Json (machine callers run
+# `verify-kit.ps1 -Json -Root <target>` themselves — adoption/updating.md).
+$doctorRed = $false
+if (-not $DryRun -and -not $Json) {
+    $doctorScript = Join-Path $Kit 'scripts/verify-kit.ps1'
+    if (Test-Path $doctorScript) {
+        Write-Host ''
+        Write-Host '--- adoption doctor (scripts/verify-kit.ps1) ---'
+        & pwsh -NoProfile -File $doctorScript -Root $Target
+        $doctorRed = ($LASTEXITCODE -ne 0)
+    }
+}
+
+if ($conflicts.Count -gt 0 -or $surgicalReport.Count -gt 0 -or $doctorRed) { exit 2 }
 exit 0

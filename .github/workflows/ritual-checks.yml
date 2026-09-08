@@ -1,0 +1,42 @@
+name: ritual-checks
+
+# One check = one command = the same code path anyone can run locally:
+#   pwsh -File scripts/ritual-checks.ps1
+# (doc-lint + enforcement-pack + scope-check; feature 006, contracts/ritual-checks-ci.md).
+# Supersedes the per-check doc-lint.yml and enforcement-pack.yml from feature 002 —
+# projects that required those check names must re-point branch protection to
+# 'ritual-checks' (docs/sdlc/branch-protection.md).
+
+on:
+  push:
+    branches:
+      - main            # post-merge trunk safety net (doc-lint on main — 002 parity)
+      - '[0-9][0-9][0-9]-*'
+      - 'fix/**'
+      - 'chore/**'
+      - 'docs/**'
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ritual-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # merge-base with origin/main and per-commit parent reads need full history
+          fetch-depth: 0
+      - name: Run the ritual checks (doc-lint + enforcement-pack + scope-check)
+        shell: pwsh
+        # pull_request checks out a detached-HEAD merge commit where branch detection
+        # returns the literal 'HEAD' — pass the branch explicitly (github.head_ref is
+        # empty on push events, where github.ref_name is the branch name).
+        # The branch name goes through an env var, NEVER interpolated into `run:` —
+        # github.head_ref is attacker-controlled on fork PRs and refnames may contain
+        # shell metacharacters (script-injection hardening; phase 3 review, F2).
+        env:
+          RITUAL_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: ./scripts/ritual-checks.ps1 -Branch $env:RITUAL_BRANCH

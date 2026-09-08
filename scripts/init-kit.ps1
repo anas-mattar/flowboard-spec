@@ -15,9 +15,13 @@
         deletes rows for tiers the project does not have, adds the mobile row when selected
       - fills the mechanical slots: {{PROJECT_NAME}}, {{BACKEND_REPO}}, {{FRONTEND_REPO}},
         {{REPOSITORY_LIST}}
+      - writes kit-adoption.json (the durable adoption record: name, topology, tiers,
+        init date, kit version; gateProof starts empty — recording the proof is the
+        human's attestation, adoption step 3)
       - prints the judgment slots that remain for a human (gate commands, PK standard,
         domain invariants, stack profile, ...)
-      - finishes by running scripts/doc-lint.ps1
+      - finishes by running scripts/verify-kit.ps1 (the adoption doctor) — a red verdict
+        at init end is the expected to-do list, not a failure; init still exits 0
 
     It never generates rulebook content — instantiated rulebooks keep their fill-by-hand
     instructions, and the constitution is still ratified by a human (adoption tracks, step 1/2).
@@ -221,6 +225,42 @@ foreach ($file in $docFiles) {
 }
 Write-Host "fill:   {{PROJECT_NAME}} -> $ProjectName; {{REPOSITORY_LIST}}$(($BackendRepo -or $FrontendRepo) ? '; repository slots' : '')"
 
+# --- 3b. Write the adoption record (007 FR-003) ---------------------------------------------
+# Durable, machine-readable, owner-editable record of the decisions init asked for — the
+# doctor's source of truth for "declared". gateProof stays empty: recording the proof is a
+# human attestation (adoption step 3), never tool-written.
+$recordPath = Join-Path $Root 'kit-adoption.json'
+if (Test-Path $recordPath) {
+    # NEVER overwrite: the record carries the owner's gate-proof attestation and any
+    # hand-declared tiers — destroying those would violate the human-attestation rule
+    # (007 data-model; phase 2 review F2). Same "keep" semantics as instantiated rulebooks.
+    Write-Host 'keep:   kit-adoption.json already exists — not overwritten (owner-edited record; delete it first to regenerate)'
+} else {
+    # kitVersionAtInit: trust the constitution's version line only while it is still the
+    # kit-shipped, unratified constitution — after ratification that line is the PROJECT's
+    # own semver, the wrong datum (phase 2 review F3; flagged for owner ratification).
+    $constPath = Join-Path $Root '.specify/memory/constitution.md'
+    $kitVersionAtInit = 'copy'
+    if (Test-Path $constPath) {
+        $constText = [IO.File]::ReadAllText($constPath)
+        if ($constText -match 'TODO\(RATIFICATION_DATE\)' -and
+            $constText -match '\*\*Version\*\*:\s*([0-9]+\.[0-9]+\.[0-9]+)') {
+            $kitVersionAtInit = $Matches[1]
+        }
+    }
+    $adoptionRecord = [ordered]@{
+        schemaVersion    = 1
+        projectName      = $ProjectName
+        topology         = $Topology
+        tiers            = @($Tiers)
+        initDate         = (Get-Date -Format 'yyyy-MM-dd')
+        kitVersionAtInit = $kitVersionAtInit
+        gateProof        = @()
+    }
+    [IO.File]::WriteAllText($recordPath, (($adoptionRecord | ConvertTo-Json -Depth 4) + "`n"))
+    Write-Host "record: kit-adoption.json written (tiers: $($Tiers -join ', ')); gateProof is yours to record (adoption step 3)"
+}
+
 # --- 4. Report the judgment slots that remain for a human -----------------------------------
 Write-Host ''
 Write-Host '=== Remaining for a human (judgment, not mechanics) ==='
@@ -242,7 +282,20 @@ if ($remaining) {
     Write-Host 'Locate them: grep -rn "{{\|TODO(" --include="*.md" .'
 }
 
-# --- 5. Doc-lint as the exit check -----------------------------------------------------------
+# --- 5. The adoption doctor as the exit check (007 FR-006) ----------------------------------
+# Child process: verify-kit terminates with `exit`. A red verdict here is EXPECTED — the
+# judgment slots and the gate proof are deliberately still open; the findings above are
+# the to-do list. Init's own success is "mechanical work done", so it exits 0 regardless.
 Write-Host ''
-& (Join-Path $PSScriptRoot 'doc-lint.ps1') -Root $Root
-exit $LASTEXITCODE
+$doctorScript = Join-Path $PSScriptRoot 'verify-kit.ps1'
+if (Test-Path $doctorScript) {
+    & pwsh -NoProfile -File $doctorScript -Root $Root
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host ''
+        Write-Host 'init-kit: the doctor findings above are the remaining human work, not an init failure.'
+        Write-Host 'init-kit: re-run  pwsh -File scripts/verify-kit.ps1  after each step until it reports OK.'
+    }
+} else {
+    Write-Host 'init-kit: scripts/verify-kit.ps1 missing (partial install? — adoption step 0: re-copy the kit including all files)'
+}
+exit 0

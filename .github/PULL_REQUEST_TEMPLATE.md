@@ -33,9 +33,11 @@ Keep this in sync by hand if that template changes — no templating engine exis
 
 ## Gate Result
 
-- [ ] Gate run **by the reviewer or user** (not the AI)
+- [ ] Gate certified **by the reviewer or user** (not the AI) — a run with confirmed exit
+      code, or (plan-declared `ci-held`, Lite/Standard only) recorded approval on the CI
+      evidence triplet (`docs/sdlc/gate-command.md`)
 
-**Gate exit code**: `EXIT: ___`
+**Gate exit code**: `EXIT: ___` — or ci-held: run URL + green conclusion + commit sha: `___`
 
 ## Approval
 

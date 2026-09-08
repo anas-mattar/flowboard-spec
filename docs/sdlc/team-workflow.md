@@ -6,8 +6,10 @@ ignore this file — nothing else depends on it.
 
 ## 1. Feature ownership — who "the user" is
 
-Every feature has exactly **one owner**: the developer whose agent implements it, who runs
-the gate for it, and who confirms the exit code. Wherever this kit says "the user"
+Every feature has exactly **one owner**: the developer whose agent implements it, and who
+certifies its gate — by running it and confirming the exit code, or, under a plan-declared
+`ci-held` (Lite/Standard only, constitution X), by recording approval on the CI evidence
+triplet. Wherever this kit says "the user"
 (gate-command, review-process, definition-of-done, CLAUDE.md), it means **the feature's
 owner** — not any teammate, and never the agent.
 
@@ -78,7 +80,9 @@ while their first awaits review, under all of these conditions:
 
 With one developer, human review means reviewing your own agent's work. With a team there
 is no excuse: **the human reviewer of a feature MUST NOT be its owner** (constitution IX
-gains teeth). The owner completes the AI review; a different developer completes
+gains teeth). The owner initiates the fresh-context AI review (DoD gate 5 — produced by a
+fresh-context agent or second model, never self-graded, with the Reviewer Provenance
+block); a different developer completes
 `human-pr-review.md` and holds the merge approval.
 
 ## 5. Territory check — before a phase, not at merge
@@ -122,5 +126,6 @@ must never silently change the law the next feature is judged by.
 
 With concurrent merges, two individually-green features can be jointly red. The CI gate
 must run on `main` after every merge; a merge that turns `main` red is **reverted
-immediately** via the `fix/` lane — no debugging on a red `main`. The user-run gate remains
-the per-feature trust ritual; CI is the cross-feature one.
+immediately** via the `fix/` lane — no debugging on a red `main`. The owner-held certifying
+gate (user-run — or plan-declared `ci-held`, `docs/sdlc/gate-command.md`) remains the
+per-feature trust ritual; CI is the cross-feature one.

@@ -25,6 +25,7 @@ there.
 | Surgical | Files that changed upstream but were never touched — see step 2/3 below. |
 | Conflicts | A verbatim file your project has locally modified. Not overwritten. |
 | Result | The kit version now recorded, or "up to date" if nothing was pending. |
+| Adoption doctor | An apply run ends with `scripts/verify-kit.ps1`'s verdict for your project — flow-down damage surfaces in the same session that caused it. A red verdict exits 2 ("attention needed"); get the doctor green before committing the flow-down. `-DryRun` skips it; `-Json` callers run `verify-kit.ps1 -Json -Root <project>` themselves. |
 
 **Resolving a conflict**: a verbatim file only conflicts when someone edited kit-owned
 prose or a kit script directly, which normally shouldn't happen — verbatim files exist to
@@ -100,6 +101,23 @@ project copied the kit's version string or its SYNC IMPACT text:
 - **Human approval**: each project owner reviewed the resulting diff and merged it as a
   normal governance change before the amendment counted as adopted.
 
+### Flow-down note: the 2026-09-08 CI-held certification amendment (kit 0.4.1 → 0.5.0)
+
+The kit's constitution X gained a CI-held certification clause: a Lite/Standard feature's
+approved plan MAY declare `**Gate Certification**: ci-held`, making certification the
+owner's recorded approval on the CI evidence triplet (run URL + green conclusion + exact
+phase-commit sha) instead of a live user-run gate. Like every amendment, it arrives here
+by **re-expression** (this section's procedure), never by copy:
+
+- Adopting it is a **MINOR bump of your own version** — a principle materially expanded.
+  What you adopt is the clause's six boundaries (Lite/Standard only; declared before the
+  first phase it governs; approval on the triplet; agent obligations unchanged; Critical
+  excluded; absent = `user-run`) plus its mirrors in your own DoD, gate-command,
+  critical-delivery, plan template, and CLAUDE.md.
+- **Nothing changes until you ratify it.** The user-run gate remains your project's law —
+  and stays lawful for every feature even after adoption; ci-held is an opt-in per
+  feature, per plan, never a default.
+
 ## 3. Other surgical files
 
 Not every surgical report is a constitution amendment. `docs/sdlc/gate-command.md`,
@@ -108,13 +126,63 @@ Not every surgical report is a constitution amendment. `docs/sdlc/gate-command.m
 project-filled content (your gate commands, your repository layout, your customizations)
 that an update must never overwrite. `docs/rulebooks/` and `modules/` are the same story
 at a larger scale — instantiated tier rules and worked examples, replaced with your own
-content at adoption.
+content at adoption. **`.github/workflows/project-gate.yml.template`** (deletable) is
+surgical for the same reason: your copy is `project-gate.yml`, filled with your gate
+chain. Updates only *report* changes to surgical paths — they never write them — so a
+changed template is refreshed by hand into your filled copy; a project adopted before
+the template existed (pre-008) never receives it through the update channel at all and
+installs it the first time by copying it from a kit clone.
 
 For these, read the commits the report names, and re-apply by hand only what's relevant:
 most kit-side changes to these files are structural or illustrative and don't require any
 action in your project at all. When one does apply — a new required section, a changed
 convention — add it to your own version the same way you'd make any other governance
 edit: reviewed, committed, no different from hand-written project documentation.
+
+## 4. The adoption doctor and its records
+
+`pwsh -File scripts/verify-kit.ps1` audits your project's kit integrity any time (structure
+essentials, unfilled slots in project-owned files, constitution ratification, declared-tier
+rulebooks + gate proof, `.kit-version`). It runs automatically at the end of `init-kit.ps1`
+and of every `update-kit.ps1` apply, and as part of the `ritual-checks` CI in adopted
+projects. It is read-only: it reports, you repair.
+
+**kit-adoption.json** (project root) is its source of truth for what you declared.
+`init-kit.ps1` writes it; you own it afterwards — adding a tier later means adding it here
+*and* instantiating the rulebook. Projects adopted before the doctor existed create it by
+hand:
+
+```json
+{
+  "schemaVersion": 1,
+  "projectName": "your project",
+  "topology": "single",
+  "tiers": ["backend", "database"],
+  "initDate": "2026-09-08",
+  "kitVersionAtInit": "copy",
+  "gateProof": [
+    { "gate": "default", "command": "your gate chain", "exitCode": 0,
+      "date": "2026-09-08", "recordedBy": "you" }
+  ]
+}
+```
+
+`topology` is `single` or `multi`; `tiers` are the menu tiers (backend, frontend, mobile,
+database, integration) **or any custom tier** (lowercase name — worker, cli, …; custom
+tiers are first-class, `docs/rulebooks/README.md`) — every declared tier must have its
+instantiated `docs/rulebooks/<tier>-rules.md`; `kitVersionAtInit` is informational — the kit's constitution
+version at init time, or `copy` (the doctor never validates it); `gateProof` is your
+attestation that the gate has been green at least once (adoption step 3) — record the
+exact command (never with secrets in it), the exit code, the date, and who ran it. No
+tool writes proof entries for you, and `init-kit.ps1` never overwrites an existing
+record — your attestation survives a re-init.
+
+**.kit-version** is written by `update-kit.ps1` (a JSON record of the kit version/commit
+you're on). A project adopted by copy that has never run an update can create it as a bare
+kit commit sha, or simply run `update-kit.ps1` once. One caveat while both files are
+absent: if your `docs/roadmap.md` still carries the kit's own title line, the doctor
+cannot tell your project from the kit template and declines to audit — creating either
+file (or retitling your roadmap) makes you auditable.
 
 ## Partial-install note
 
