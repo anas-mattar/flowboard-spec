@@ -39,8 +39,9 @@ bootstrap clause) and recorded here once the scaffold merges.
 - Constitution: `.specify/memory/constitution.md` — supersedes everything, including this file.
   It is the project's ONLY constitution.
 - Definition of Done: `docs/sdlc/definition-of-done.md` — the six gates every phase must pass.
-- Gate command: `docs/sdlc/gate-command.md` — the user runs it; you never claim success
-  without the user-confirmed exit code.
+- Gate command: `docs/sdlc/gate-command.md` — certification is held by the user: the
+  user-confirmed exit code, or (Lite/Standard, plan-declared `ci-held` — constitution X)
+  the owner's recorded approval on the CI evidence triplet. You never claim success.
 
 ## Source of Truth Priority
 
@@ -87,8 +88,13 @@ links to prevail).
 5. Implement **one phase only**. UI phase with visual references? Run the Visual
    Compliance Loop (`docs/sdlc/review-process.md`) until the deviation table is empty or
    user-approved. Then stop and ask the user to run the gate.
-6. User checks `git diff --stat`; fix only current-phase issues.
-7. Commit the successful phase. AI review, then human review. Merge only after approval.
+6. Review the working diff for intent (`git diff --stat`), fix only current-phase issues,
+   then commit the phase (`phase N` in the subject).
+7. Run the machine scope check against the commit (`pwsh -File scripts/scope-check.ps1` —
+   PASS required; a failing commit is remediated and redone). AI review by a fresh-context
+   agent or second model — never self-graded — with the Reviewer Provenance block; then
+   human review. Merge only after approval. CI re-runs the same checks on every push
+   (`scripts/ritual-checks.ps1`).
 
 ## Strict Rules
 
@@ -96,7 +102,12 @@ links to prevail).
 - Do not refactor unrelated files or change unrelated features.
 - Do not add packages unless approved in `plan.md`.
 - Do not change architecture unless approved in `plan.md`.
-- Do not claim success until the user runs the gate and confirms the exit code.
+- Do not claim success until the user runs the gate and confirms the exit code — or, on a
+  Lite/Standard feature whose approved plan declares `**Gate Certification**: ci-held`,
+  until the owner records approval on the evidence triplet (CI run URL + green conclusion
+  + exact phase-commit sha — for a declared batch, the batch-end commit;
+  `docs/sdlc/gate-command.md`). Under ci-held you report the evidence and request that
+  approval; you still never claim success yourself.
 - Domain invariants (`docs/domain/flowboard-invariants.md`) carry constitutional force.
 
 ## Task-Scoped Reading
@@ -114,7 +125,8 @@ Read the pack that matches what you are about to touch — not everything, every
 | Domain-critical logic | `docs/domain/flowboard-invariants.md` |
 | A feature declared Critical (regulated / high-risk) | `docs/sdlc/critical-delivery.md` |
 | Frontend UI | `docs/rulebooks/frontend-rules.md` + `docs/rulebooks/` compliance checklist for that tier |
-| Reviewing / finishing a phase | `docs/sdlc/review-process.md` + the templates in `specs/_templates/` |
+| Reviewing / finishing a phase | `docs/sdlc/review-process.md` + the templates in `specs/_templates/`; verdicts come from `pwsh -File scripts/ritual-checks.ps1` (doc-lint + enforcement-pack + scope-check + the adoption doctor — same command CI runs) |
+| Updating this project from the kit | `adoption/updating.md`; integrity verdicts come from `pwsh -File scripts/verify-kit.ps1` (the adoption doctor — runs at init end, update end, and in CI) |
 
 <!-- Tier rows are a MENU, not a requirement: keep only the tiers this project has, and add
      a row per extra tier (e.g. "Mobile UI | docs/rulebooks/mobile-rules.md", or a worker/CLI

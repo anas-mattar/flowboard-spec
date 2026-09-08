@@ -30,21 +30,35 @@ screenshots to the phase notes — the AI review verifies they exist.
 
 ## After Each Phase
 
-1. User runs the gate command (`docs/sdlc/gate-command.md`).
-2. User checks:
+1. User runs the gate command (`docs/sdlc/gate-command.md`) — or, when the approved plan
+   declares `**Gate Certification**: ci-held` (Lite/Standard only), the agent reports the
+   CI evidence triplet and the owner records approval on it; on a declared batch this
+   certification lands once, at batch end.
+2. Review the working diff for intent (`git diff --stat`), fix only current-phase issues,
+   and commit the phase — the subject carries the `phase N` token so the scope check can
+   attribute the commit.
+3. Run the machine scope check **against the committed phase** (the script reads git
+   history, not the working tree):
 
 ```bash
-git diff --stat
+pwsh -File scripts/scope-check.ps1
 ```
 
-3. Fix only current phase issues.
-4. Revert unrelated changes.
-5. Commit successful phase.
-6. Do not start next phase without approval.
+   It must report `PASS`: every changed file inside the phase's **Territory** from
+   `tasks.md` (a `WARN` is acceptable only for features specified before the
+   verification pack — Definition of Done, gate 4).
+4. On `FAIL`, remediate and redo the phase commit: revert the undeclared change — or, if
+   it is legitimate scope discovery, amend the phase's **Territory** in `tasks.md` (owner
+   approval) in a commit made **before** the re-committed phase. The check reads the
+   declaration from the commit's parent, so same-commit widening never passes.
+5. Do not start next phase without approval.
 
 ## AI Review
 
-Complete `specs/_templates/ai-code-review-template.md`. Check:
+Completed from `specs/_templates/ai-code-review-template.md` by a **fresh-context agent
+or second model — never the implementing session grading itself** — with the Reviewer
+Provenance block filled (Definition of Done, gate 5; `scripts/enforcement-pack.ps1`
+fails a branch whose added review lacks it). Check:
 
 - Spec match
 - Visual-reference match (where visual references exist): the Visual Compliance Loop's
@@ -66,7 +80,7 @@ Human reviewer checks (record in `specs/_templates/human-pr-review-template.md`)
 
 - Actual UI vs visual references
 - Business behavior
-- Domain correctness (business-critical calculations against `{{DOMAIN_INVARIANTS_PATH}}`)
+- Domain correctness (business-critical calculations against `docs/domain/flowboard-invariants.md`)
 - Security implications
 - Architectural compliance
 - Code diff

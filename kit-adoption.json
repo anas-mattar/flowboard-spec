@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "projectName": "FlowBoard",
+  "topology": "multi",
+  "tiers": ["backend", "frontend", "database"],
+  "initDate": "2026-08-27",
+  "kitVersionAtInit": "copy",
+  "gateProof": [
+    { "gate": "backend", "command": "dotnet build --warnaserror && dotnet test", "exitCode": 0,
+      "date": "2026-08-27", "recordedBy": "anas.m (transcribed from docs/sdlc/gate-command.md: proven green on the empty scaffolds, both exit codes confirmed by the user — adoption step 3)" },
+    { "gate": "frontend", "command": "npm run lint && npm run build", "exitCode": 0,
+      "date": "2026-08-27", "recordedBy": "anas.m (transcribed from docs/sdlc/gate-command.md: proven green on the empty scaffolds, both exit codes confirmed by the user — adoption step 3)" }
+  ]
+}

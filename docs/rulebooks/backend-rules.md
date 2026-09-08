@@ -84,7 +84,8 @@
   validation failure, authorization failure (wrong/no board membership), and concurrency
   conflict where the endpoint supports `If-Match`.
 - The gate (`docs/sdlc/gate-command.md`) is run by the user; a phase is not done before
-  the user confirms exit code 0.
+  the user confirms exit code 0 — or, under a plan-declared `ci-held` (Lite/Standard
+  only, constitution X), before the owner records approval on the CI evidence triplet.
 
 ## Security
 

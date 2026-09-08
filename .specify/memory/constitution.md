@@ -1,7 +1,26 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.0.0 → 2.0.0 (FlowBoard, 2026-09-01)
+Version change: 2.0.0 → 2.1.0 (FlowBoard, 2026-09-08)
+Bump rationale: MINOR — Principle X (Controlled Delivery) materially expanded with the
+  upstream kit's CI-held certification clause (kit constitution 0.5.0, feature 008),
+  re-expressed here per adoption/updating.md §2. For Lite and Standard features only,
+  the approved plan MAY declare `**Gate Certification**: ci-held`, under which gate
+  certification is the owner's recorded approval on the CI evidence triplet — run URL,
+  green conclusion, and the exact phase-commit sha (batch-end commit for a declared
+  batch) — instead of a locally-run gate. The agent's obligations are unchanged: it
+  never claims success; under ci-held it reports the evidence and requests the owner's
+  approval. Critical features MUST NOT declare or use it (scripts/enforcement-pack.ps1
+  fails a Critical plan declaring it — the check arrived in the same flow-down). Absent
+  a declaration the value is `user-run`, so every existing plan stays compliant.
+  Swept in the same change: CLAUDE.md strict rule and Law bullet, gate-command.md
+  (CI-held section + CI wiring), review-process.md step 1, rulebook gate items; the
+  kit's verbatim mirrors (definition-of-done gate 3, critical-delivery item 4,
+  plan-template Gate Certification field, flow.md) arrived via update-kit in the same
+  flow-down. Human adoption: the project owner's review and approval of this flow-down
+  change (updating.md §2 step 6).
+
+Prior version history entry — 1.0.0 → 2.0.0 (FlowBoard, 2026-09-01):
 Bump rationale: MAJOR — adoption of the upstream kit's delivery-core amendments (kit
   constitution 0.3.0 and 0.4.0):
   1. Former V (Data Standards) and VI (Auditability) demoted to conventions in
@@ -57,6 +76,10 @@ Retired: former V (Data Standards) and VI (Auditability) — demoted to
 Templates requiring updates when this file changes:
   - .specify/templates/plan-template.md (Constitution Check gate must mirror the principles 1:1)
   - CLAUDE.md (strict rules must not contradict this file)
+  - scripts/enforcement-pack.ps1 (encodes constitutional constants — batch-phase cap,
+    Critical cooling-off hours, the Gate Certification legal values `user-run`/`ci-held`
+    and the Critical ci-held exclusion — these MUST change in lockstep with amendments
+    touching them)
 -->
 
 # FlowBoard Constitution
@@ -183,10 +206,25 @@ certification moves to batch end. Critical features MUST NOT declare batches —
 user-run gate obligation is unchanged. Absent a declaration, the per-phase user-run gate above
 applies in full.
 
+**CI-held certification**: for a Lite or Standard feature, the approved plan MAY declare —
+as `**Gate Certification**: ci-held` in `plan.md`, before the first phase it governs — that
+gate certification is satisfied by the owner's **recorded approval on the evidence triplet**:
+the CI run of the project gate on the **exact phase commit** (for a declared batch, the
+batch-end commit), cited by run URL, green conclusion, and commit sha, recorded in the
+feature's phase record. The approval is per phase (or per declared batch), never blanket;
+a run on any other commit certifies nothing; the agent's obligations are unchanged — it
+MUST NOT claim success, and under this mode it reports the evidence and requests the
+owner's approval on it. The user-run gate remains lawful always. Critical features MUST NOT
+declare or use CI-held certification. Absent a declaration, the value is `user-run` — the
+gate law above applies in full.
+
 **Rationale**: Small, gated increments keep changes reviewable, reversible, and low-risk; the
 user-held exit code keeps the trust boundary human. Batching trades gate frequency — never
 per-phase revertibility or review — for fewer owner interruptions on low-risk work, and only
-when declared in an approved plan.
+when declared in an approved plan. CI-held certification moves the owner's approval input
+from "I ran it" to "I read unforgeable evidence" — the agent cannot mint a green run on a
+host it does not control — without ever removing the human approval itself; the trust
+boundary stays human, asynchronously.
 
 ## Governance
 
@@ -211,4 +249,4 @@ evaluated before Phase 0 research and re-evaluated after Phase 1 design. Any vio
 justified in the plan's Complexity Tracking section or the work MUST stop and be reported. Use
 `CLAUDE.md` and the `docs/` guidance files for runtime development guidance.
 
-**Version**: 2.0.0 | **Ratified**: 2026-08-27 | **Last Amended**: 2026-09-01
+**Version**: 2.1.0 | **Ratified**: 2026-08-27 | **Last Amended**: 2026-09-08

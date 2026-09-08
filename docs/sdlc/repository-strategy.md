@@ -15,21 +15,21 @@ treatment.
 
 ```text
 flowboard-api     # Backend repository
-flowboard-web    # Frontend repository (and/or {{MOBILE_REPO}}, {{WORKER_REPO}}, …)
+flowboard-web     # Frontend repository
 ```
 
 Optional shared documentation/spec repository, when specs and governance need a home that is
 neither tier:
 
 ```text
-{{SPECS_REPO}}       # Optional shared specs/documentation repository
+flowboard            # This governance repository — specs, constitution, docs
 ```
 
 ## flowboard-api
 
 Contains:
 
-- {{BACKEND_STACK_ITEMS}} <!-- e.g. ASP.NET Core Web API, EF Core, SQL Server migrations -->
+- ASP.NET Core Web API (.NET 10), EF Core 10, SignalR hubs, SQL Server migrations
 - Backend tests
 - Database migrations
 
@@ -43,7 +43,7 @@ Does not contain:
 
 Contains:
 
-- {{FRONTEND_STACK_ITEMS}} <!-- e.g. Next.js App Router, TypeScript, tRPC client -->
+- Next.js 16 App Router, TypeScript strict, tRPC BFF, Tailwind v4 + shadcn/ui
 - Frontend tests
 
 Does not contain:
@@ -52,7 +52,7 @@ Does not contain:
 - Database migrations
 - Server-side secrets
 
-## {{SPECS_REPO}} (optional)
+## flowboard (this governance repository)
 
 Contains:
 
@@ -62,7 +62,7 @@ Contains:
 Use it when backend and frontend teams need one canonical place for governance; otherwise keep
 specs in the primary repository.
 
-## Nested Layout (recommended when {{SPECS_REPO}} exists)
+## Nested Layout (in use here)
 
 Clone the code repositories **inside** the governance repository's working directory and list
 them in its `.gitignore` (the kit's `.gitignore` ships commented-out lines for exactly this).
@@ -70,11 +70,10 @@ They remain fully independent repositories — **never git submodules** (pinned 
 HEADs are chronic friction, especially for AI agents).
 
 ```text
-{{SPECS_REPO}}/                # governance repo
+flowboard/                   # governance repo (this one)
 ├── CLAUDE.md  .specify/  docs/  specs/  scripts/
-├── flowboard-api/          # independent code repo (ignored by parent)
-└── flowboard-web/         # independent code repo (ignored by parent)
-                               # …one nested repo per tier: mobile, worker, etc.
+├── flowboard-api/           # independent code repo (ignored by parent)
+└── flowboard-web/           # independent code repo (ignored by parent)
 ```
 
 Why nest: AI agents read `CLAUDE.md` from the working directory *and its ancestors*, so an
@@ -96,7 +95,7 @@ the nested layout first.
 When a feature spans repositories:
 
 1. Create matching branches (same `NNN-<name>`) in each affected repository — plus the spec
-   branch in {{SPECS_REPO}}, when one exists.
+   branch in this governance repository.
 2. Define the API contract in the feature's `contracts/` **before** any consuming tier
    (web, mobile, worker) implements against it.
 3. Implement and gate the providing tier (usually the backend) first.

@@ -24,11 +24,12 @@ introduced it. Nothing is recorded yet.)*
 When production requires an emergency change that bypasses the normal gates, ALL of the
 following must hold — record each instance:
 
-1. Conditions (all-of): {{BREAK_GLASS_CONDITIONS}} <!-- e.g. production outage + no
-   gate-passing fix available within the SLA -->
-2. Named approver: {{BREAK_GLASS_APPROVER}} <!-- a person/role, not a team -->
+1. Conditions (all-of): production outage or data-integrity incident + no gate-passing
+   fix available the same working day.
+2. Named approver: the project owner (anas.m) — FlowBoard has a single owner; revisit if
+   the team grows.
 3. Revert window: the bypassing change is re-driven through the full workflow (spec, gate,
-   reviews) within {{REVERT_WINDOW}} or reverted.
+   reviews) within 48 hours or reverted.
 4. Any privileged role/permission granted for the emergency is time-boxed and audited.
 
 ## Until expanded

@@ -1,0 +1,56 @@
+# project-gate.yml.template — kit-shipped CI recipe for YOUR project gate
+# (kit feature 008; docs/sdlc/gate-command.md, "CI-held certification" + "Wiring the
+# project gate in CI").
+#
+# The `.template` suffix keeps this file inert — GitHub never runs it. To use it:
+#
+#   1. COPY it to .github/workflows/project-gate.yml. Leave this template untouched:
+#      it is surgical-class, so kit updates REPORT upstream changes to it but never
+#      rewrite it — refresh it (or first-install it, in an adoption that predates it)
+#      by copying from the kit clone by hand (adoption/updating.md, section 3). Your
+#      filled copy is project-owned and never managed by update-kit at all.
+#   2. Fill the GATE_WORKDIR slot — the directory your gate runs in ('.' for a
+#      single-repo project; the app subdirectory for nested topologies) — and the
+#      GATE_CHAIN slot with your exact gate chain from docs/sdlc/gate-command.md (e.g.
+#      `npm run build && npm run typecheck && npm run lint && npm test`).
+#   3. Secrets (API keys, license tokens) belong in your CI secret store, referenced via
+#      `env:` — NEVER pasted into this file, the gate chain, or the evidence you record.
+#   4. Push a governed branch: the run page shows the command, the conclusion, and the
+#      commit sha — the evidence triplet for CI-held certification (constitution X).
+#      Cite the PUSH-event run: a pull_request-event run executes a merge preview, not
+#      the phase commit, and certifies nothing.
+#
+# Trigger notes: `main` on push is the post-merge safety net (a build/test regression on
+# the trunk surfaces immediately); a branch with an open PR runs the gate twice per push
+# (push + pull_request events) — trim the pull_request trigger if CI minutes matter.
+# Multi-gate projects (frontend + backend chains): duplicate the job per gate/workdir.
+# Non-Linux toolchains: change `runs-on:`/`shell:` to match (e.g. windows-latest + pwsh).
+# Recommended once this has run at least once: require the `project-gate` check on main
+# (docs/sdlc/branch-protection.md) — recommended, never mandated by the kit.
+
+name: project-gate
+
+on:
+  push:
+    branches:
+      - main
+      - '[0-9][0-9][0-9]-*'
+      - 'fix/**'
+      - 'chore/**'
+      - 'docs/**'
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  project-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the project gate
+        working-directory: '{{GATE_WORKDIR}}'
+        shell: bash
+        run: |
+          {{GATE_CHAIN}}

@@ -69,4 +69,4 @@
 
 - [ ] No new packages beyond those approved in the feature's `plan.md` (constitution IV).
 - [ ] Only the approved phase's files changed (`git diff --stat` reviewed).
-- [ ] Gate run by the user with confirmed exit code 0 (constitution X).
+- [ ] Gate certified: user-confirmed exit code 0 — or, plan-declared `ci-held`, the owner's recorded approval on the CI evidence triplet (constitution X).
