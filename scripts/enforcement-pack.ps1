@@ -7,8 +7,22 @@
     branch's diff versus main:
 
       - Structure       (NNN-* branches): spec.md/plan.md/tasks.md exist; Delivery Level
-                         header is filled with Lite, Standard, or Critical (not the
-                         template placeholder).
+                         header, when present, is filled with Lite, Micro, Standard, or
+                         Critical (not the template placeholder), read from VISIBLE text
+                         (a commented-out decoy never sets the lane). A Micro feature
+                         requires spec.md only (constitution X, Micro lane — the
+                         mini-spec is the lane's whole specification).
+      - MicroLane       (NNN-* branches declared Micro): exactly one phase (distinct
+                         'phase N' numbers on the branch), no plan.md/tasks.md in the
+                         tree (promotion is all-or-nothing), a **Territory** block of at
+                         most $Config.MicroTerritoryMaxFiles literal file entries (no
+                         globs — a glob defeats the cap), at most
+                         $Config.MicroPhaseMaxLines changed lines in TOTAL across the
+                         phase's commits (a hard failure where other lanes get a
+                         per-commit PhaseSizeWarning — summed so remediation commits
+                         cannot split the bound), and no '**Gate Batching**'
+                         declaration (one phase — nothing to batch). Every failure names
+                         the promotion remediation (constitution X, Micro lane).
       - LiteAndAbuse     (fix/*, chore/* branches): no changed file matches a prohibited
                          category (dependency manifest, auth, schema/migration, contracts,
                          domain invariants); migrations are always prohibited on this lane
@@ -18,11 +32,13 @@
                          and was first committed at least $Config.CoolingOffHours ago.
       - PhaseSizeWarning (NNN-* branches): non-blocking warning when a single commit's
                          diff exceeds the configured line/file thresholds.
-      - GateCertification (NNN-* branches): the plan.md '**Gate Certification**'
-                         declaration, when present, must be 'user-run' or 'ci-held', and
-                         'ci-held' is prohibited on Critical features (constitution X,
-                         CI-held certification; docs/sdlc/critical-delivery.md item 4).
-                         An absent line means 'user-run' — plans from before the clause
+      - GateCertification (NNN-* branches): the '**Gate Certification**' declaration —
+                         read from plan.md, or from spec.md when the feature is Micro
+                         (the lane has no plan.md; constitution X, Micro lane) — when
+                         present, must be 'user-run' or 'ci-held', and 'ci-held' is
+                         prohibited on Critical features (constitution X, CI-held
+                         certification; docs/sdlc/critical-delivery.md item 4). An
+                         absent line means 'user-run' — plans from before the clause
                          remain valid.
       - ReviewProvenance (all recognized lanes): every specs/**/ai-code-review*.md ADDED
                          (or arriving as a rename target) in the branch's diff must carry
@@ -69,6 +85,11 @@ $Config = @{
     PhaseWarnLines          = 400
     PhaseWarnFiles          = 15
     MaxBatchPhases          = 3
+    # Micro-lane bounds — constitutional constants (constitution X, Micro lane; sync-listed
+    # in the constitution's mirror list — change only in lockstep with an amendment).
+    MicroTerritoryMaxFiles  = 5
+    MicroPhaseMaxLines      = 400
+    MicroMaxPhases          = 1
 }
 
 $failures = @()
@@ -110,6 +131,18 @@ function Get-VisiblePlanLines {
     return ([regex]::Replace($raw, '(?s)<!--.*?-->', '')) -split "`r?`n"
 }
 
+# Delivery Level of a numbered feature, from spec.md's first VISIBLE '**Delivery Level**:'
+# line — comment-stripped, so a commented-out 'Micro' (or 'Critical') decoy never sets the
+# lane (contract M13; same rule as the plan-header parsers above). Returns the trimmed
+# value string, '' when the file or the line is absent.
+function Get-DeliveryLevel {
+    param([string]$SpecPath)
+    if (-not (Test-Path -LiteralPath $SpecPath)) { return '' }
+    $line = (Get-VisiblePlanLines -PlanPath $SpecPath | Where-Object { $_ -match '^\*\*Delivery Level\*\*:' } | Select-Object -First 1)
+    if (-not $line) { return '' }
+    return ($line -replace '^\*\*Delivery Level\*\*:\s*', '' -replace '<!--.*$', '').Trim()
+}
+
 function Test-GlobAny {
     param([string]$Path, [string[]]$Globs)
     foreach ($g in $Globs) {
@@ -124,19 +157,23 @@ function Invoke-StructureCheck {
     param([string]$Branch)
     if ($Branch -notmatch '^\d{3}-') { return }
     $dir = "specs/$Branch"
-    foreach ($required in @('spec.md', 'plan.md', 'tasks.md')) {
-        $p = Join-Path $dir $required
+    $specPath = Join-Path $dir 'spec.md'
+    $level = Get-DeliveryLevel -SpecPath $specPath
+    # A Micro feature's whole specification is the mini-spec: spec.md alone is required
+    # here; MicroLane separately fails plan.md/tasks.md PRESENCE on the lane (contract M7).
+    $required = if ($level -match '^Micro\b') { @('spec.md') } else { @('spec.md', 'plan.md', 'tasks.md') }
+    foreach ($f in $required) {
+        $p = Join-Path $dir $f
         if (-not (Test-Path $p)) {
-            $script:failures += "Structure: $dir/$required is missing (every NNN-* branch requires spec.md, plan.md, and tasks.md — CLAUDE.md Feature Structure)"
+            $script:failures += "Structure: $dir/$f is missing (every NNN-* branch requires spec.md, plan.md, and tasks.md — or spec.md alone when declared Micro; CLAUDE.md Feature Structure)"
         }
     }
-    $specPath = Join-Path $dir 'spec.md'
     if (Test-Path $specPath) {
-        $line = (Get-Content $specPath | Where-Object { $_ -match '^\*\*Delivery Level\*\*:' } | Select-Object -First 1)
+        $line = (Get-VisiblePlanLines -PlanPath $specPath | Where-Object { $_ -match '^\*\*Delivery Level\*\*:' } | Select-Object -First 1)
         if (-not $line) {
             $script:failures += "Structure: $dir/spec.md has no **Delivery Level** header"
-        } elseif ($line -notmatch '^\*\*Delivery Level\*\*:\s*(Lite|Standard|Critical)\b') {
-            $script:failures += "Structure: $dir/spec.md's **Delivery Level** header is unfilled or invalid: '$($line.Trim())' (must be Lite, Standard, or Critical)"
+        } elseif ($level -notmatch '^(Lite|Micro|Standard|Critical)\b') {
+            $script:failures += "Structure: $dir/spec.md's **Delivery Level** header is unfilled or invalid: '$level' (legal values: Lite, Micro, Standard, Critical — constitution X)"
         }
     }
 }
@@ -181,8 +218,7 @@ function Invoke-CriticalEvidenceCheck {
     $dir = "specs/$Branch"
     $specPath = Join-Path $dir 'spec.md'
     if (-not (Test-Path $specPath)) { return }
-    $line = (Get-Content $specPath | Where-Object { $_ -match '^\*\*Delivery Level\*\*:' } | Select-Object -First 1)
-    if (-not $line -or $line -notmatch '^\*\*Delivery Level\*\*:\s*Critical\b') { return }
+    if ((Get-DeliveryLevel -SpecPath $specPath) -notmatch '^Critical\b') { return }
 
     $reviewPath = Join-Path $dir 'second-model-review.md'
     if (-not (Test-Path $reviewPath)) {
@@ -231,12 +267,8 @@ function Invoke-GateBatchingCheck {
         $script:failures += "GateBatching: $dir/plan.md declares 'phases $from-$to' ($span phases) — a batch covers at most $($Config.MaxBatchPhases) consecutive phases (constitution X, Batched gates)"
     }
 
-    $specPath = Join-Path $dir 'spec.md'
-    if (Test-Path $specPath) {
-        $level = (Get-Content $specPath | Where-Object { $_ -match '^\*\*Delivery Level\*\*:' } | Select-Object -First 1)
-        if ($level -match '^\*\*Delivery Level\*\*:\s*Critical\b') {
-            $script:failures += "GateBatching: $dir declares a gate batch on a Critical feature — Critical features never batch; every phase keeps its own human-executed gate (docs/sdlc/critical-delivery.md item 4)"
-        }
+    if ((Get-DeliveryLevel -SpecPath (Join-Path $dir 'spec.md')) -match '^Critical\b') {
+        $script:failures += "GateBatching: $dir declares a gate batch on a Critical feature — Critical features never batch; every phase keeps its own human-executed gate (docs/sdlc/critical-delivery.md item 4)"
     }
 }
 
@@ -248,10 +280,15 @@ function Invoke-GateCertificationCheck {
     param([string]$Branch)
     if ($Branch -notmatch '^\d{3}-') { return }
     $dir = "specs/$Branch"
-    $planPath = Join-Path $dir 'plan.md'
-    if (-not (Test-Path $planPath)) { return }   # missing plan.md is StructureCheck's failure
+    $specPath = Join-Path $dir 'spec.md'
+    $level = Get-DeliveryLevel -SpecPath $specPath
+    # On a Micro feature the mini-spec is the declaration's home — the lane has no plan.md
+    # (constitution X, Micro lane; contract M9).
+    $declPath = if ($level -match '^Micro\b') { $specPath } else { Join-Path $dir 'plan.md' }
+    $declName = "$dir/$(Split-Path -Leaf $declPath)"
+    if (-not (Test-Path $declPath)) { return }   # a missing declaration file is StructureCheck's failure
 
-    $line = (Get-VisiblePlanLines -PlanPath $planPath | Where-Object { $_ -match '^\*\*Gate Certification\*\*:' } | Select-Object -First 1)
+    $line = (Get-VisiblePlanLines -PlanPath $declPath | Where-Object { $_ -match '^\*\*Gate Certification\*\*:' } | Select-Object -First 1)
     if (-not $line) { return }                   # absent line means 'user-run' (backward compatible)
 
     # Strip any trailing HTML comment (the template ships one) before parsing the value.
@@ -259,16 +296,101 @@ function Invoke-GateCertificationCheck {
     if ($value -eq '' -or $value -eq 'user-run') { return }
 
     if ($value -ne 'ci-held') {
-        $script:failures += "GateCertification: $dir/plan.md declares '**Gate Certification**: $value' — must be 'user-run' or 'ci-held' (constitution X, CI-held certification)"
+        $script:failures += "GateCertification: $declName declares '**Gate Certification**: $value' — must be 'user-run' or 'ci-held' (constitution X, CI-held certification)"
         return
     }
 
+    if ($level -match '^Critical\b') {
+        $script:failures += "GateCertification: $dir declares '**Gate Certification**: ci-held' on a Critical feature — Critical features MUST NOT use CI-held certification; every certifying gate stays human-executed, locally (constitution X, CI-held certification; docs/sdlc/critical-delivery.md item 4)"
+    }
+}
+
+# --- Micro-lane check (009: constitution X, Micro lane) ---
+# Applies only when spec.md's VISIBLE Delivery Level is Micro (a commented-out decoy never
+# sets the lane — contract M13). The bounds are constitutional constants ($Config above);
+# every failure names the promotion remediation. Reads the branch's CURRENT tree state, so
+# a promoted branch (level re-declared Standard) exits these rules from the promotion
+# commit onward (contract M11) — scope-check separately attributes each historical commit
+# against its parent's declaration.
+function Invoke-MicroLaneCheck {
+    param([string]$Branch, [string]$Base)
+    if ($Branch -notmatch '^\d{3}-') { return }
+    $dir = "specs/$Branch"
     $specPath = Join-Path $dir 'spec.md'
-    if (Test-Path $specPath) {
-        $level = (Get-Content $specPath | Where-Object { $_ -match '^\*\*Delivery Level\*\*:' } | Select-Object -First 1)
-        if ($level -match '^\*\*Delivery Level\*\*:\s*Critical\b') {
-            $script:failures += "GateCertification: $dir declares '**Gate Certification**: ci-held' on a Critical feature — Critical features MUST NOT use CI-held certification; every certifying gate stays human-executed, locally (constitution X, CI-held certification; docs/sdlc/critical-delivery.md item 4)"
+    if ((Get-DeliveryLevel -SpecPath $specPath) -notmatch '^Micro\b') { return }
+    $promote = 'promote to Standard — expand spec.md to the full template (level re-declared Standard), add plan.md + tasks.md (Territory moves there), in a commit before the next phase commit (constitution X, Micro lane)'
+
+    # Halfway promotion is illegal: the full set arrives together or not at all (M7).
+    foreach ($f in @('plan.md', 'tasks.md')) {
+        if (Test-Path (Join-Path $dir $f)) {
+            $script:failures += "MicroLane: $dir/$f exists while spec.md still declares Micro — promotion is all-or-nothing; $promote"
         }
+    }
+
+    # One phase means nothing to batch (M8).
+    $batchLine = (Get-VisiblePlanLines -PlanPath $specPath | Where-Object { $_ -match '^\*\*Gate Batching\*\*:' } | Select-Object -First 1)
+    if ($batchLine) {
+        $script:failures += "MicroLane: $dir/spec.md declares '**Gate Batching**' — a Micro feature is exactly one phase; there is nothing to batch (constitution X, Micro lane); delete the line, or $promote"
+    }
+
+    # Territory cap (M5). Same block grammar scope-check parses; entries must be literal
+    # file paths — one glob or subtree entry would defeat the file cap outright.
+    $tEntries = @()
+    $tMarkers = 0
+    $collecting = $false; $started = $false
+    foreach ($line in (Get-VisiblePlanLines -PlanPath $specPath)) {
+        if ($line -match '^\*\*Territory\*\*:') { $tMarkers++; $collecting = $true; $started = $false; continue }
+        if (-not $collecting) { continue }
+        if ($line -match '^\s*$') { if ($started) { $collecting = $false }; continue }
+        if ($line -match '^\s*[-*]\s+`([^`]+)`\s*$') { $started = $true; $tEntries += $matches[1].Trim(); continue }
+        $collecting = $false
+    }
+    if ($tMarkers -gt 1) {
+        # scope-check FAILs duplicates too — kept aligned so the two scripts never diverge
+        # on the same spec (phase 2 review, F7).
+        $script:failures += "MicroLane: $dir/spec.md carries $tMarkers **Territory** markers — a Micro feature declares exactly one feature-global block; merge them, or $promote"
+    }
+    if ($tEntries.Count -gt $Config.MicroTerritoryMaxFiles) {
+        $script:failures += "MicroLane: $dir/spec.md declares $($tEntries.Count) territory entries — a Micro feature's Territory covers at most $($Config.MicroTerritoryMaxFiles) files (constitution X, Micro lane); shrink the territory, or $promote"
+    }
+    foreach ($e in $tEntries) {
+        if ($e -match '\*' -or $e -match '/\s*$') {
+            $script:failures += "MicroLane: territory entry '$e' in $dir/spec.md is a glob or subtree — Micro territory entries must be literal file paths, or the $($Config.MicroTerritoryMaxFiles)-file cap is unenforceable; list the files, or $promote"
+        }
+    }
+
+    # Exactly one phase (M6) + the hard size bound (M12 — PhaseSizeWarning stays a
+    # non-blocking per-commit warning on every other lane). Distinct phase NUMBERS are
+    # counted, not commits, so in-phase remediation commits ('phase 1 fixes: …') stay
+    # legal exactly as they are on Standard features — but their lines COUNT: the bound
+    # is the phase's TOTAL across every commit carrying its token, so splitting a change
+    # over remediation commits cannot defeat it (phase 2 review, F1 — owner-resolved
+    # 2026-09-09; constitution X wording matches).
+    if (-not $Base) { return }
+    $phaseNums = @{}
+    $phaseTotal = 0
+    $phaseCommitCount = 0
+    $commits = (git rev-list --no-merges "$Base..HEAD" 2>$null) | Where-Object { $_ }
+    foreach ($commit in $commits) {
+        $subject = (git log -1 --format=%s $commit 2>$null)
+        if ($subject -notmatch '(?i)\bphase\s+(\d+)\b') { continue }
+        $phaseNums[[int]$matches[1]] = $true
+        $phaseCommitCount++
+        $numstat = git show --numstat --format='' $commit 2>$null
+        foreach ($row in $numstat) {
+            if (-not $row) { continue }
+            $parts = $row -split "`t"
+            if ($parts.Count -lt 3) { continue }
+            if ($parts[0] -match '^\d+$') { $phaseTotal += [int]$parts[0] }
+            if ($parts[1] -match '^\d+$') { $phaseTotal += [int]$parts[1] }
+        }
+    }
+    if ($phaseTotal -gt $Config.MicroPhaseMaxLines) {
+        $script:failures += "MicroLane: the phase's $phaseCommitCount commit(s) change $phaseTotal line(s) in total — a Micro phase changes at most $($Config.MicroPhaseMaxLines) lines across all its commits, a hard bound on this lane (constitution X, Micro lane); shrink the change, or $promote"
+    }
+    if ($phaseNums.Keys.Count -gt $Config.MicroMaxPhases) {
+        $nums = ($phaseNums.Keys | Sort-Object) -join ', '
+        $script:failures += "MicroLane: the branch carries commits for phases $nums — a Micro feature has exactly $($Config.MicroMaxPhases) phase; $promote"
     }
 }
 
@@ -358,6 +480,7 @@ if ($Branch -in @('main', 'master')) {
     Write-Host "enforcement-pack: '$Branch' is the trunk, not a feature/fix/chore/docs branch — no scripted checks apply"
 } elseif ($Branch -match '^\d{3}-') {
     Invoke-StructureCheck -Branch $Branch
+    Invoke-MicroLaneCheck -Branch $Branch -Base $diffBase
     Invoke-CriticalEvidenceCheck -Branch $Branch
     Invoke-GateBatchingCheck -Branch $Branch
     Invoke-GateCertificationCheck -Branch $Branch

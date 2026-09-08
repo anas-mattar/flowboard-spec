@@ -7,8 +7,9 @@ ignore this file — nothing else depends on it.
 ## 1. Feature ownership — who "the user" is
 
 Every feature has exactly **one owner**: the developer whose agent implements it, and who
-certifies its gate — by running it and confirming the exit code, or, under a plan-declared
-`ci-held` (Lite/Standard only, constitution X), by recording approval on the CI evidence
+certifies its gate — by running it and confirming the exit code, or, under a declared
+`ci-held` (Lite/Micro/Standard only, declared in the plan — or the Micro mini-spec —
+constitution X), by recording approval on the CI evidence
 triplet. Wherever this kit says "the user"
 (gate-command, review-process, definition-of-done, CLAUDE.md), it means **the feature's
 owner** — not any teammate, and never the agent.
@@ -87,7 +88,9 @@ block); a different developer completes
 
 ## 5. Territory check — before a phase, not at merge
 
-`plan.md` declares what the feature touches. Before starting each phase, the owner (or
+`plan.md` declares what the feature touches — on a Micro feature, its mini-spec
+`spec.md`'s **Territory** block does (constitution X, Micro lane). Before starting each
+phase, the owner (or
 agent) checks that no *other open feature branch* claims the same files — one command:
 
 ```powershell

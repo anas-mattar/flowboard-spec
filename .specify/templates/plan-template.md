@@ -10,7 +10,9 @@
 **Gate Certification**: user-run <!-- `user-run` (default) or `ci-held` (constitution X,
   CI-held certification). Under ci-held, gate 3 is satisfied by the owner's recorded
   approval on the evidence triplet — CI run URL + green conclusion + exact phase-commit
-  sha (batch: the batch-end commit). Lite/Standard only — a Critical feature declaring
+  sha (batch: the batch-end commit). Lite, Micro, or Standard only — a Micro feature
+  declares it in its mini-spec spec.md, not here (the lane has no plan.md; constitution X,
+  Micro lane) — and a Critical feature declaring
   ci-held fails scripts/enforcement-pack.ps1. Declare BEFORE the first phase it governs;
   never retroactively. An absent line means user-run. -->
 
@@ -58,7 +60,7 @@ Confirm each item or record a justified exception in Complexity Tracking. Source
 - [ ] **External Integration Governance (VII)**: Every external integration has a complete documented contract.
 - [ ] **Testing Requirements (VIII)**: Business-critical logic has automated/deterministic/regression coverage.
 - [ ] **Human Review (IX)**: Plan accounts for required human review before merge.
-- [ ] **Controlled Delivery (X)**: One approved phase at a time; no unrelated changes; each phase passes the user-run gate — or, for a Lite/Standard feature with `**Gate Batching**: phases N-M` declared above (max 3 consecutive phases, before the batch starts), one certifying user-run gate at batch end while every phase keeps its own commit, scope check, AI review, and agent-run feedback gate — or, for a Lite/Standard feature with `**Gate Certification**: ci-held` declared above, the owner's recorded approval on the evidence triplet (CI run URL + green conclusion + exact phase/batch-end commit sha; constitution X, CI-held certification). Critical features MUST NOT batch and MUST NOT declare ci-held.
+- [ ] **Controlled Delivery (X)**: One approved phase at a time; no unrelated changes; each phase passes the user-run gate — or, for a Lite/Standard feature with `**Gate Batching**: phases N-M` declared above (max 3 consecutive phases, before the batch starts), one certifying user-run gate at batch end while every phase keeps its own commit, scope check, AI review, and agent-run feedback gate — or, for a Lite, Micro, or Standard feature with `**Gate Certification**: ci-held` declared (above — or, on a Micro feature, in its mini-spec `spec.md`, since the lane has no plan.md), the owner's recorded approval on the evidence triplet (CI run URL + green conclusion + exact phase/batch-end commit sha; constitution X, CI-held certification). Critical features MUST NOT batch and MUST NOT declare ci-held.
 
   **Phase sizing rule**: A phase MUST be independently revertible (no other phase's
   correctness depends on this phase being present) and MUST correspond to one meaningfully

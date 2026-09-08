@@ -128,6 +128,32 @@ by **re-expression** (this section's procedure), never by copy:
   and stays lawful for every feature even after adoption; ci-held is an opt-in per
   feature, per plan, never a default.
 
+### Flow-down note: the 2026-09-09 Micro-lane amendment (kit 0.5.0 → 0.6.0)
+
+The kit's constitution gained a fourth delivery level — **Lite < Micro < Standard <
+Critical** (Principles I and X): a numbered feature MAY be declared Micro, delivered from
+a single-page mini-spec (`spec.md` only, no plan.md/tasks.md) in exactly one phase inside
+hard machine-checked bounds (at most 5 territory files and 400 changed lines), with every
+verification layer unchanged and in-place promotion to Standard when the work outgrows a
+bound; CI-held eligibility widened to Lite/Micro/Standard. Like every amendment, it
+arrives by **re-expression** (this section's procedure), never by copy:
+
+- Adopting it is a **MINOR bump of your own version**. What you adopt: Principle I's
+  Micro arm, Principle X's Micro-lane clause (one phase; both bound constants; the
+  eligibility checklist; promotion in place; Critical excluded; absent declaration =
+  Standard) and the widened CI-held eligibility, plus its mirrors in your own DoD,
+  gate-command, branch-strategy, critical-delivery, spec template, and CLAUDE.md.
+- The **machine half and the template arrive verbatim** through the normal update
+  channel: `scripts/scope-check.ps1`, `scripts/enforcement-pack.ps1`, and
+  `.specify/templates/micro-spec-template.md`. The Micro checks are inert until a
+  feature's `spec.md` declares `**Delivery Level**: Micro`, so taking the scripts before
+  (or without) ratifying the amendment leaves your existing features' verdicts unchanged —
+  with one general hardening that rides along: scope-check now also FAILs a commit that
+  deletes or renames away a feature's `spec.md` or `tasks.md` on any numbered branch
+  (never a legitimate move; previously only tasks.md deletion was guarded).
+- **Nothing changes until you ratify it.** Absent a declaration, every numbered feature
+  is Standard — exactly as before.
+
 ## 3. Other surgical files
 
 Not every surgical report is a constitution amendment. `docs/sdlc/gate-command.md`,

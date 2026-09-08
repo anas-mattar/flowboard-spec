@@ -26,11 +26,18 @@ Gates apply at two different points, not uniformly at every phase:
 ## Gates (all required, in order)
 
 1. **Specification approved** — `spec.md`, `plan.md`, and `tasks.md` for the feature
-   exist and are approved before implementation begins (constitution I).
+   exist and are approved before implementation begins (constitution I). **Micro arm**:
+   for a feature declared Micro (constitution X, Micro lane), the approved single-page
+   mini-spec — `spec.md` from `.specify/templates/micro-spec-template.md` — alone
+   satisfies this item; no `plan.md` or `tasks.md` exists while the feature remains
+   Micro.
 2. **Single-phase scope respected** — only the one approved phase was implemented; no
    unrelated changes are bundled in (constitution X), and the phase itself satisfies the
    phase-sizing rule (`.specify/templates/plan-template.md`, Controlled Delivery check):
-   independently revertible, one meaningfully independent and testable slice.
+   independently revertible, one meaningfully independent and testable slice. For a
+   Micro feature (no `plan.md`) the sizing rule is constitution X's Micro bounds — one
+   phase, at most 400 changed lines in total across the phase's commits, enforced as a
+   hard failure.
 3. **Gate passed with user-held certification** — by default the user (not AI) ran the gate
    (`docs/sdlc/gate-command.md`) and confirmed the exit code. AI MUST NOT claim
    success without that confirmation (constitution X). The AI MAY run the gate
@@ -43,8 +50,10 @@ Gates apply at two different points, not uniformly at every phase:
    batch's phases by **one** user-run gate at batch end; items 1–2 and 4–5 still
    apply to every phase individually, and each phase keeps its own commit. Critical
    features MUST NOT batch (`scripts/enforcement-pack.ps1` fails the branch).
-   **CI-held option (Lite/Standard only)**: when the feature's `plan.md` declares
-   `**Gate Certification**: ci-held` (constitution X, CI-held certification), this
+   **CI-held option (Lite, Micro, or Standard only)**: when the feature's `plan.md`
+   declares `**Gate Certification**: ci-held` — on a Micro feature the declaration lives
+   in the mini-spec `spec.md`, the lane's only specification document — (constitution X,
+   CI-held certification), this
    item is satisfied by the **owner's recorded approval on the evidence triplet** —
    the CI run of the project gate on the exact phase commit, cited by run URL, green
    conclusion, and commit sha, in the feature's phase record (`docs/sdlc/gate-command.md`,
@@ -56,7 +65,8 @@ Gates apply at two different points, not uniformly at every phase:
 4. **Diff reviewed / scope guard** — the phase commit passes the machine scope check
    (`pwsh -File scripts/scope-check.ps1`): every changed file falls inside the phase's
    **Territory** declared in `tasks.md` (`.specify/templates/tasks-template.md`, Phase
-   Territory). A PASS verdict is required; a WARN verdict (no territory declared) is
+   Territory) — for a Micro feature, the feature-global **Territory** block in its
+   mini-spec `spec.md` (constitution X, Micro lane; the lane has no tasks.md). A PASS verdict is required; a WARN verdict (no territory declared) is
    acceptable only for features specified before the verification pack. Undeclared
    changes are reverted — or, when the scope discovery is legitimate, the territory is
    amended with owner approval in a commit made **before** the phase commit that relies

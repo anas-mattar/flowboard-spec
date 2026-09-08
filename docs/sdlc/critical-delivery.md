@@ -6,14 +6,16 @@ workflow, never instead of it.
 
 ## Delivery levels
 
-The kit has three delivery levels. Two already exist under other names; this file defines
-only the third:
+The kit has four delivery levels. The first three are defined elsewhere — Lite and
+Standard under other names in `docs/sdlc/branch-strategy.md`, Micro in constitution X
+(Micro lane); this file defines only the last:
 
 | Level | Lane | Requirements |
 |---|---|---|
 | **Lite** | `fix/`, `chore/`, `docs/` — the lightweight lane (`docs/sdlc/branch-strategy.md`) | User-run gate + `git diff --stat` scope check + human review |
+| **Micro** | `NNN-` numbered feature, single-page mini-spec, one phase inside hard bounds (constitution X, Micro lane) | Mini-spec approved + Definition of Done with the Micro arms (`docs/sdlc/definition-of-done.md`) |
 | **Standard** | `NNN-` numbered feature | Full spec workflow + Definition of Done (`docs/sdlc/definition-of-done.md`) |
-| **Critical** | `NNN-` numbered feature + this addendum | Standard, plus the additions below |
+| **Critical** | `NNN-` numbered feature + this addendum | Standard, plus the additions below — **never** Micro, gate batching, or ci-held |
 
 The level is chosen **per feature, at feature creation** — not per project. A project in a
 regulated domain will declare most features Critical; the same project's internal admin
@@ -49,10 +51,12 @@ Declare Critical when the feature touches any of:
    **Why**: "we reviewed it" must be demonstrable later, not remembered.
 4. **Human-executed gates only, one per phase** — the agent-run gate feedback loop
    (`docs/sdlc/gate-command.md`) does not apply, and neither does gate batching
-   (constitution X, Batched gates) nor CI-held certification (constitution X, CI-held
-   certification): a Critical feature MUST NOT declare `**Gate Batching**` or
-   `**Gate Certification**: ci-held` in its `plan.md` — `scripts/enforcement-pack.ps1`
-   fails the branch on either. Every phase's gate run that counts toward Done is executed
+   (constitution X, Batched gates), CI-held certification (constitution X, CI-held
+   certification), nor the Micro lane (constitution X, Micro lane — a Critical feature is
+   never a one-phase mini-spec feature): a Critical feature MUST NOT declare
+   `**Gate Batching**` or `**Gate Certification**: ci-held` in its `plan.md`, nor
+   `**Delivery Level**: Micro` at all — `scripts/enforcement-pack.ps1` fails the branch
+   on any of these. Every phase's gate run that counts toward Done is executed
    by a human, locally.
    **Why**: for Critical work, even the fast-feedback loop stays on the human side of the
    trust boundary, and both gate frequency and gate *execution* are part of that boundary.

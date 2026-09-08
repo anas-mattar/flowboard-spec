@@ -10,7 +10,9 @@ Keep this in sync by hand if that template changes — no templating engine exis
 [What does this PR do, in one or two sentences?]
 
 **Feature/branch**: `[NNN-name | fix/name | chore/name | docs/name]`
-**Spec / plan / tasks**: [link, if this is a numbered `NNN-` feature]
+**Spec / plan / tasks**: [link, if this is a numbered `NNN-` feature — for a Micro
+feature, the mini-spec `spec.md` alone; verify its eligibility checklist still holds
+against the diff (constitution X, Micro lane)]
 **AI review**: [link to the completed ai-code-review.md — read it first]
 
 ## Business Review
@@ -34,7 +36,8 @@ Keep this in sync by hand if that template changes — no templating engine exis
 ## Gate Result
 
 - [ ] Gate certified **by the reviewer or user** (not the AI) — a run with confirmed exit
-      code, or (plan-declared `ci-held`, Lite/Standard only) recorded approval on the CI
+      code, or (declared `ci-held` in the plan — or the Micro mini-spec —
+      Lite/Micro/Standard only) recorded approval on the CI
       evidence triplet (`docs/sdlc/gate-command.md`)
 
 **Gate exit code**: `EXIT: ___` — or ci-held: run URL + green conclusion + commit sha: `___`

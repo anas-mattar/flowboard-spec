@@ -11,6 +11,13 @@
         is enforcement-pack's prohibited-category and abuse-guard checks.
       - NNN-* branches: every phase commit is checked against the **Territory** list under
         its phase heading in specs/NNN-name/tasks.md.
+      - NNN-* branches declared Micro (constitution X, Micro lane): the commit's PARENT
+        spec.md declares '**Delivery Level**: Micro' (comment-stripped, first visible
+        match), so the territory is the feature-global **Territory** block in spec.md —
+        the lane has no tasks.md. All other semantics are unchanged: parent-read
+        anti-widening, the implicit specs/NNN-name/** entry, -like matching, verdicts.
+        A Micro feature with no **Territory** block FAILs (the mini-spec template
+        requires one; the lane has no pre-existing features to grandfather).
 
     Phase attribution: the commit subject must carry a 'phase N' token (research D2);
     -Phase overrides. A commit with no parseable phase token is not a phase commit
@@ -92,19 +99,42 @@ function Get-CommitPaths {
     $paths | Where-Object { $_ } | Select-Object -Unique
 }
 
+# Declarations are parsed from VISIBLE text only: a '**Delivery Level**: Micro' decoy
+# inside an HTML comment block must never win first-match over the rendered one (same
+# rule as enforcement-pack's Get-VisiblePlanLines — 008 phase 2 review, F1 precedent).
+function Get-VisibleLines {
+    param([string[]]$Lines)
+    $raw = ($Lines -join "`n")
+    return ([regex]::Replace($raw, '(?s)<!--.*?-->', '')) -split "`r?`n"
+}
+
+# Micro detection (constitution X, Micro lane): the first visible '**Delivery Level**:'
+# line of the given spec.md blob has the value Micro. Absent blob, absent field, or any
+# other value means NOT Micro — zero new behavior (contract M1).
+function Test-IsMicro {
+    param([string[]]$SpecLines)
+    if (-not $SpecLines) { return $false }
+    $line = Get-VisibleLines -Lines $SpecLines |
+        Where-Object { $_ -match '^\*\*Delivery Level\*\*:' } | Select-Object -First 1
+    return [bool]($line -and $line -match '^\*\*Delivery Level\*\*:\s*Micro\b')
+}
+
 # Territory list for phase N, from a specific blob of tasks.md.
 # Entries MUST be backtick-wrapped list items (`- `path``); collection starts at the first
 # entry after the marker and ends at the first blank line or non-entry line once entries
 # have begun — so a following task checklist can never be swallowed as territory (review F1).
 # Returns @{ Found = bool; Duplicate = bool; Entries = string[]; Invalid = string[] }
+# -Global (Micro lane): the block is feature-global in spec.md, not under a phase heading —
+# the first '**Territory**:' marker anywhere counts, and a second one anywhere is a
+# duplicate. Lines are pre-stripped of HTML comments by the caller (Get-VisibleLines).
 function Get-Territory {
-    param([string[]]$TasksLines, [int]$PhaseNumber)
+    param([string[]]$TasksLines, [int]$PhaseNumber, [switch]$Global)
     $result = @{ Found = $false; Duplicate = $false; Entries = @(); Invalid = @() }
-    $inPhase = $false
+    $inPhase = [bool]$Global
     $collecting = $false
     $started = $false
     foreach ($line in $TasksLines) {
-        if ($line -match '^##\s+Phase\s+(\d+)\b') {
+        if (-not $Global -and $line -match '^##\s+Phase\s+(\d+)\b') {
             $inPhase = ([int]$matches[1] -eq $PhaseNumber)
             $collecting = $false
             continue
@@ -169,12 +199,26 @@ function Invoke-ScopeCheck {
 
     # No commit on a feature branch may delete tasks.md — that is the F2 bypass's first
     # move, and hiding it in a token-less commit must not help, so this check runs BEFORE
-    # phase attribution.
+    # phase attribution. spec.md gets the same protection: on a Micro branch it IS the
+    # territory declaration (constitution X, Micro lane), and deleting it is never
+    # legitimate on any numbered branch (promotion rewrites it, never removes it).
+    $specRel = "specs/$FeatureBranch/spec.md"
     $statusRows = git -c core.quotepath=off show --name-status --format='' $Sha 2>$null
     foreach ($row in $statusRows) {
-        if ($row -match "^D`t" -and ($row -split "`t")[1] -eq $tasksRel) {
-            Write-Host "scope-check: FAIL commit ${sha7}: the commit deletes $tasksRel — the territory declaration must never be deleted on a feature branch (review F2)"
-            return $false
+        $parts = $row -split "`t"
+        if ($row -match "^D`t") {
+            $deleted = $parts[1]
+            if ($deleted -eq $tasksRel -or $deleted -eq $specRel) {
+                Write-Host "scope-check: FAIL commit ${sha7}: the commit deletes $deleted — a feature's declaration files must never be deleted on its branch (review F2)"
+                return $false
+            }
+        } elseif ($row -match '^R' -and $parts.Count -ge 3) {
+            # A rename away is a delete wearing a costume (phase 2 review, F3).
+            $source = $parts[1]
+            if ($source -eq $tasksRel -or $source -eq $specRel) {
+                Write-Host "scope-check: FAIL commit ${sha7}: the commit renames $source away — a feature's declaration files must never be deleted or renamed on its branch (review F2)"
+                return $false
+            }
         }
     }
 
@@ -188,6 +232,52 @@ function Invoke-ScopeCheck {
     if ($phaseN -le 0) {
         Write-Host "scope-check: not applicable (commit $sha7 carries no 'phase N' token — not a phase commit)"
         return $true
+    }
+
+    # Micro lane (constitution X, Micro lane): the lane — and with it the territory
+    # source — is decided by the PARENT's spec.md, so a commit can never switch its own
+    # lane or widen its own territory (anti-widening, contract M4). Claim-commit fallback
+    # mirrors the tasks.md rule below; a parent that has the feature directory but no
+    # spec.md simply is not Micro (absent spec.md = Standard behavior, contract M1).
+    $specBlob = git show "${Sha}^:$specRel" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        $specBlob = $null
+        git rev-parse --verify --quiet "${Sha}^:specs/$FeatureBranch" *> $null
+        if ($LASTEXITCODE -ne 0) {
+            $specBlob = git show "${Sha}:$specRel" 2>$null
+            if ($LASTEXITCODE -ne 0) { $specBlob = $null }
+        }
+    }
+    if (Test-IsMicro -SpecLines @($specBlob)) {
+        $territory = Get-Territory -TasksLines (Get-VisibleLines -Lines @($specBlob)) -Global
+        # Every Micro FAIL names the promotion remediation (contract, error-message rule).
+        $microPromote = "fix the declaration in a commit made BEFORE the phase commit — or promote to Standard: expand spec.md to the full template, add plan.md + tasks.md (Territory moves there), in a commit before the next phase commit (constitution X, Micro lane)"
+        if ($territory.Duplicate) {
+            Write-Host "scope-check: FAIL phase $phaseN commit ${sha7}: more than one **Territory** marker in $specRel (a Micro feature declares exactly one feature-global block); $microPromote"
+            return $false
+        }
+        if ($territory.Invalid.Count -gt 0) {
+            foreach ($bad in $territory.Invalid) {
+                Write-Host "scope-check: FAIL phase $phaseN commit ${sha7}: invalid territory entry '$bad' (entries must be repo-relative, no '..'); $microPromote"
+            }
+            return $false
+        }
+        if (-not $territory.Found -or $territory.Entries.Count -eq 0) {
+            Write-Host "scope-check: FAIL phase $phaseN commit ${sha7}: this Micro feature declares no usable **Territory** block in $specRel — the mini-spec template requires one (no pre-Micro feature exists to grandfather); $microPromote"
+            return $false
+        }
+        $globs = @("specs/$FeatureBranch/**") + $territory.Entries  # implicit spec-dir entry
+        $paths = @(Get-CommitPaths -Sha $Sha)
+        $strays = @($paths | Where-Object { -not (Test-InTerritory -Path $_ -Globs $globs) })
+        if ($strays.Count -eq 0) {
+            Write-Host "scope-check: PASS phase $phaseN commit $sha7 ($($paths.Count) file(s), Micro territory from spec.md)"
+            return $true
+        }
+        foreach ($s in $strays) {
+            Write-Host "scope-check: FAIL phase $phaseN commit ${sha7}: $s not in territory"
+        }
+        Write-Host "scope-check: remediation — revert the undeclared change; or amend the **Territory** in $specRel (owner approval, kept within the Micro territory cap that enforcement-pack.ps1 checks — constitution X, Micro lane) in a commit made BEFORE the phase commit; or promote to Standard: expand spec.md to the full template, add plan.md + tasks.md (Territory moves there), in a commit before the next phase commit"
+        return $false
     }
 
     # Declaration as of the parent (research D3). Fall back to the commit's own blob ONLY
