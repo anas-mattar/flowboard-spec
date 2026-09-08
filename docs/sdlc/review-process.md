@@ -31,7 +31,8 @@ screenshots to the phase notes — the AI review verifies they exist.
 ## After Each Phase
 
 1. User runs the gate command (`docs/sdlc/gate-command.md`) — or, when the approved plan
-   declares `**Gate Certification**: ci-held` (Lite/Standard only), the agent reports the
+   declares `**Gate Certification**: ci-held` (Lite/Micro/Standard only; a Micro feature
+   declares it in its mini-spec `spec.md`), the agent reports the
    CI evidence triplet and the owner records approval on it; on a declared batch this
    certification lands once, at batch end.
 2. Review the working diff for intent (`git diff --stat`), fix only current-phase issues,
@@ -45,12 +46,16 @@ pwsh -File scripts/scope-check.ps1
 ```
 
    It must report `PASS`: every changed file inside the phase's **Territory** from
-   `tasks.md` (a `WARN` is acceptable only for features specified before the
+   `tasks.md` — for a Micro feature, the feature-global **Territory** block in its
+   mini-spec `spec.md` (constitution X, Micro lane) — (a `WARN` is acceptable only for features specified before the
    verification pack — Definition of Done, gate 4).
 4. On `FAIL`, remediate and redo the phase commit: revert the undeclared change — or, if
    it is legitimate scope discovery, amend the phase's **Territory** in `tasks.md` (owner
    approval) in a commit made **before** the re-committed phase. The check reads the
-   declaration from the commit's parent, so same-commit widening never passes.
+   declaration from the commit's parent, so same-commit widening never passes. On a
+   Micro feature the territory amendment lives in `spec.md`, must stay within the lane's
+   file cap, and the standing alternative is always **promotion to Standard** (full spec
+   + `plan.md` + `tasks.md` in a commit before the next phase commit).
 5. Do not start next phase without approval.
 
 ## AI Review

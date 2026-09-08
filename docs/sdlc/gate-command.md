@@ -1,7 +1,8 @@
 # Gate Command
 
 Certification is held by the user: by default the user runs the gate locally and confirms
-the exit code; on a Lite/Standard feature whose approved plan declares
+the exit code; on a Lite, Micro, or Standard feature whose approved plan — for a Micro
+feature, its approved mini-spec `spec.md` — declares
 `**Gate Certification**: ci-held`, certification is the owner's recorded approval on the
 CI evidence triplet (the "CI-held certification" section below). AI must not claim success
 without the user-held certification, whichever form it takes. In a team, "the user" means
@@ -88,10 +89,13 @@ user-run gate: `**Gate Batching**: phases N-M` (constitution X, Batched gates;
 - Every phase in the batch still gets its **own commit, machine scope check
   (`scripts/scope-check.ps1` against the phase's declared territory), and fresh-context
   AI review** — a failed batch-end gate localizes to a phase via the per-phase commits.
+- **Micro features never batch** — the lane is exactly one phase, so there is nothing to
+  batch; a `**Gate Batching**` line in a mini-spec fails the branch (constitution X,
+  Micro lane).
 - **Critical features never batch** (`docs/sdlc/critical-delivery.md`);
   `scripts/enforcement-pack.ps1` fails a Critical branch whose plan declares a batch.
 
-## CI-held certification (Lite/Standard only)
+## CI-held certification (Lite, Micro, or Standard only)
 
 When the feature's approved `plan.md` declares `**Gate Certification**: ci-held`
 (constitution X, CI-held certification; the default absent the line is `user-run`), gate

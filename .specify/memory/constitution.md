@@ -1,7 +1,38 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 2.0.0 → 2.1.0 (FlowBoard, 2026-09-08)
+Version change: 2.1.0 → 2.2.0 (FlowBoard, 2026-09-09)
+Bump rationale: MINOR — Principles I and X materially expanded with the upstream kit's
+  Micro delivery lane (kit constitution 0.6.0, feature 009), re-expressed here per
+  adoption/updating.md §2. FlowBoard's delivery levels become Lite < Micro < Standard <
+  Critical. A numbered feature MAY declare `**Delivery Level**: Micro` in its spec.md:
+  its whole specification is then a single-page mini-spec
+  (.specify/templates/micro-spec-template.md — arrived verbatim in the same flow-down),
+  with no plan.md or tasks.md, delivered in exactly one phase. Principle I's Micro arm:
+  the approved mini-spec alone satisfies specification-first. Principle X's Micro lane:
+  hard bounds — declared Territory of at most 5 files (the feature's own spec directory
+  excluded) and at most 400 changed lines IN TOTAL across the phase's commits (a failure
+  for Micro where other lanes get a per-commit warning) — plus checklist-affirmed
+  non-measurable bounds (no schema/migration, no new packages, no architecture change,
+  no flowboard-invariant surface, no visual-reference UI); no Gate Batching declaration;
+  Critical MUST NOT use the lane; absent declaration = Standard, so every existing
+  feature is unaffected. Outgrowing any bound promotes the feature IN PLACE to Standard
+  (full spec.md + plan.md + tasks.md, committed before any further phase). Every
+  verification layer is unchanged: user-run (or ci-held) gate, scope-check (Territory
+  read from spec.md on Micro), fresh-context AI review, human review at merge. X's
+  CI-held eligibility widens to "Lite, Micro, or Standard", with the declaration read
+  from the mini-spec on Micro. The machine half (scope-check.ps1, enforcement-pack.ps1
+  MicroLane check with the constants above) arrived verbatim in the same flow-down and
+  is inert until a feature declares Micro. Swept in the same change: CLAUDE.md (Law
+  bullet, structure note, strict rules, workflow step, reading row), gate-command.md
+  (eligibility + declaration home + never-batches note), review-process.md
+  (after-each-phase + territory source), rulebook gate items; the kit's verbatim mirrors
+  (definition-of-done, branch-strategy, critical-delivery, flow.md, spec/plan templates,
+  PR + human-review templates) arrived via update-kit. Human adoption: the project
+  owner's review and approval of this flow-down change (updating.md §2 step 6).
+
+Prior version history:
+  2.0.0 → 2.1.0 (FlowBoard, 2026-09-08)
 Bump rationale: MINOR — Principle X (Controlled Delivery) materially expanded with the
   upstream kit's CI-held certification clause (kit constitution 0.5.0, feature 008),
   re-expressed here per adoption/updating.md §2. For Lite and Standard features only,
@@ -78,8 +109,9 @@ Templates requiring updates when this file changes:
   - CLAUDE.md (strict rules must not contradict this file)
   - scripts/enforcement-pack.ps1 (encodes constitutional constants — batch-phase cap,
     Critical cooling-off hours, the Gate Certification legal values `user-run`/`ci-held`
-    and the Critical ci-held exclusion — these MUST change in lockstep with amendments
-    touching them)
+    and the Critical ci-held exclusion, the Micro-lane bounds (territory-file cap 5,
+    phase-total line bound 400, single-phase rule) and the Delivery Level legal values —
+    these MUST change in lockstep with amendments touching them)
 -->
 
 # FlowBoard Constitution
@@ -94,8 +126,16 @@ update `tasks.md`; (4) implement one approved phase only; (5) run the project ga
 changes; (7) commit the approved phase. Implementation MUST NOT start before requirements are
 documented.
 
+**Micro arm**: a feature declared **Micro** (Principle X, Micro lane) satisfies this
+principle with an approved **single-page mini-spec** — its `spec.md`, authored from
+`.specify/templates/micro-spec-template.md` — alone: steps (2) and (3) are skipped, and no
+`plan.md` or `tasks.md` exists while the feature remains Micro. Every other step is
+unchanged. Absent a Micro declaration, the full workflow above applies.
+
 **Rationale**: Documented intent prevents rework, makes review meaningful, and ties every code
-change to an approved requirement.
+change to an approved requirement. The Micro arm keeps all of that — intent is still written
+and approved before implementation — while dropping only the planning ceremony that adds
+nothing to a change small enough to fit the lane's machine-policed bounds.
 
 ### II. Source of Truth Hierarchy
 
@@ -206,8 +246,10 @@ certification moves to batch end. Critical features MUST NOT declare batches —
 user-run gate obligation is unchanged. Absent a declaration, the per-phase user-run gate above
 applies in full.
 
-**CI-held certification**: for a Lite or Standard feature, the approved plan MAY declare —
-as `**Gate Certification**: ci-held` in `plan.md`, before the first phase it governs — that
+**CI-held certification**: for a Lite, Micro, or Standard feature, the approved plan MAY
+declare — as `**Gate Certification**: ci-held` in `plan.md` (for a Micro feature: in its
+approved mini-spec `spec.md`, the lane's only specification document), before the first
+phase it governs — that
 gate certification is satisfied by the owner's **recorded approval on the evidence triplet**:
 the CI run of the project gate on the **exact phase commit** (for a declared batch, the
 batch-end commit), cited by run URL, green conclusion, and commit sha, recorded in the
@@ -218,13 +260,37 @@ owner's approval on it. The user-run gate remains lawful always. Critical featur
 declare or use CI-held certification. Absent a declaration, the value is `user-run` — the
 gate law above applies in full.
 
+**Micro lane**: a numbered feature MAY be declared **Micro** — `**Delivery Level**: Micro`
+in its `spec.md` — when it fits the lane's bounds. A Micro feature has **exactly one
+phase**; its specification is the approved single-page mini-spec (Principle I, Micro arm),
+which carries the feature-global **Territory** block and, optionally, a
+`**Gate Certification**` declaration; it MUST NOT declare `**Gate Batching**` (one phase —
+nothing to batch). The measurable bounds are hard: the declared Territory covers at most
+**5 files** (the feature's own `specs/NNN-name/**` excluded), and the phase changes at
+most **400 lines in total** — counted across every commit carrying its `phase N` token,
+so remediation commits cannot split the bound — a failure for Micro where other lanes
+get a per-commit warning. The non-measurable bounds — no schema or migration, no new
+packages, no architecture change, no domain-invariant surface
+(docs/domain/flowboard-invariants.md), no visual-reference UI — are affirmed in the
+mini-spec's eligibility checklist and verified in human review. Every verification layer
+is unchanged: user-held gate certification, the machine scope check (Territory read from
+`spec.md`), fresh-context AI review, and human review at merge. Critical features MUST
+NOT use the Micro lane. Absent a `**Delivery Level**` declaration, a numbered feature is
+Standard. When work outgrows any bound, the feature is **promoted in place to Standard**:
+`spec.md` is expanded to the full template (level re-declared Standard) and `plan.md` +
+`tasks.md` are added (Territory moves under the phase headings), in a commit made
+**before** any further phase commit; promotion is one-way and all-or-nothing.
+`scripts/enforcement-pack.ps1` fails a Micro branch that violates any of these bounds.
+
 **Rationale**: Small, gated increments keep changes reviewable, reversible, and low-risk; the
 user-held exit code keeps the trust boundary human. Batching trades gate frequency — never
 per-phase revertibility or review — for fewer owner interruptions on low-risk work, and only
 when declared in an approved plan. CI-held certification moves the owner's approval input
 from "I ran it" to "I read unforgeable evidence" — the agent cannot mint a green run on a
 host it does not control — without ever removing the human approval itself; the trust
-boundary stays human, asynchronously.
+boundary stays human, asynchronously. The Micro lane trades specification ceremony — never
+verification — for speed on provably small work: every measurable bound is machine-policed,
+and outgrowing a bound forces promotion to Standard rather than quiet stretching.
 
 ## Governance
 
@@ -249,4 +315,4 @@ evaluated before Phase 0 research and re-evaluated after Phase 1 design. Any vio
 justified in the plan's Complexity Tracking section or the work MUST stop and be reported. Use
 `CLAUDE.md` and the `docs/` guidance files for runtime development guidance.
 
-**Version**: 2.1.0 | **Ratified**: 2026-08-27 | **Last Amended**: 2026-09-08
+**Version**: 2.2.0 | **Ratified**: 2026-08-27 | **Last Amended**: 2026-09-09
