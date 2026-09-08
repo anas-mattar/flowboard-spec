@@ -17,6 +17,13 @@
     zero writes. -Force <path[]> takes the kit version of specific conflicted verbatim
     paths; forcing a surgical-class path is refused.
 
+    Every non-DryRun run records the kit HEAD it ran against in .kit-version (contract,
+    step 5) — so a surgical report is delivered exactly once, at the update that carries
+    it: handle it in that session (adoption/updating.md §2-3). The commits a past report
+    named stay recoverable as `git log <oldRecorded>..<newRecorded>` in the kit clone.
+    Conflicts are re-detected from file content every run and keep being reported until
+    resolved, regardless of the recorded commit.
+
     All content comparisons are CRLF-normalized (research D4) — Windows line-ending
     differences never count as a change. A file that fails to read as text falls back
     to a raw-byte comparison.
@@ -240,14 +247,16 @@ foreach ($entry in $surgicalFiles) {
 }
 
 # --- Compute the recorded commit for this run's write + report ---------------------------
-# It only advances to kit HEAD on a clean/resolved run (SC-002): while any conflict or
-# surgical item is still outstanding against an EXISTING record, keep it pinned so a bare
-# re-run reproduces the identical report — nothing gets silently acknowledged just by
-# running the tool again. The very first write (no prior record) always advances, even
-# amid a degraded-mode report full of "no baseline" entries — that transition is what
-# gives the next run a precise baseline (research D5).
-$hasPending = ($conflicts.Count -gt 0 -or $surgicalReport.Count -gt 0)
-$newKitCommit = if ($recordedCommit -and $hasPending) { $recordedCommit } else { $kitHeadSha }
+# Always the kit HEAD this run was computed against (contract step 5; SC-005 idempotence).
+# An earlier implementation held the record at the OLD sha while surgical items were
+# outstanding, mis-citing SC-002 (which is about never overwriting project content) — but
+# the surgical backlog is computed FROM this record, so the hold deadlocked: the record
+# could never advance once any surgical change shipped, "up to date" never returned, and
+# the report re-listed a growing backlog forever (fix/update-kit-version-ratchet).
+# Surgical reports are therefore delivered once, at the update that carries them; past
+# reports stay recoverable as `git log <oldRecorded>..<newRecorded>` in the kit clone.
+# Conflicts are content-detected each run and keep being reported regardless.
+$newKitCommit = $kitHeadSha
 
 if (-not $DryRun) {
     $record = [PSCustomObject]@{
@@ -291,6 +300,9 @@ if ($Json) {
         Write-Host 'Result: up to date'
     } else {
         Write-Host "Result: kit $kitVersionString @ $newKitCommit$(if ($DryRun) { ' (not written - dry run)' })"
+    }
+    if ($surgicalReport.Count -gt 0 -and -not $DryRun) {
+        Write-Host "NOTE: this surgical report is delivered once — the record now advances to kit HEAD. Handle it this session (adoption/updating.md); recover it later with: git log $(if ($recordedCommit) { $recordedCommit.Substring(0,7) } else { '<old>' })..$($kitHeadSha.Substring(0,7)) in the kit clone."
     }
 }
 

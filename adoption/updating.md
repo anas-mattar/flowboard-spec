@@ -22,7 +22,7 @@ there.
 | Section | What it means |
 |---|---|
 | Applied | Verbatim kit files it copied — pure kit prose/scripts, nothing project-specific in them. Safe to accept as-is. |
-| Surgical | Files that changed upstream but were never touched — see step 2/3 below. |
+| Surgical | Files that changed upstream but were never touched — see step 2/3 below. This report is delivered **once**, at the update that carries it: handle it in the same session. |
 | Conflicts | A verbatim file your project has locally modified. Not overwritten. |
 | Result | The kit version now recorded, or "up to date" if nothing was pending. |
 | Adoption doctor | An apply run ends with `scripts/verify-kit.ps1`'s verdict for your project — flow-down damage surfaces in the same session that caused it. A red verdict exits 2 ("attention needed"); get the doctor green before committing the flow-down. `-DryRun` skips it; `-Json` callers run `verify-kit.ps1 -Json -Root <project>` themselves. |
@@ -34,12 +34,22 @@ be replaced wholesale. Review the diff; if the local edit was a mistake, re-run 
 file conflicted (it'll keep being reported) or move the customization to a project-owned
 file instead.
 
+**The surgical report is delivered once**: every apply advances the recorded kit commit
+in `.kit-version` to the kit HEAD it ran against, so the next run reports only what is
+new since — a surgical backlog is never re-listed. Handle the report in the session that
+produced it (steps 2–3 below). A past report is always recoverable: the old recorded
+commit is in the superseded `.kit-version` (visible in your flow-down commit's diff), and
+`git log <old>..<new>` in the kit clone re-derives exactly what that update named.
+
 **Commit the run**: the update never commits for you. Review `git status`, commit the
 applied files and the updated `.kit-version` together, exactly like any other governance
 change.
 
 **Idempotence**: running the update again immediately after a clean apply reports "up to
-date" and changes nothing — a good way to confirm you're current.
+date" and changes nothing — a good way to confirm you're current. This holds after a
+surgical-bearing apply too: the record advanced with the apply, so the re-run has nothing
+new to report (unresolved verbatim conflicts are the one exception — they are re-detected
+from file content every run until resolved).
 
 ## 2. When the surgical report names the constitution
 
