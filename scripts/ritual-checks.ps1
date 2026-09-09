@@ -10,7 +10,9 @@
       1. scripts/doc-lint.ps1
       2. scripts/enforcement-pack.ps1   (includes the ReviewProvenance check)
       3. scripts/scope-check.ps1 -All   (every phase commit since merge-base with main)
-      4. scripts/verify-kit.ps1         (the adoption doctor — ADOPTED PROJECTS ONLY,
+      4. scripts/build-digests.ps1 -Check  (law-digest freshness — reports n/a, distinct
+                                         from OK, until digest markers exist; 010)
+      5. scripts/verify-kit.ps1         (the adoption doctor — ADOPTED PROJECTS ONLY,
                                          gated on .kit-version OR kit-adoption.json at
                                          -Root, mirroring the doctor's own discriminator;
                                          a tree with neither marker shows an explicit n/a
@@ -48,6 +50,7 @@ $members = [ordered]@{
     'doc-lint'         = @((Join-Path $scriptsDir 'doc-lint.ps1'), '-Root', $Root)
     'enforcement-pack' = @((Join-Path $scriptsDir 'enforcement-pack.ps1'), '-Root', $Root) + $branchArgs
     'scope-check'      = @((Join-Path $scriptsDir 'scope-check.ps1'), '-All', '-Root', $Root) + $branchArgs
+    'digests'          = @((Join-Path $scriptsDir 'build-digests.ps1'), '-Check', '-Root', $Root)
 }
 
 # The adoption doctor joins for adopted projects. The gate mirrors the doctor's OWN
@@ -62,16 +65,33 @@ if ((Test-Path (Join-Path $Root '.kit-version')) -or (Test-Path (Join-Path $Root
 }
 
 $results = [ordered]@{}
+$digestsNA = $null
 foreach ($name in $members.Keys) {
     Write-Host "=== ritual-checks: $name ==="
-    & pwsh -NoProfile -File @($members[$name])
-    $results[$name] = $LASTEXITCODE
+    if ($name -eq 'digests') {
+        # The digest check's n/a states (no markers yet — 010 SC-004) are distinct
+        # verdicts, not OK: capture the member's output (re-echoed verbatim) to read the
+        # n/a line while keeping the exit-code contract identical to the other members.
+        $out = & pwsh -NoProfile -File @($members[$name]) 2>&1
+        $results[$name] = $LASTEXITCODE
+        $out | ForEach-Object { Write-Host $_ }
+        if ($results[$name] -eq 0) {
+            # Echo the member's own n/a reason into the summary (phase 1 review F5).
+            $naLine = @($out | ForEach-Object { "$_" } | Where-Object { $_ -match '^digests: n/a' }) | Select-Object -First 1
+            if ($naLine) { $digestsNA = $naLine.Substring('digests: '.Length) }
+        }
+    } else {
+        & pwsh -NoProfile -File @($members[$name])
+        $results[$name] = $LASTEXITCODE
+    }
     Write-Host ''
 }
 
 $failedCount = 0
 foreach ($name in $results.Keys) {
-    $verdict = if ($results[$name] -eq 0) { 'OK' } else { $failedCount++; 'FAIL' }
+    $verdict = if ($results[$name] -eq 0) {
+        if ($name -eq 'digests' -and $digestsNA) { $digestsNA } else { 'OK' }
+    } else { $failedCount++; 'FAIL' }
     Write-Host ('ritual-checks: {0,-16} {1}' -f $name, $verdict)
 }
 if ($doctorNA) {

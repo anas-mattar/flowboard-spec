@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "packs": [
+    { "name": "delivery",  "docs": ["docs/sdlc/definition-of-done.md", "docs/sdlc/gate-command.md", "docs/sdlc/flow.md"] },
+    { "name": "branching", "docs": ["docs/sdlc/branch-strategy.md", "docs/sdlc/repository-strategy.md", "docs/sdlc/team-workflow.md"] },
+    { "name": "review",    "docs": ["docs/sdlc/review-process.md", "docs/sdlc/rollback-process.md"] },
+    { "name": "critical",  "docs": ["docs/sdlc/critical-delivery.md"] },
+    { "name": "adoption",  "docs": ["adoption/updating.md"] }
+  ]
+}

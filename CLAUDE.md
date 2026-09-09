@@ -125,6 +125,18 @@ links to prevail).
 
 Read the pack that matches what you are about to touch — not everything, every time:
 
+**Orientation first (optional)**: the law packs below have generated one-page digests in
+`docs/digests/` — delivery, branching, critical, adoption today (member documents per
+pack: `docs/digests/digest-packs.json`, the single source of composition). A pack whose
+documents carry no digest markers has no digest yet: `docs/sdlc/review-process.md`,
+`docs/sdlc/rollback-process.md`, `docs/sdlc/gate-command.md`, and
+`docs/sdlc/repository-strategy.md` are this project's own (surgical) copies, so mark them
+yourself and regenerate to add theirs. A digest orients; it is **never a source-of-truth
+rung and never satisfies a "read first" obligation** — before acting on an area, read the
+full document. Digests are written only by `scripts/build-digests.ps1`, and CI fails on
+any drift — on a green branch a digest matches its law. The always-load row (this file +
+the Definition of Done) is unchanged — digests never replace it.
+
 | Touching… | Read first |
 |---|---|
 | Any phase (always) | This file + `docs/sdlc/definition-of-done.md` |

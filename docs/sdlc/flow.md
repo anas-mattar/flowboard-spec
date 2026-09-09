@@ -5,6 +5,9 @@ not law**: it introduces no rule and changes none. If anything here conflicts wi
 owning document, the owning document prevails — and the constitution
 (`.specify/memory/constitution.md`) prevails over everything.
 
+<!-- digest: The flow: baseline, claim, specify, phase loop (gate, commit, scope check, AI review), human review, merge. -->
+<!-- digest: flow.md is a summary, not law — the owning documents prevail, and the constitution prevails over everything. -->
+
 ## The diagram
 
 ```text

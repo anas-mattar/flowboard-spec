@@ -6,6 +6,8 @@ and **IX. Human Review Requirement**.
 
 ## Two units of review
 
+<!-- digest: Gates 1-5 must hold at every phase commit; gate 6 (human review) applies once per feature, at merge. -->
+
 Gates apply at two different points, not uniformly at every phase:
 
 - **Gates 1–5** MUST pass at **every phase commit** — a phase is not Done until items 1–5
@@ -31,6 +33,9 @@ Gates apply at two different points, not uniformly at every phase:
    mini-spec — `spec.md` from `.specify/templates/micro-spec-template.md` — alone
    satisfies this item; no `plan.md` or `tasks.md` exists while the feature remains
    Micro.
+
+   <!-- digest: Gate 1: spec.md, plan.md, tasks.md approved before implementation begins; Micro: the approved mini-spec alone. -->
+
 2. **Single-phase scope respected** — only the one approved phase was implemented; no
    unrelated changes are bundled in (constitution X), and the phase itself satisfies the
    phase-sizing rule (`.specify/templates/plan-template.md`, Controlled Delivery check):
@@ -38,6 +43,9 @@ Gates apply at two different points, not uniformly at every phase:
    Micro feature (no `plan.md`) the sizing rule is constitution X's Micro bounds — one
    phase, at most 400 changed lines in total across the phase's commits, enforced as a
    hard failure.
+
+   <!-- digest: Gate 2: only the one approved phase, nothing unrelated; Micro: at most 400 changed lines across the phase's commits. -->
+
 3. **Gate passed with user-held certification** — by default the user (not AI) ran the gate
    (`docs/sdlc/gate-command.md`) and confirmed the exit code. AI MUST NOT claim
    success without that confirmation (constitution X). The AI MAY run the gate
@@ -62,6 +70,11 @@ Gates apply at two different points, not uniformly at every phase:
    other commit certifies nothing; the agent still never claims success — it reports the
    evidence and requests the approval. The user-run gate remains lawful always. Critical
    features MUST NOT declare ci-held (`scripts/enforcement-pack.ps1` fails the branch).
+
+   <!-- digest: Gate 3: the user runs the gate and confirms the exit code — the AI never claims success on its own runs. -->
+   <!-- digest: Batched gates (Lite/Standard, plan-declared, max 3 consecutive phases): one certifying user-run gate at batch end. -->
+   <!-- digest: ci-held (Lite/Micro/Standard, declared in plan or mini-spec): owner approval recorded on run URL + green + exact sha. -->
+
 4. **Diff reviewed / scope guard** — the phase commit passes the machine scope check
    (`pwsh -File scripts/scope-check.ps1`): every changed file falls inside the phase's
    **Territory** declared in `tasks.md` (`.specify/templates/tasks-template.md`, Phase
@@ -74,6 +87,9 @@ Gates apply at two different points, not uniformly at every phase:
    never be legalized in the commit that introduces it). The owner still reviews
    `git diff --stat` for intent; the machine makes a skipped or sloppy scope check
    visible (`docs/sdlc/review-process.md`).
+
+   <!-- digest: Gate 4: scope-check PASS — every changed file inside the declared Territory; amendments precede the phase commit. -->
+
 5. **AI review complete — by a reviewer that did not write the code** — the AI review
    checklist (`specs/_templates/ai-code-review-template.md`) was completed: spec/visual-
    reference match, stack rulebooks, security, tests, migrations, unrelated changes,
@@ -90,11 +106,16 @@ Gates apply at two different points, not uniformly at every phase:
    committed before the verification pack are grandfathered at their historical paths. The machine verifies the block's presence and consistency; the truth of the
    attestation remains the owner's to audit — but it is now a falsifiable written
    statement, not an unstated assumption.
+
+   <!-- digest: Gate 5: AI review by a fresh-context agent or second model with the Reviewer Provenance block — never self-graded. -->
+
 6. **Human review approved (once per feature, at merge)** — after the feature's final phase
    passes gates 1–5, a human reviewer verified business requirements, domain correctness,
    security implications, visual-reference compliance, and architectural compliance across the
    **full feature diff**, and approved the change. **Human review is required before merge**
    (constitution IX; `specs/_templates/human-pr-review-template.md`).
+
+   <!-- digest: Gate 6: a human reviews the full feature diff and approves before merge — once per feature. -->
 
 A phase **stands** on the feature branch once items 1–5 are true (items 4–5 verified against
 its commit — a failing commit is remediated and redone). The **feature** may be **merged** to
@@ -106,6 +127,8 @@ item 6.
 If any artifact conflicts with another, or with the constitution, **stop and report**
 rather than silently choosing one. The constitution
 (`.specify/memory/constitution.md`) prevails.
+
+<!-- digest: If artifacts conflict, stop and report — the constitution prevails; never silently choose. -->
 
 ## Equivalence to the constitution
 

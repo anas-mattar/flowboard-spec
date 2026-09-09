@@ -17,6 +17,8 @@ next number automatically.
 > `specs/<branch>` and reject branches that don't start with `NNN-`; a divergent convention
 > silently disables the whole tooling layer.
 
+<!-- digest: Feature branches are NNN-short-name mapping 1:1 to specs/NNN-short-name/ — never hand-invent a different layout. -->
+
 ## Number Allocation
 
 `create-new-feature.ps1` allocates the next number from the **local** `specs/` directory —
@@ -41,6 +43,8 @@ The manual recipe it automates (kept as the fallback):
 
 The rest of the multi-developer rules live in `docs/sdlc/team-workflow.md`.
 
+<!-- digest: Claim with scripts/claim-feature.ps1: remote-aware number allocation and an immediate push — the remote is the ledger. -->
+
 ## Branch Taxonomy
 
 | Pattern | Use for | Spec dir? | Example |
@@ -57,6 +61,8 @@ requires the user-run gate, the `git diff --stat` scope check, and human review 
 If a "fix" grows into behavior change or schema change, stop and promote it to a numbered
 feature.
 
+<!-- digest: Lite lane (fix/, chore/, docs/): no spec directory, but the gate, scope check, and human review before merge remain. -->
+
 **Delivery levels**: the kit has four, in ascending ceremony — **Lite < Micro < Standard <
 Critical**. **Lite** is the lightweight lane above (`fix/`, `chore/`, `docs/` — no spec
 directory). **Micro** is a numbered feature whose entire specification is a single-page
@@ -69,6 +75,9 @@ plus the addendum in `docs/sdlc/critical-delivery.md` — Critical MUST NOT use 
 lane. The level is chosen per feature, not per project, declared in the feature's
 `spec.md` at creation.
 
+<!-- digest: Four delivery levels in ascending ceremony: Lite < Micro < Standard < Critical; chosen per feature, declared in spec.md. -->
+<!-- digest: Micro: single-page mini-spec, exactly one phase, at most 5 territory files and 400 changed lines, machine-enforced. -->
+
 Boundaries between neighbors: **Lite vs Micro** — Lite is for work with no behavior
 change (tooling, docs, straightforward bug corrections); the moment a small change alters
 behavior, it is at least Micro — behavior change always gets written, approved intent. **Micro vs
@@ -78,6 +87,8 @@ visual-reference surface); anything larger, or any feature needing phases or pla
 Standard. A Micro feature that outgrows its bounds mid-flight is **promoted in place to
 Standard** (full spec + plan.md + tasks.md, committed before any further phase commit) —
 exactly like promoting a `fix/` branch that grew into a feature.
+
+<!-- digest: Behavior change is at least Micro; a Micro feature that outgrows a bound promotes in place to Standard, never stretches. -->
 
 ## Rules
 
@@ -96,6 +107,9 @@ exactly like promoting a `fix/` branch that grew into a feature.
 - Never force-push `main`.
 - Each implementation phase is its own commit on the feature branch so a bad phase
   reverts cleanly (see `docs/sdlc/rollback-process.md`).
+
+<!-- digest: main is protected: no direct commits, never force-push; merge only after certification and approved human review. -->
+<!-- digest: Push the feature branch before merging; merge --no-ff so the merge commit survives; one commit per phase. -->
 
 ## Spec Directory Contents
 

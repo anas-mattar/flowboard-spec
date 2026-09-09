@@ -24,6 +24,8 @@ feature's risk grows mid-flight (it starts touching money movement, patient data
 irreversible operations), stop and promote it — exactly like promoting a `fix/` branch that
 grew into a feature.
 
+<!-- digest: The level is chosen per feature at creation, declared in spec.md; risk growing mid-flight promotes — never stretch. -->
+
 ## When a feature MUST be Critical
 
 Declare Critical when the feature touches any of:
@@ -36,19 +38,30 @@ Declare Critical when the feature touches any of:
 
 **Why**: these are the changes where "we can fix it in a follow-up" is false.
 
+<!-- digest: Declare Critical for domain invariants, irreversible data operations, authn/authz/payment, or auditor-facing evidence. -->
+
 ## Additional requirements (all MUST)
 
 1. **Rollback plan before implementation** — `specs/_templates/rollback-template.md` is
    filled for this feature **before phase 1 begins**, not at review time.
    **Why**: a rollback plan written after the change is a description, not a plan.
+
+   <!-- digest: Critical 1: the rollback plan is filled before phase 1 begins, not at review time. -->
+
 2. **Domain-invariant review** — the AI review and the human review each include an explicit
    pass over the domain-invariants pack (constitution V), item by item, recorded in the
    review document.
    **Why**: invariant violations are the one class of defect the gate cannot catch.
+
+   <!-- digest: Critical 2: AI and human reviews each pass over the domain-invariants pack item by item, recorded. -->
+
 3. **Audit evidence retained** — the gate command + exit code, the `scope-check.ps1`
    verdict and the `git diff --stat` output,
    and both completed review checklists are kept in the feature directory.
    **Why**: "we reviewed it" must be demonstrable later, not remembered.
+
+   <!-- digest: Critical 3: audit evidence retained — gate command + exit code, scope-check verdict, diff stat, both review checklists. -->
+
 4. **Human-executed gates only, one per phase** — the agent-run gate feedback loop
    (`docs/sdlc/gate-command.md`) does not apply, and neither does gate batching
    (constitution X, Batched gates), CI-held certification (constitution X, CI-held
@@ -60,6 +73,9 @@ Declare Critical when the feature touches any of:
    by a human, locally.
    **Why**: for Critical work, even the fast-feedback loop stays on the human side of the
    trust boundary, and both gate frequency and gate *execution* are part of that boundary.
+
+   <!-- digest: Critical 4: human-executed gates only, one per phase — never agent-run gates, batching, ci-held, or the Micro lane. -->
+
 5. **Independent approval** — the human reviewer MUST NOT be the feature's owner
    (`docs/sdlc/team-workflow.md`). A solo developer substitutes:
    - a written **second-model adversarial review**, recorded as
@@ -75,8 +91,12 @@ Declare Critical when the feature touches any of:
    **Why**: the person who drove the agent is the person least able to see its blind spots,
    and an undefined substitute ("some review, some time") is not falsifiable.
 
+   <!-- digest: Critical 5: the human reviewer is never the owner; solo devs substitute a second-model review + 24h cooling-off. -->
+
 ## What this addendum is NOT
 
 It adds no new gates, documents, or workflow steps beyond the five items above. Do not
 invent extra ceremony for Critical features — the protection comes from evidence and
 independence, not volume.
+
+<!-- digest: Critical adds nothing beyond the five items — protection comes from evidence and independence, not volume. -->

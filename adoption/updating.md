@@ -17,6 +17,8 @@ ready to apply. The script refuses to run (exit 1) against a dirty working tree,
 partial kit install, or the kit repository itself — commit or stash first if it stops you
 there.
 
+<!-- digest: update-kit.ps1 runs from a kit clone with -Target: verbatim files copied, surgical only reported, never written. -->
+
 **Reading the report:**
 
 | Section | What it means |
@@ -25,7 +27,10 @@ there.
 | Surgical | Files that changed upstream but were never touched — see step 2/3 below. This report is delivered **once**, at the update that carries it: handle it in the same session. |
 | Conflicts | A verbatim file your project has locally modified. Not overwritten. |
 | Result | The kit version now recorded, or "up to date" if nothing was pending. |
+| (never listed) | `generated`-class paths — `docs/digests/*-digest.md` — are neither copied nor reported: each project generates its own digests from its **own** law with `scripts/build-digests.ps1` (the generator and `docs/digests/digest-packs.json` arrive verbatim). |
 | Adoption doctor | An apply run ends with `scripts/verify-kit.ps1`'s verdict for your project — flow-down damage surfaces in the same session that caused it. A red verdict exits 2 ("attention needed"); get the doctor green before committing the flow-down. `-DryRun` skips it; `-Json` callers run `verify-kit.ps1 -Json -Root <project>` themselves. |
+
+<!-- digest: generated-class paths (docs/digests/*-digest.md) never flow down — each project generates digests from its own law. -->
 
 **Resolving a conflict**: a verbatim file only conflicts when someone edited kit-owned
 prose or a kit script directly, which normally shouldn't happen — verbatim files exist to
@@ -40,6 +45,8 @@ new since — a surgical backlog is never re-listed. Handle the report in the se
 produced it (steps 2–3 below). A past report is always recoverable: the old recorded
 commit is in the superseded `.kit-version` (visible in your flow-down commit's diff), and
 `git log <old>..<new>` in the kit clone re-derives exactly what that update named.
+
+<!-- digest: The surgical report is delivered once — handle it in the session that produced it; the record advances to kit HEAD. -->
 
 **Commit the run**: the update never commits for you. Review `git status`, commit the
 applied files and the updated `.kit-version` together, exactly like any other governance
@@ -60,6 +67,8 @@ been founded on the kit's principles.
 
 An amendment never gets copied in. It gets **re-expressed**:
 
+<!-- digest: Constitution amendments are re-expressed, never copied: your own version bump, your own SYNC IMPACT, citation sweep. -->
+
 1. **Read the kit's rationale.** The commits the report names are the amendment log (the
    kit has no separate changelog) — read what changed and why before touching anything.
 2. **Bump your own version, not the kit's.** Your constitution's version footer is your
@@ -76,6 +85,9 @@ An amendment never gets copied in. It gets **re-expressed**:
    in for your stack, not left as a slot — before removing the principle from your
    constitution. A demotion with nowhere to land is a silent loss of a rule, not a
    simplification.
+
+   <!-- digest: Verify demoted content lands in your project before deleting the principle — nowhere to land means a rule is lost. -->
+
 5. **Sweep citations.** Grep your own governance docs for the old principle number or
    name (renumbering is common when principles are added, demoted, or deleted) and fix
    every reference — CLAUDE.md, plan/spec/task templates, rulebooks, anything that cites
@@ -83,6 +95,8 @@ An amendment never gets copied in. It gets **re-expressed**:
 6. **Human approval adopts it.** Same rule as any other constitutional change: a person
    reviews and approves before the amendment counts as adopted in your project. The
    update script only delivers the report; it never amends your constitution for you.
+
+   <!-- digest: Human approval adopts an amendment — the update script only delivers the report, never amends your constitution. -->
 
 ### Worked example: the 2026-09-01 kit 0.3.0 → 0.4.0 flow-back
 
@@ -154,6 +168,51 @@ arrives by **re-expression** (this section's procedure), never by copy:
 - **Nothing changes until you ratify it.** Absent a declaration, every numbered feature
   is Standard — exactly as before.
 
+### Flow-down note: the 2026-09-09 law digests (kit feature 010 — no constitution amendment)
+
+The kit grew a per-pack law-digest machine: curated one-line markers beside binding rules,
+a deterministic generator, and a CI freshness check. **No constitutional change is
+involved** (the kit's constitution stayed 0.6.0) — there is nothing to re-express; this
+note is the whole adoption story:
+
+- **What arrives verbatim**: `scripts/build-digests.ps1` (generator + `-Check`),
+  `docs/digests/digest-packs.json` (pack composition), and the updated
+  `scripts/ritual-checks.ps1` with its `digests` member.
+- **What never arrives**: the kit's own `docs/digests/*-digest.md` files — they are
+  `generated`-class (neither copied nor reported; see the report table in step 1). A
+  digest summarizes the law of the repository it lives in, so each project generates its
+  own.
+- **The flow-down includes generating your digests.** The kit's verbatim pack documents
+  (DoD, flow, branch-strategy, team-workflow, critical-delivery, and this file) now carry
+  digest markers, and the update copies them in — so the moment the marked law lands, the
+  `digests` member demands the digests it produces. Run
+  `pwsh -File scripts/build-digests.ps1` and **commit the generated digests together with
+  the update**; skipping the step fails ritual-checks loudly, naming exactly those digest
+  files and that command — never silently. The `n/a (no digest markers)` inert state
+  belongs only to a tree with no markers anywhere (a pre-010 copy adoption that never
+  updates, or a project that deletes the markers — they are ordinary comment lines in
+  your law, yours to keep or remove).
+- **Marking your own law (optional)**: add markers beside the binding rules of your own
+  documents — gate-command, review-process, rollback-process, and repository-strategy are
+  your surgical copies, so markers there summarize *your* filled-in law — then
+  regenerate:
+
+  ```markdown
+  <!-- digest: <one-line rule statement, at most 120 chars> -->
+  ```
+
+  A marker counts only as a standalone line, in exact lowercase grammar, outside HTML
+  comment blocks and code fences (this example is safely inside one); a near-miss line
+  fails the check rather than vanishing. Bounds: at most 40 lines per pack digest,
+  120 chars per one-liner. CI fails on any drift between a rule and its digest —
+  regenerate with `pwsh -File scripts/build-digests.ps1`.
+- **Mirror by hand (surgical)**: the CLAUDE.md Task-Scoped Reading "Orientation first"
+  paragraph — the pointer that sends agents to a pack's digest before the full read —
+  is surgical-class; copy the kit's wording into your own CLAUDE.md, as with the 008/009
+  mirrors above. Without it your digests exist but nothing points agents at them.
+- **Digests are orientation only**: never a source-of-truth rung, never a substitute for
+  reading the full document before acting on its area (each digest's header says so).
+
 ## 3. Other surgical files
 
 Not every surgical report is a constitution amendment. `docs/sdlc/gate-command.md`,
@@ -175,6 +234,8 @@ action in your project at all. When one does apply — a new required section, a
 convention — add it to your own version the same way you'd make any other governance
 edit: reviewed, committed, no different from hand-written project documentation.
 
+<!-- digest: Surgical files carry project-filled content: re-apply by hand only what applies — an ordinary governance edit. -->
+
 ## 4. The adoption doctor and its records
 
 `pwsh -File scripts/verify-kit.ps1` audits your project's kit integrity any time (structure
@@ -182,6 +243,8 @@ essentials, unfilled slots in project-owned files, constitution ratification, de
 rulebooks + gate proof, `.kit-version`). It runs automatically at the end of `init-kit.ps1`
 and of every `update-kit.ps1` apply, and as part of the `ritual-checks` CI in adopted
 projects. It is read-only: it reports, you repair.
+
+<!-- digest: verify-kit.ps1 is the adoption doctor: read-only, runs at init end, update end, and in adopted-project CI. -->
 
 **kit-adoption.json** (project root) is its source of truth for what you declared.
 `init-kit.ps1` writes it; you own it afterwards — adding a tier later means adding it here
@@ -212,6 +275,8 @@ attestation that the gate has been green at least once (adoption step 3) — rec
 exact command (never with secrets in it), the exit code, the date, and who ran it. No
 tool writes proof entries for you, and `init-kit.ps1` never overwrites an existing
 record — your attestation survives a re-init.
+
+<!-- digest: kit-adoption.json is project-owned: every declared tier needs an instantiated rulebook; gateProof is your attestation. -->
 
 **.kit-version** is written by `update-kit.ps1` (a JSON record of the kit version/commit
 you're on). A project adopted by copy that has never run an update can create it as a bare

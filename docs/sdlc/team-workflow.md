@@ -14,6 +14,8 @@ triplet. Wherever this kit says "the user"
 (gate-command, review-process, definition-of-done, CLAUDE.md), it means **the feature's
 owner** — not any teammate, and never the agent.
 
+<!-- digest: Every feature has exactly one owner — "the user" means the feature's owner, never a teammate and never the agent. -->
+
 ## 2. Number reservation — the remote is the ledger
 
 Feature numbers are claimed on the remote, not computed locally
@@ -52,6 +54,8 @@ How a developer takes a feature from the roadmap (**docs/roadmap.md**, see
    (rule 1), and picks their cross-reviewer (rule 4) at claim time — the owner of a
    neighboring feature is usually the best choice.
 
+<!-- digest: A remote NNN-* branch IS the claim — check remote branches before picking, never the roadmap alone. -->
+
 **WIP limit — one active feature per developer, with a pipelining exception.** Multiple
 claimed branches are number squatting: claims stop meaning "being worked on." To park a
 feature, push your progress and note it in the roadmap's decisions log so someone else
@@ -77,6 +81,8 @@ while their first awaits review, under all of these conditions:
 **Stale claims may be reclaimed.** A claimed branch with no commits for two weeks
 (adjust to taste) is up for adoption: new owner, one line in the decisions log.
 
+<!-- digest: WIP limit: one active feature each; pipelining: one awaiting-review + one active, territory disjoint or sequenced. -->
+
 ## 4. Cross-review — the owner never approves their own feature
 
 With one developer, human review means reviewing your own agent's work. With a team there
@@ -85,6 +91,8 @@ gains teeth). The owner initiates the fresh-context AI review (DoD gate 5 — pr
 fresh-context agent or second model, never self-graded, with the Reviewer Provenance
 block); a different developer completes
 `human-pr-review.md` and holds the merge approval.
+
+<!-- digest: Cross-review: the human reviewer of a feature must not be its owner. -->
 
 ## 5. Territory check — before a phase, not at merge
 
@@ -113,17 +121,23 @@ Overlap is not forbidden — it is **sequenced**: the owners agree on merge orde
 later feature rebases after the earlier one lands. Discovering overlap at merge time is a
 process failure; record the agreed order in both features' `plan.md`.
 
+<!-- digest: Run territory-check.ps1 before each phase; overlap is sequenced by agreed merge order, never discovered at merge time. -->
+
 ## 6. Rebase before gate
 
 The gate certifies the phase **as it will land**, not as it was written. Before asking for
 the gate on the final phase (and after any teammate's merge that touches your territory):
 rebase the feature branch on current `main`, re-run the loop if UI was touched, then gate.
 
+<!-- digest: Rebase on main before the final phase's gate, and after any teammate's merge touching your territory. -->
+
 ## 7. Governance changes ride alone
 
 Constitution and `docs/sdlc/` changes never travel inside a feature branch. They get their
 own `docs/<name>` branch and require team-lead (or whole-team) approval — a feature merge
 must never silently change the law the next feature is judged by.
+
+<!-- digest: Governance changes ride alone on a docs/ branch with team-lead approval — never inside a feature branch. -->
 
 ## 8. CI on main is the referee
 
@@ -132,3 +146,5 @@ must run on `main` after every merge; a merge that turns `main` red is **reverte
 immediately** via the `fix/` lane — no debugging on a red `main`. The owner-held certifying
 gate (user-run — or plan-declared `ci-held`, `docs/sdlc/gate-command.md`) remains the
 per-feature trust ritual; CI is the cross-feature one.
+
+<!-- digest: A merge that turns main red is reverted immediately via the fix/ lane — no debugging on a red main. -->

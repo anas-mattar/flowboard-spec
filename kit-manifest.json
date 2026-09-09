@@ -38,6 +38,9 @@
     { "path": "scripts/*.ps1", "class": "verbatim" },
     { "path": "specs/_templates/**", "class": "verbatim" },
     { "path": "adoption/**", "class": "verbatim" },
-    { "path": "kit-manifest.json", "class": "verbatim" }
+    { "path": "kit-manifest.json", "class": "verbatim" },
+    { "path": "docs/digests/digest-packs.json", "class": "verbatim" },
+    { "path": "docs/digests/*-digest.md", "class": "generated",
+      "reason": "written only by scripts/build-digests.ps1 from the owning repo's OWN law — update-kit never copies these into a project; each project generates its own" }
   ]
 }
