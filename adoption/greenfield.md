@@ -130,8 +130,9 @@ owns it.
 From the first week:
 
 - **Ritual checks in CI**: the kit ships `.github/workflows/ritual-checks.yml`, which runs
-  `scripts/ritual-checks.ps1` (doc-lint + enforcement-pack + scope-check + the adoption
-  doctor in adopted projects) on every push to a governed branch. **Finishing adoption includes wiring `ritual-checks` as a required status
+  `scripts/ritual-checks.ps1` (doc-lint + enforcement-pack + scope-check + digests +
+  roadmap-claims + the adoption doctor in adopted projects) on every push to a governed
+  branch. **Finishing adoption includes wiring `ritual-checks` as a required status
   check** (`docs/sdlc/branch-protection.md`); until then, or on a CI host other than GitHub
   Actions, run the same single command locally or from your CI:
   `pwsh -File scripts/ritual-checks.ps1` — the wrapper and CI produce identical verdicts by

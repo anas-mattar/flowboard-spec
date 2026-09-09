@@ -5,6 +5,7 @@
      II is unchanged); read the full document before acting on its area. -->
 
 - Feature branches are NNN-short-name mapping 1:1 to specs/NNN-short-name/ — never hand-invent a different layout. (`docs/sdlc/branch-strategy.md`)
+- Flip a new claim's roadmap row to in progress in a main-side docs commit — ritual-checks fails while a claim reads idea. (`docs/sdlc/branch-strategy.md`)
 - Claim with scripts/claim-feature.ps1: remote-aware number allocation and an immediate push — the remote is the ledger. (`docs/sdlc/branch-strategy.md`)
 - Lite lane (fix/, chore/, docs/): no spec directory, but the gate, scope check, and human review before merge remain. (`docs/sdlc/branch-strategy.md`)
 - Four delivery levels in ascending ceremony: Lite < Micro < Standard < Critical; chosen per feature, declared in spec.md. (`docs/sdlc/branch-strategy.md`)

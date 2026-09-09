@@ -2,7 +2,8 @@ name: ritual-checks
 
 # One check = one command = the same code path anyone can run locally:
 #   pwsh -File scripts/ritual-checks.ps1
-# (doc-lint + enforcement-pack + scope-check; feature 006, contracts/ritual-checks-ci.md).
+# (doc-lint + enforcement-pack + scope-check + digests + roadmap-claims; feature 006,
+#  contracts/ritual-checks-ci.md).
 # Supersedes the per-check doc-lint.yml and enforcement-pack.yml from feature 002 —
 # projects that required those check names must re-point branch protection to
 # 'ritual-checks' (docs/sdlc/branch-protection.md).
@@ -29,7 +30,7 @@ jobs:
         with:
           # merge-base with origin/main and per-commit parent reads need full history
           fetch-depth: 0
-      - name: Run the ritual checks (doc-lint + enforcement-pack + scope-check)
+      - name: Run the ritual checks (one command, every member)
         shell: pwsh
         # pull_request checks out a detached-HEAD merge commit where branch detection
         # returns the literal 'HEAD' — pass the branch explicitly (github.head_ref is
