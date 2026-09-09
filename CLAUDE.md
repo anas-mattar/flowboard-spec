@@ -149,7 +149,7 @@ the Definition of Done) is unchanged — digests never replace it.
 | A feature declared Micro (small, bounded, one phase) | `.specify/templates/micro-spec-template.md` + `docs/sdlc/branch-strategy.md` (level menu) |
 | A feature declared Critical (regulated / high-risk) | `docs/sdlc/critical-delivery.md` |
 | Frontend UI | `docs/rulebooks/frontend-rules.md` + `docs/rulebooks/` compliance checklist for that tier |
-| Reviewing / finishing a phase | `docs/sdlc/review-process.md` + the templates in `specs/_templates/`; verdicts come from `pwsh -File scripts/ritual-checks.ps1` (doc-lint + enforcement-pack + scope-check + the adoption doctor — same command CI runs) |
+| Reviewing / finishing a phase | `docs/sdlc/review-process.md` + the templates in `specs/_templates/`; verdicts come from `pwsh -File scripts/ritual-checks.ps1` (doc-lint + enforcement-pack + scope-check + digests + roadmap-claims + the adoption doctor — same command CI runs) |
 | Updating this project from the kit | `adoption/updating.md`; integrity verdicts come from `pwsh -File scripts/verify-kit.ps1` (the adoption doctor — runs at init end, update end, and in CI) |
 
 <!-- Tier rows are a MENU, not a requirement: keep only the tiers this project has, and add

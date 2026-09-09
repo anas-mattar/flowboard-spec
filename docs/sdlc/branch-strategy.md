@@ -41,6 +41,15 @@ The manual recipe it automates (kept as the fallback):
    to whichever branch reaches the remote first. If you lose the race, renumber before any
    other work.
 
+**Then flip the roadmap row.** The branch is the claim; the roadmap row is what the *next*
+agent reads. In the same sitting, a **main-side** `docs/` commit sets that feature's
+`docs/roadmap.md` row to Status `in progress` with its Owner and Spec path
+(`specs/NNN-<name>/`). A claimed branch whose row still reads `idea` says the work is
+unstarted and invites a duplicate spec, so `scripts/ritual-checks.ps1` fails while any
+claim visible on the remote has no non-idea row (`scripts/roadmap-claim-check.ps1`).
+
+<!-- digest: Flip a new claim's roadmap row to in progress in a main-side docs commit — ritual-checks fails while a claim reads idea. -->
+
 The rest of the multi-developer rules live in `docs/sdlc/team-workflow.md`.
 
 <!-- digest: Claim with scripts/claim-feature.ps1: remote-aware number allocation and an immediate push — the remote is the ledger. -->

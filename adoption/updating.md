@@ -213,6 +213,33 @@ note is the whole adoption story:
 - **Digests are orientation only**: never a source-of-truth rung, never a substitute for
   reading the full document before acting on its area (each digest's header says so).
 
+### Flow-down note: the 2026-09-09 roadmap-claim check (kit feature 011 — no constitution amendment)
+
+The kit's `ritual-checks` grew a sixth member, `roadmap-claims`: every `NNN-*` feature branch
+visible on `origin` must have a `docs/roadmap.md` row, in a table with a Status column, whose
+Status is not `idea`. **No constitutional change is involved** (the kit's constitution stayed
+0.6.0) — there is nothing to re-express; this note is the whole adoption story:
+
+- **What arrives verbatim**: `scripts/roadmap-claim-check.ps1` (new), the updated
+  `scripts/ritual-checks.ps1` that runs it, and `scripts/claim-feature.ps1`, which now
+  prints the flip reminder after a successful claim.
+- **What it enforces**: the second half of the claim ritual — when you claim `NNN-name`,
+  flip that feature's roadmap row in a main-side `docs/` commit in the same sitting
+  (`docs/sdlc/branch-strategy.md`, Number Allocation). A claim whose row still reads `idea`
+  tells the next agent the work is unstarted and invites a duplicate spec; the field
+  incident this closes ran 13 days that way.
+- **It can turn your CI red on the first run, by design.** The check reads the branches
+  actually on your remote, so a *stale* `NNN-*` branch still sitting there — merged long
+  ago, or abandoned — needs its row to read `shipped`/`dropped`, or the branch deleted.
+  That sweep is the point: a lingering claim with a stale row is the same lie.
+- **Three inert states, all exit 0 and reported as `n/a`, never failed**: no `origin`
+  remote, a remote it cannot reach, and a `docs/roadmap.md` with no Status-bearing table.
+  `docs/roadmap.md` never flows down, so a project whose ledger is shaped differently from
+  the kit's is left alone rather than forced into the kit's table.
+- **The branch's own number is exempt**, so a fresh claim can commit its mini-spec before
+  the row exists without deadlocking itself; every *other* visible claim still has to have
+  a row for the branch to go green.
+
 ## 3. Other surgical files
 
 Not every surgical report is a constitution amendment. `docs/sdlc/gate-command.md`,

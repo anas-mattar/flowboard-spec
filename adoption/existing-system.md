@@ -102,7 +102,8 @@ documented in `scripts/doc-lint.ps1`'s header comment.
 
 Same as greenfield step 7: the ritual checks in CI — the kit's
 `.github/workflows/ritual-checks.yml` runs `scripts/ritual-checks.ps1` (doc-lint +
-enforcement-pack + scope-check + the adoption doctor) on every governed-branch push, and
+enforcement-pack + scope-check + digests + roadmap-claims + the adoption doctor) on every
+governed-branch push, and
 finishing adoption includes requiring the `ritual-checks` status check
 (`docs/sdlc/branch-protection.md`);
 on other CI hosts, invoke the same wrapper for identical verdicts — plus the CI gate as
