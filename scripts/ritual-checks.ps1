@@ -17,6 +17,10 @@
                                          -Root, mirroring the doctor's own discriminator;
                                          a tree with neither marker shows an explicit n/a
                                          line, excluded from the failure count — 007 US3)
+      6. scripts/roadmap-claim-check.ps1  (every NNN-* claim on origin must have a
+                                         non-idea roadmap row — GAP-017; reports n/a
+                                         with no remote, an unreachable ledger, or no
+                                         Status-bearing roadmap table — 011)
 
     Each member runs as a child pwsh process (the member scripts terminate with `exit`),
     and the wrapper ends with a verdict block, one line per member, then
@@ -51,6 +55,7 @@ $members = [ordered]@{
     'enforcement-pack' = @((Join-Path $scriptsDir 'enforcement-pack.ps1'), '-Root', $Root) + $branchArgs
     'scope-check'      = @((Join-Path $scriptsDir 'scope-check.ps1'), '-All', '-Root', $Root) + $branchArgs
     'digests'          = @((Join-Path $scriptsDir 'build-digests.ps1'), '-Check', '-Root', $Root)
+    'roadmap-claims'   = @((Join-Path $scriptsDir 'roadmap-claim-check.ps1'), '-Root', $Root) + $branchArgs
 }
 
 # The adoption doctor joins for adopted projects. The gate mirrors the doctor's OWN
@@ -65,20 +70,21 @@ if ((Test-Path (Join-Path $Root '.kit-version')) -or (Test-Path (Join-Path $Root
 }
 
 $results = [ordered]@{}
-$digestsNA = $null
+$naReasons = @{}
+# Members whose n/a states (010 SC-004; 011 no-ledger/no-table) are distinct verdicts,
+# not OK: capture their output (re-echoed verbatim) to read the n/a line while keeping
+# the exit-code contract identical to the other members.
+$naCapableMembers = @('digests', 'roadmap-claims')
 foreach ($name in $members.Keys) {
     Write-Host "=== ritual-checks: $name ==="
-    if ($name -eq 'digests') {
-        # The digest check's n/a states (no markers yet — 010 SC-004) are distinct
-        # verdicts, not OK: capture the member's output (re-echoed verbatim) to read the
-        # n/a line while keeping the exit-code contract identical to the other members.
+    if ($name -in $naCapableMembers) {
         $out = & pwsh -NoProfile -File @($members[$name]) 2>&1
         $results[$name] = $LASTEXITCODE
         $out | ForEach-Object { Write-Host $_ }
         if ($results[$name] -eq 0) {
             # Echo the member's own n/a reason into the summary (phase 1 review F5).
-            $naLine = @($out | ForEach-Object { "$_" } | Where-Object { $_ -match '^digests: n/a' }) | Select-Object -First 1
-            if ($naLine) { $digestsNA = $naLine.Substring('digests: '.Length) }
+            $naLine = @($out | ForEach-Object { "$_" } | Where-Object { $_ -match "^${name}: n/a" }) | Select-Object -First 1
+            if ($naLine) { $naReasons[$name] = $naLine.Substring("${name}: ".Length) }
         }
     } else {
         & pwsh -NoProfile -File @($members[$name])
@@ -90,7 +96,7 @@ foreach ($name in $members.Keys) {
 $failedCount = 0
 foreach ($name in $results.Keys) {
     $verdict = if ($results[$name] -eq 0) {
-        if ($name -eq 'digests' -and $digestsNA) { $digestsNA } else { 'OK' }
+        if ($naReasons.ContainsKey($name)) { $naReasons[$name] } else { 'OK' }
     } else { $failedCount++; 'FAIL' }
     Write-Host ('ritual-checks: {0,-16} {1}' -f $name, $verdict)
 }

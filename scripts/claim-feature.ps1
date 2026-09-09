@@ -163,6 +163,7 @@ if ($Json) {
     if ($pushed) { Write-Host "CLAIMED: $branch (pushed to origin — the claim is live)" }
     else { Write-Host "CLAIMED LOCALLY: $branch (not pushed — not team-visible)" }
     Write-Host "SPEC_FILE: $specFile"
+    Write-Host "NEXT: flip the roadmap row for $branch (Status, Owner, Spec ``specs/$branch/``) in a main-side docs commit — ritual-checks fails while a claim's row still reads 'idea' (GAP-017)."
 }
 exit 0
 
