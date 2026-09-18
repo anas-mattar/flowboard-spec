@@ -29,7 +29,8 @@ owning document, the owning document prevails — and the constitution
 │         → owner certifies the GATE (exit code — or, declared        │
 │           ci-held, evidence approval AFTER the phase commit below)  │
 │         → commit the phase ('phase N' in the subject)               │
-│         → SCOPE CHECK: scope-check.ps1 = declared territory only    │
+│         → SCOPE CHECK: scope-check.ps1 (+ scope-check-repos.ps1     │
+│           in a multi-repo project) = declared territory only        │
 │         → AI REVIEW by a fresh-context reviewer (provenance block)  │
 │                                                                     │
 │      ritual-checks CI re-runs the machine checks on every push      │
@@ -57,7 +58,7 @@ owning document, the owning document prevails — and the constitution
 | 3a | Implement | Exactly one approved phase; UI with visual references runs the Visual Compliance Loop | `.specify/memory/constitution.md` (X), `docs/sdlc/review-process.md` |
 | 3b | Gate | **Certifying gate**: the owner runs it and confirms the exit code — or, when the approved plan (Micro: mini-spec) declares `**Gate Certification**: ci-held` (Lite/Micro/Standard only), records approval on the CI evidence triplet; agent runs are feedback only in either mode | `docs/sdlc/gate-command.md`, `docs/sdlc/definition-of-done.md` (gate 3) |
 | 3c | Commit | One commit per phase (`phase N` in the subject) after the owner's `git diff --stat` intent review, so a bad phase reverts cleanly and the scope check can attribute it; `ritual-checks` CI re-runs the machine checks on every push | `docs/sdlc/branch-strategy.md`, `docs/sdlc/rollback-process.md`, `docs/sdlc/branch-protection.md` |
-| 3d | Scope check | **Machine scope check**: `scripts/scope-check.ps1` verifies the committed phase against its declared **Territory** in `tasks.md` (Micro: in `spec.md`) — PASS required; a failing commit is remediated and redone | `docs/sdlc/review-process.md`, `docs/sdlc/definition-of-done.md` (gate 4) |
+| 3d | Scope check | **Machine scope check**: `scripts/scope-check.ps1` verifies the committed phase against its declared **Territory** in `tasks.md` (Micro: in `spec.md`) — PASS required; a failing commit is remediated and redone. Multi-repo: `scripts/scope-check-repos.ps1` grades the same phase's commits in the nested code repositories (`n/a` elsewhere) | `docs/sdlc/review-process.md`, `docs/sdlc/definition-of-done.md` (gate 4), `docs/sdlc/repository-strategy.md` |
 | 3e | AI review | **AI review** completed from `specs/_templates/ai-code-review-template.md` by a **fresh-context agent or second model** (never self-graded), with the Reviewer Provenance block | `docs/sdlc/definition-of-done.md` (gate 5), `docs/sdlc/review-process.md` |
 | 4 | Feature review | **Human review**, once per feature at merge — in a team the reviewer is never the owner | `.specify/memory/constitution.md` (IX), `docs/sdlc/definition-of-done.md` (gate 6), `specs/_templates/human-pr-review-template.md` |
 | 5 | Merge | Push the branch, merge `--no-ff` into protected `main`; CI on `main` is the cross-feature referee | `docs/sdlc/branch-strategy.md`, `docs/sdlc/team-workflow.md` (rule 8) |

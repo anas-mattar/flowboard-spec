@@ -43,15 +43,24 @@ screenshots to the phase notes — the AI review verifies they exist.
 
 ```bash
 pwsh -File scripts/scope-check.ps1
+pwsh -File scripts/scope-check-repos.ps1   # multi-repo only; n/a elsewhere
 ```
 
    It must report `PASS`: every changed file inside the phase's **Territory** from
    `tasks.md` — for a Micro feature, the feature-global **Territory** block in its
    mini-spec `spec.md` (constitution X, Micro lane) — (a `WARN` is acceptable only for features specified before the
    verification pack — Definition of Done, gate 4).
+   In a multi-repo project the second command grades this phase's commits in the nested
+   code repositories (`docs/sdlc/repository-strategy.md`, "Territory across repositories");
+   neither verdict may be FAIL — `n/a`, `not applicable` and `WARN` are the cross-repo
+   check's lawful non-blocking verdicts, and a phase that touches no code repository
+   legitimately produces one. Whole-run verdicts, here and in CI, come from
+   `pwsh -File scripts/ritual-checks.ps1` (doc-lint + enforcement-pack + scope-check +
+   scope-repos + digests + roadmap-claims, plus the adoption doctor).
 4. On `FAIL`, remediate and redo the phase commit: revert the undeclared change — or, if
    it is legitimate scope discovery, amend the phase's **Territory** in `tasks.md` (owner
-   approval) in a commit made **before** the re-committed phase. The check reads the
+   approval, recorded as constitution I requires) in a commit made **before** the
+   re-committed phase. The check reads the
    declaration from the commit's parent, so same-commit widening never passes. On a
    Micro feature the territory amendment lives in `spec.md`, must stay within the lane's
    file cap, and the standing alternative is always **promotion to Standard** (full spec
@@ -81,7 +90,10 @@ fails a branch whose added review lacks it). Check:
 AI review alone is insufficient. **Human review is required before merge**, and a
 change MUST NOT be merged until a human reviewer approves it (constitution IX).
 
-Human reviewer checks (record in `specs/_templates/human-pr-review-template.md`):
+<!-- digest: The human reviewer judges whether an amendment's approver really agreed — no machine can check that. -->
+
+Human reviewer checks (record in `specs/NNN-name/human-pr-review.md`, written from
+`specs/_templates/human-pr-review-template.md`):
 
 - Actual UI vs visual references
 - Business behavior
@@ -91,6 +103,12 @@ Human reviewer checks (record in `specs/_templates/human-pr-review-template.md`)
 - Code diff
 - Gate result
 - No unrelated changes
+- Every amendment in the feature diff carries its record — each change to an approved
+  `spec.md`, `plan.md`, `tasks.md` or `contracts/` file names an approver who is not the
+  implementing agent (constitution I). A machine can grade that a record exists and agrees
+  with its commit; **whether the named person actually agreed — and whether the agent
+  approved its own amendment — is this reviewer's to judge**, and it is the half no check
+  reaches.
 
 ## Merge
 

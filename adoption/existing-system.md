@@ -98,13 +98,22 @@ that refer to the adopter's code (not kit governance files) in **bold**, not bac
 fill or remove anything that looks like a `{{SLOT}}` placeholder. The authoring convention is
 documented in `scripts/doc-lint.ps1`'s header comment.
 
+## 7b. Multi-repo: give gate 4 reach into the code
+
+If your code lives in nested repositories beside this one, declare them in
+**kit-adoption.json**'s `codeRepos` array and copy
+**.github/workflows/code-repo-scope-check.yml.template** into each of them, filling its two
+slots. Until you do, the machine scope check governs only this repository: every phase commit
+containing code is graded by a reviewer's eye alone, and the adoption doctor WARNs
+(`docs/sdlc/repository-strategy.md`, "Territory across repositories"). Territory entries then
+name paths repo-prefixed from this repository's root.
+
 ## 8. Keep the framework honest
 
 Same as greenfield step 7: the ritual checks in CI — the kit's
-`.github/workflows/ritual-checks.yml` runs `scripts/ritual-checks.ps1` (doc-lint +
-enforcement-pack + scope-check + digests + roadmap-claims + the adoption doctor) on every
-governed-branch push, and
-finishing adoption includes requiring the `ritual-checks` status check
+`.github/workflows/ritual-checks.yml` runs `scripts/ritual-checks.ps1` (the wrapper prints
+one verdict line per member and is the authoritative list) on every governed-branch push,
+and finishing adoption includes requiring the `ritual-checks` status check
 (`docs/sdlc/branch-protection.md`);
 on other CI hosts, invoke the same wrapper for identical verdicts — plus the CI gate as
 second witness, and institutional knowledge (deploy residuals, protected data registers,

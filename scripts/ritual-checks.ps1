@@ -10,6 +10,12 @@
       1. scripts/doc-lint.ps1
       2. scripts/enforcement-pack.ps1   (includes the ReviewProvenance check)
       3. scripts/scope-check.ps1 -All   (every phase commit since merge-base with main)
+      3b. scripts/scope-check-repos.ps1 -All  (the same grading for the nested code
+                                         repositories declared in kit-adoption.json —
+                                         reports n/a, distinct from OK, when none are
+                                         declared or none is present here, which is the
+                                         kit repository, every single-repo adoption, and
+                                         governance CI; 012)
       4. scripts/build-digests.ps1 -Check  (law-digest freshness — reports n/a, distinct
                                          from OK, until digest markers exist; 010)
       5. scripts/verify-kit.ps1         (the adoption doctor — ADOPTED PROJECTS ONLY,
@@ -54,6 +60,7 @@ $members = [ordered]@{
     'doc-lint'         = @((Join-Path $scriptsDir 'doc-lint.ps1'), '-Root', $Root)
     'enforcement-pack' = @((Join-Path $scriptsDir 'enforcement-pack.ps1'), '-Root', $Root) + $branchArgs
     'scope-check'      = @((Join-Path $scriptsDir 'scope-check.ps1'), '-All', '-Root', $Root) + $branchArgs
+    'scope-repos'      = @((Join-Path $scriptsDir 'scope-check-repos.ps1'), '-All', '-Root', $Root) + $branchArgs
     'digests'          = @((Join-Path $scriptsDir 'build-digests.ps1'), '-Check', '-Root', $Root)
     'roadmap-claims'   = @((Join-Path $scriptsDir 'roadmap-claim-check.ps1'), '-Root', $Root) + $branchArgs
 }
@@ -74,7 +81,7 @@ $naReasons = @{}
 # Members whose n/a states (010 SC-004; 011 no-ledger/no-table) are distinct verdicts,
 # not OK: capture their output (re-echoed verbatim) to read the n/a line while keeping
 # the exit-code contract identical to the other members.
-$naCapableMembers = @('digests', 'roadmap-claims')
+$naCapableMembers = @('digests', 'roadmap-claims', 'scope-repos')
 foreach ($name in $members.Keys) {
     Write-Host "=== ritual-checks: $name ==="
     if ($name -in $naCapableMembers) {

@@ -43,10 +43,18 @@ The manual recipe it automates (kept as the fallback):
 
 **Then flip the roadmap row.** The branch is the claim; the roadmap row is what the *next*
 agent reads. In the same sitting, a **main-side** `docs/` commit sets that feature's
-`docs/roadmap.md` row to Status `in progress` with its Owner and Spec path
-(`specs/NNN-<name>/`). A claimed branch whose row still reads `idea` says the work is
-unstarted and invites a duplicate spec, so `scripts/ritual-checks.ps1` fails while any
-claim visible on the remote has no non-idea row (`scripts/roadmap-claim-check.ps1`).
+`docs/roadmap.md` row to Status `in progress` with its Owner and Spec path. A claimed
+branch whose row still reads `idea` says the work is unstarted and invites a duplicate
+spec, so `scripts/ritual-checks.ps1` fails while any claim visible on the remote has no
+non-idea row (`scripts/roadmap-claim-check.ps1`).
+
+**Write that Spec cell bracketed** — `` `[specs/NNN-<name>/]` `` — until the feature
+merges. The spec directory lives on the feature branch, so on main it does not exist yet
+and a plain backticked path fails doc-lint on the very commit the rule above requires
+(the two rules collide by construction at claim time; brackets are the kit's authoring
+convention for a path that does not resolve here — `scripts/doc-lint.ps1` header, and the
+`specified` row in `specs/_templates/roadmap-template.md`). Drop the brackets when the
+feature merges and the directory reaches main.
 
 <!-- digest: Flip a new claim's roadmap row to in progress in a main-side docs commit — ritual-checks fails while a claim reads idea. -->
 
@@ -131,7 +139,7 @@ specs/NNN-<name>/
 ├─ data-model.md          (optional)
 ├─ contracts/             (optional)
 ├─ quickstart.md          (optional)
-├─ notes.md               (optional)
+├─ notes.md               (optional — phase evidence; see below)
 ├─ screenshots/           (optional — visual references, when the project has them)
 ├─ checklists/            (optional)
 ├─ ai-code-review.md      (per-feature; from specs/_templates/)
@@ -142,6 +150,19 @@ specs/NNN-<name>/
 A **Micro** feature's directory holds `spec.md` (the mini-spec) plus the per-feature
 review files only — no `plan.md`/`tasks.md` until promoted to Standard (constitution X,
 Micro lane).
+
+**`notes.md` is where a feature's evidence lives**: phase results, scenario and measurement
+tables, gate records, review findings and their dispositions, and any judgement the feature
+had to write down. **`tasks.md` holds the agreed work and its completion state, and nothing
+else** — a task says what was agreed, and a ticked box says it is done.
+
+The split is not housekeeping. `spec.md`, `plan.md`, `tasks.md` and `contracts/` are the
+documents the amendment rule grades (constitution I, Amendment authority), so annotating a
+task with what actually happened is an **amendment** to an approved document and owes an
+approver record — while the same sentence in `notes.md` owes nothing. Recording what you
+found must never cost an approval, so record it in `notes.md`.
+
+<!-- digest: notes.md holds a feature's evidence; tasks.md holds the agreed work and its completion state alone. -->
 
 ## Cross-Repository Features
 

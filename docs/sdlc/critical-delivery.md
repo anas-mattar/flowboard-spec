@@ -91,7 +91,31 @@ Declare Critical when the feature touches any of:
    **Why**: the person who drove the agent is the person least able to see its blind spots,
    and an undefined substitute ("some review, some time") is not falsifiable.
 
+   **What the machine checks** (`scripts/enforcement-pack.ps1`, CriticalEvidence). The rule
+   above has two arms and the check follows whichever one applies, choosing by the
+   `developers` array in `kit-adoption.json`:
+
+   - **Nothing declared, or one developer** → `second-model-review.md`, first committed at
+     least 24 hours before merge. The substitute above, unchanged.
+   - **Two or more developers** → `specs/NNN-name/human-pr-review.md`, **committed**, carrying
+     a filled `## Review Provenance` block whose **Reviewer** is not its **Owner**, plus the
+     verbatim attestation. No cooling-off.
+
+   The count is taken after non-string and blank entries are dropped and duplicates collapsed
+   case-insensitively, so `["Ada","ada"]` is one developer, not two. An absent, empty, or
+   otherwise unusable declaration selects the **solo arm**: a project that has never declared
+   anything keeps the stricter requirement, forever. The doctor (`scripts/verify-kit.ps1`)
+   reports a malformed declaration and states the mode it produces, because the fallback is
+   otherwise silent. See **adoption/updating.md** for the shape.
+
+   **Honesty about the team arm too**: it compares two names written by the same team, in
+   one file. That converts a silent omission into a written claim a reviewer can falsify —
+   which is worth something, and is not the same as verifying that the review happened. The
+   cooling-off does not apply there because the period exists to give a solo developer
+   distance from their own work, and a second person already is that distance.
+
    <!-- digest: Critical 5: the human reviewer is never the owner; solo devs substitute a second-model review + 24h cooling-off. -->
+   <!-- digest: kit-adoption.json developers picks Critical 5's arm: none or one = solo substitute, 2+ = independent human review. -->
 
 ## What this addendum is NOT
 

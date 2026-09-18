@@ -2,10 +2,10 @@
 
 Makes `.github/workflows/ritual-checks.yml` an actual merge gate on GitHub, not just an
 informative CI run — completing the enforcement pack (kit feature 002) and the
-verification pack (kit feature 006). Without this, the checks in
-`scripts/ritual-checks.ps1` (doc-lint + enforcement-pack + scope-check + digests +
-roadmap-claims, plus the adoption doctor in adopted projects) run but nothing stops a
-PR that fails them from being merged anyway.
+verification pack (kit feature 006). Without this, the checks that
+`scripts/ritual-checks.ps1` runs — it prints one verdict line per member, and the wrapper
+itself is the authoritative list — run but nothing stops a PR that fails them from being
+merged anyway.
 
 > **Migrating from the 002-era checks**: `ritual-checks` supersedes the separate
 > `doc-lint` and `enforcement-pack` workflows/check names. A repository that already

@@ -55,6 +55,16 @@ paragraph: what the change does, why the verdict, and where the residual risk si
 [What was found, where (file/symbol), why it matters, and the evidence.]
 *Action: [who does what, or "none" + why].*
 
+## Amendments in this diff
+
+<!-- Constitution I, Amendment authority: list every change this phase made to the feature's
+  own spec.md, plan.md, tasks.md or contracts/, with the approver each one records. A phase
+  that rewrote its own plan changed the standard it is being graded against, and a review
+  that does not say so is grading the work against a marking scheme the worker rewrote.
+  "None" is a valid and common answer — say it explicitly rather than omitting the section. -->
+
+- [ ] Amendments listed, or **none** stated explicitly
+
 ## Constitution re-check (post-implementation)
 
 [PASS/FAIL — re-evaluate the plan's Constitution Check against the code as built. List

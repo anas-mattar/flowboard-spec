@@ -98,7 +98,9 @@ links to prevail).
 6. Review the working diff for intent (`git diff --stat`), fix only current-phase issues,
    then commit the phase (`phase N` in the subject).
 7. Run the machine scope check against the commit (`pwsh -File scripts/scope-check.ps1` —
-   PASS required; a failing commit is remediated and redone). AI review by a fresh-context
+   PASS required; a failing commit is remediated and redone; in a multi-repo project
+   `pwsh -File scripts/scope-check-repos.ps1` grades the same phase's commits in the
+   nested code repositories). AI review by a fresh-context
    agent or second model — never self-graded — with the Reviewer Provenance block; then
    human review. Merge only after approval. CI re-runs the same checks on every push
    (`scripts/ritual-checks.ps1`).
@@ -112,6 +114,9 @@ links to prevail).
 - Do not refactor unrelated files or change unrelated features.
 - Do not add packages unless approved in `plan.md`.
 - Do not change architecture unless approved in `plan.md`.
+- Amending an approved feature document records who approved it, and **you never approve
+  your own amendment** (constitution I, Amendment authority — read it for the record shape
+  and the one exemption).
 - Do not claim success until the user runs the gate and confirms the exit code — or, on a
   Lite/Micro/Standard feature whose approved plan (Micro: mini-spec) declares
   `**Gate Certification**: ci-held`,
@@ -149,7 +154,7 @@ the Definition of Done) is unchanged — digests never replace it.
 | A feature declared Micro (small, bounded, one phase) | `.specify/templates/micro-spec-template.md` + `docs/sdlc/branch-strategy.md` (level menu) |
 | A feature declared Critical (regulated / high-risk) | `docs/sdlc/critical-delivery.md` |
 | Frontend UI | `docs/rulebooks/frontend-rules.md` + `docs/rulebooks/` compliance checklist for that tier |
-| Reviewing / finishing a phase | `docs/sdlc/review-process.md` + the templates in `specs/_templates/`; verdicts come from `pwsh -File scripts/ritual-checks.ps1` (doc-lint + enforcement-pack + scope-check + digests + roadmap-claims + the adoption doctor — same command CI runs) |
+| Reviewing / finishing a phase | `docs/sdlc/review-process.md` + the templates in `specs/_templates/`; verdicts come from `pwsh -File scripts/ritual-checks.ps1` (doc-lint + enforcement-pack + scope-check + scope-repos + digests + roadmap-claims + the adoption doctor — same command CI runs) |
 | Updating this project from the kit | `adoption/updating.md`; integrity verdicts come from `pwsh -File scripts/verify-kit.ps1` (the adoption doctor — runs at init end, update end, and in CI) |
 
 <!-- Tier rows are a MENU, not a requirement: keep only the tiers this project has, and add
@@ -168,3 +173,7 @@ the Definition of Done) is unchanged — digests never replace it.
      Single-repo projects: "This repository is the only repository." -->
 
 When implementing a feature, always confirm which repository is active before changing files.
+Multi-repo projects declare their code repositories in `kit-adoption.json` and write
+**Territory** entries repo-prefixed from this repository's root — see "Territory across
+repositories" in `docs/sdlc/repository-strategy.md`, which is what
+`scripts/scope-check-repos.ps1` grades against.

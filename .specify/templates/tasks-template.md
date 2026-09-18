@@ -11,8 +11,10 @@ description: "Task list template for feature implementation"
 **Tests**: The examples below include test tasks. Per constitution Principle VIII, tests are
 REQUIRED for business-critical functionality, business-critical calculations (deterministic/
 golden-fixture validation), and any change affecting business-critical logic. Omit test tasks
-only when the feature genuinely has none of those — record that determination in this file
-rather than silently dropping the tests section.
+only when the feature genuinely has none of those — record that determination in the feature's
+`notes.md` rather than silently dropping the tests section. It goes there, not here, because
+this file is graded by the amendment rule (constitution I) and evidence must never cost an
+approver record; `docs/sdlc/branch-strategy.md` states the split.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -51,7 +53,10 @@ and fails on any undeclared file (Definition of Done gate 4). Rules:
   path — all must be in territory.
 - Territory may be amended only with owner approval and only in a commit made **before** the
   phase commit that relies on it: the check reads the declaration from the commit's parent,
-  so a stray file can never be legalized in the commit that introduces it.
+  so a stray file can never be legalized in the commit that introduces it. That approval is
+  **recorded, not assumed** — the amended section carries an
+  `**Amendment approved by**: <name>, <YYYY-MM-DD>` line and the amending commit names the
+  same approver, and an implementing agent never approves its own (constitution I).
 - Phase commits MUST carry a `phase N` token in the commit subject (e.g. `phase 2: entry
   form`) so the check can attribute them.
 - A phase with no declaration produces a non-blocking warning (compatibility with features
