@@ -23,6 +23,8 @@
       "reason": "tier templates are instantiated with project-specific rules" },
     { "path": ".github/workflows/project-gate.yml.template", "class": "surgical",
       "reason": "gate-slot-bearing template (tier-rulebook pattern): the adopter copies it to project-gate.yml and fills the slots; deletable like the tier menu" },
+    { "path": ".github/workflows/code-repo-scope-check.yml.template", "class": "surgical",
+      "reason": "slot-bearing template (governance repo + code-repo directory): the adopter copies it INTO a nested code repository and fills the slots; multi-repo projects only, deletable like the tier menu" },
     { "path": "modules/**", "class": "surgical",
       "reason": "worked examples; projects replace with their own domain modules" },
     { "path": "docs/sdlc/branch-protection.md", "class": "verbatim" },

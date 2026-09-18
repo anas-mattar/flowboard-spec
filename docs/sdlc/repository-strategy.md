@@ -90,6 +90,50 @@ constitution, no rulebooks, no specs. CI may clone a code repository alone to bu
 but any environment where an agent *authors* changes (including cloud agents) MUST reproduce
 the nested layout first.
 
+## Territory across repositories
+
+The feature's **Territory** is declared once, in the governance repository
+(`specs/NNN-name/tasks.md`; a Micro feature's mini-spec `spec.md`), and it covers every
+repository the phase touches. Entries are written **repo-prefixed and relative to the
+governance root** — the way the tree looks from where you run the check:
+
+```text
+**Territory**:
+
+- `flowboard-api/src/Boards/**`
+- `flowboard-web/app/(boards)/**`
+- `specs/NNN-name/`
+```
+
+`pwsh -File scripts/scope-check-repos.ps1` grades each code repository's phase commits
+against that declaration, prefixing the repository's own paths with its directory name
+before matching. It reads the repositories named in **kit-adoption.json**'s `codeRepos`
+array, and reports `n/a` when none is declared or none is present — so a governance-only
+checkout is unaffected. Two rules make it work:
+
+- **Matching branch names.** The code repository must carry the same `NNN-name` branch as
+  the governance repository (the Cross-Repository Feature Rule below) — that is how the
+  check finds the declaration for a code commit.
+- **Declare before you commit.** The declaration is read as it stood *when the code was
+  committed*: widening it afterwards cannot turn a FAIL into a PASS, exactly as in the
+  single-repository check. Legitimate scope discovery is amended in a governance commit
+  made **before** the code phase commit that relies on it — and that amendment records who
+  approved it, exactly as constitution I requires of any change to an approved feature
+  document.
+- **Territory is never back-declared.** A declaration that post-dates a phase's code commit
+  FAILs that commit even when every file it touched is inside the declared paths — the
+  ordering is the violation. Turning this on mid-flight therefore means one of two things
+  for phases already committed: re-commit them on top of the declaration, or leave those
+  phases undeclared (a lawful non-blocking WARN) and declare from the next phase forward.
+
+In CI the reach is inverted: the governance repository's CI clones itself alone and reports
+`n/a`, while each code repository runs the check for itself by checking out the governance
+repository as a sibling — the kit ships
+**.github/workflows/code-repo-scope-check.yml.template** for exactly that.
+
+<!-- digest: Multi-repo Territory entries are repo-prefixed from the governance root; scope-check-repos.ps1 grades code repos. -->
+<!-- digest: A code commit is graded against the declaration as of its own date — later widening never turns FAIL into PASS. -->
+
 ## Cross-Repository Feature Rule
 
 When a feature spans repositories:

@@ -240,6 +240,203 @@ Status is not `idea`. **No constitutional change is involved** (the kit's consti
   the row exists without deadlocking itself; every *other* visible claim still has to have
   a row for the branch to go green.
 
+### Flow-down note: the 2026-09-09 cross-repo scope check (kit feature 012 — no constitution amendment)
+
+Machine gate 4 reaches the nested code repositories. **No constitutional change is involved**
+(the kit's constitution stayed 0.6.0); this note is the whole adoption story, and it matters
+most to projects in the nested multi-repo layout — until now, every phase commit containing
+code was outside the scope check's reach (GAP-016).
+
+- **What arrives verbatim**: `scripts/scope-lib.ps1` (new — the parsing/matching helpers, now
+  shared), `scripts/scope-check-repos.ps1` (new — the cross-repo grader),
+  `scripts/scope-check.ps1` (unchanged behavior, now dot-sourcing the library),
+  `scripts/ritual-checks.ps1` (new `scope-repos` member), `scripts/init-kit.ps1` and
+  `scripts/verify-kit.ps1` (the `codeRepos` field), and
+  `.github/workflows/code-repo-scope-check.yml.template` (surgical — you copy it).
+- **It is inert until you declare something.** With no `codeRepos` in `kit-adoption.json`, the
+  member reports `n/a` and your CI verdict is unchanged. A single-repo project never declares
+  it and is unaffected.
+- **What a multi-repo project does**: add `codeRepos` to the record (§4), write this feature's
+  **Territory** entries repo-prefixed from the governance root
+  (`` `your-api/src/**` ``), and copy the code-repo workflow template into each code repository,
+  filling its governance-repository and directory slots. The doctor WARNs until the field is
+  there — absent and empty count the same.
+- **Two rules that bite immediately**: the code repository must carry the same `NNN-name`
+  branch as the governance repository (the Cross-Repository Feature Rule), and the territory
+  must be declared **before** the code is committed — a declaration that post-dates a code
+  phase commit FAILs it, which is the same anti-retroactivity rule the in-repo check has
+  always applied to its own commits.
+- **Reading a code-repo CI run**: PASS or FAIL means it graded. A run showing only WARN or
+  `n/a` graded nothing — a mismatched directory name, a missing branch, or a code repository
+  whose trunk is not `main` (pass `-BaseRef`). Do not accept that as a green gate.
+
+### Flow-down note: the 2026-09-16 amendment authority (kit 0.6.0 → 0.7.0, feature 014)
+
+Principle I gains an **Amendment authority** clause, and `scripts/enforcement-pack.ps1` gains
+the check that grades it. The rule: once a feature's `spec.md` or `plan.md` has been approved,
+a later change to that feature's `spec.md`, `plan.md`, `tasks.md` or `contracts/` must record
+who approved it, and **an implementing agent must not approve its own amendment**. It closes
+GAP-019 — until now an agent could widen its own Territory and pass the scope check by
+construction, because the check reads the Territory that same agent just wrote.
+
+- **What the update writes for you (verbatim)**: `scripts/enforcement-pack.ps1` (the new
+  `Invoke-AmendmentAuthorityCheck`), `.specify/templates/tasks-template.md`,
+  `docs/sdlc/definition-of-done.md` (gates 5 and 6), `docs/sdlc/branch-strategy.md`, and both
+  review templates — `specs/_templates/ai-code-review-template.md` and
+  `specs/_templates/human-pr-review-template.md`, which is what makes your reviewers see
+  amendments at all.
+- **What you mirror by hand (surgical — the update reports these, it never writes them)**:
+  `CLAUDE.md` (the Strict Rules bullet: you never approve your own amendment),
+  `docs/sdlc/review-process.md` (the human-reviewer check — whether the named approver really
+  agreed) and `docs/sdlc/repository-strategy.md` (the multi-repo twin of the clause). Skip these
+  and you get the machine while your agent instructions and your review checklist never mention
+  the rule — live and unenforced, which `spec.md` US4 calls the worst state in the kit.
+  `.specify/memory/constitution.md` is surgical too, and is yours: §2 reports it, nothing
+  writes it.
+- **Ratify the clause first.** The kit shipped the law one phase before the machine
+  deliberately: a kit must not enforce a rule it has not ratified. Do the same — adopt the
+  Principle I wording into your constitution as its own reviewed change, then let the check
+  arrive. The wording is itself adopted from an adopting project's ratified text (FitForge
+  constitution 1.1.0), so a project already carrying that clause reconciles rather than
+  collides.
+- **If you already carry that clause, one paragraph of it stops being true.** The field
+  wording closes with an "Enforcement, honestly stated" paragraph saying the rule is enforced
+  by review and not by machine, because the check was owed to the kit and did not yet exist.
+  It exists now. Delete or rewrite that paragraph when the check arrives, and keep the
+  honesty it was written for by replacing it with what the check does *not* verify (below) —
+  otherwise your constitution understates your own enforcement, which is the same defect as
+  overstating it. **This is an edit in your repository, by you, under your own ritual**: the
+  kit never writes your constitution, and an update only reports it (§2).
+
+**What the check grades.** On an `NNN-*` branch, every non-merge commit in the branch's range,
+and within each commit only the paths `specs/NNN-name/spec.md`, `plan.md`, `tasks.md` and
+`contracts/*`. Nothing else in your repository is in scope — `notes.md`, `research.md`,
+`screenshots/`, and every file outside the feature directory are ungraded, which is why
+recording evidence never costs an approval.
+
+- A document's **first appearance is creation**, not amendment, and owes no record. This kit
+  has no approval token, so existence is the proxy for approval (stated plainly in the clause).
+  A branch renumbered by a lost claim race is creation too: the whole `specs/NNN-name`
+  directory moves, `claim-feature.ps1` mandates the header edits that ride along, and the check
+  skips a rename whose old path was in a different feature directory (FR-010). It is the one
+  exempted case where a document's text did change — the alternative was a state with no legal
+  path to green.
+- Every later change to the document's **text** is an amendment. The test is the text, never
+  the intent: re-wording, re-scoping or annotating a task is an amendment even when the work
+  itself was already agreed.
+- **Two exemptions, both narrow.** A `tasks.md` change that alters nothing but checkbox state
+  — `- [ ]` to `- [x]` or back — is progress, not amendment. Un-ticking counts too. But
+  rewriting a task's text *while* ticking it is an amendment: record what was done in
+  `notes.md` and leave the task saying what was agreed.
+- And the **approval transition itself**, on `spec.md` or `plan.md`: `**Status**: Draft`
+  becoming `**Status**: Approved` is the act that starts the rule, not a change to an approved
+  document, so it owes no record.
+  The kit's own spec templates mandate that edit; a rule that charged an approver record for
+  obeying the template would be charging for the approval. It is exempt only in that exact
+  shape — exactly one line differs in the whole file, it is the document's **first**
+  `**Status**:` line and not one inside a fenced block, the old value is `Draft`, and the new
+  value is `Approved` plus at most a date, an `(owner: …)` parenthetical and the template's
+  trailing comment. Anything riding along on that line, a second status line rewritten beside
+  it, or `Approved` going back to `Draft`, is an amendment like any other. A `tasks.md` status
+  line is not exempt — no kit template gives it one.
+
+**A conforming record** is two halves, and the check wants both:
+
+```text
+**Amendment approved by**: anas.m, 2026-09-13
+```
+
+in the amended section of the document itself — not in `notes.md`, not inside an HTML comment —
+**and** the same approver named in the amendment commit's message. The message is the half a
+later edit cannot fake, which is the whole reason it is asked for. Two failures you may meet:
+
+```text
+AmendmentAuthority: commit a1b2c3d amends specs/014-amendment-authority/plan.md after
+approval with no conforming approver record. Add '**Amendment approved by**: <name>,
+<YYYY-MM-DD>' to the amended section and name the same approver in the commit message
+(constitution I, Amendment authority). Ticking a task off is exempt …
+
+AmendmentAuthority: commit a1b2c3d records 'anas.m' as the approver of its change to
+specs/014-amendment-authority/plan.md, but its commit message does not name them — the
+message is fixed at commit time and is the half a later edit cannot fake
+(constitution I; plan D5)
+```
+
+"Not inside a comment" means what a Markdown renderer means by it, and the check reads your
+documents the way a renderer does. A comment opener quoted in backticks, or sitting inside a
+fenced block, is literal text that hides nothing; an escaped backtick opens no code span; and
+an unterminated opener hides everything after it to the end of the file, because that is what
+a reader would see:
+
+```text
+**Amendment approved by**: anas.m, 2026-09-13    <- counts
+
+The syntax is `<!--`.                            <- prose. The record below still counts.
+**Amendment approved by**: anas.m, 2026-09-13
+
+<!-- **Amendment approved by**: anas.m, 2026-09-13 -->   <- hidden. Does not count.
+
+<!-- a note someone forgot to close
+**Amendment approved by**: anas.m, 2026-09-13    <- hidden too, and so is the rest of the file
+```
+
+So a graded document may freely *discuss* comment syntax and still carry a visible record. The
+`<-` notes above are margin annotations, not part of the lines: a real record line ends at the
+date, and anything appended to it — including a note like those — defeats the pattern and is no
+record at all. The kit learned this the hard way:
+ a `tasks.md` task describing this very check quoted a comment
+opener in backticks, an earlier implementation read it as a real one, and every approver record
+below that line went invisible — the rule was briefly impossible to comply with in any document
+that mentioned it. If a record you can see is reported missing, look upward for an opener that
+was never closed; that is the one case where the renderer hides it from a human too.
+
+<!-- digest: The amendment check grades spec.md, plan.md, tasks.md and contracts/ only; a checkbox flip is progress. -->
+<!-- digest: Approving a document is not amending it: a lone Draft-to-Approved status flip owes no approver record. -->
+
+**What it does not verify, stated honestly.** It grades that a record exists, is well-formed,
+and names the same approver as its commit. Three things it cannot do. It cannot verify that the
+named person agreed — on a solo project the approver is the same human who drove the session.
+It does **not** enforce the self-approval prohibition: the kit records no link between a commit
+and the session that produced its diff, so **that half of the rule is held by review alone**.
+And it does not observe approval itself. What you gain is that an amendment is now visible in
+the diff and gradeable — not that consent is proven. A determined implementer can still write a
+name. The record has the strength of the Reviewer Provenance block, not of an authentication;
+treat it as a written claim a reviewer can falsify, and falsify it at gate 5 and gate 6.
+
+**Arrival day is silent — the boundary.** A commit is graded only if
+`Invoke-AmendmentAuthorityCheck` existed in the repository **before that commit was made**.
+Nothing you committed before the update that delivers the check is graded, here or in any
+adopted project. No in-flight branch turns red on arrival; the first commit the rule can fail
+is one you make afterwards, knowing it applies.
+
+One exception, worth checking *before* you update rather than after: if your CI clones
+shallowly, the check fails on the first `NNN-*` branch it sees, because it will not guess at a
+boundary it cannot compute. That is a verdict on the checkout, not on your history — set
+`fetch-depth: 0` (below) and arrival day is silent as described.
+
+The boundary is not a courtesy, and it is worth understanding rather than just relying on.
+Half of every record lives in the commit message, and a commit message is immutable. A
+retroactive rule would therefore be one **no adopter could comply with** — the only remedy
+would be rewriting published history. A rule whose commonest remedy is impossible is a rule
+people route around, so it binds forward only. The stated cost: between ratifying the clause
+and the check landing, the rule is law and ungraded. Keep that window to one phase, as the kit
+did on its own branch.
+
+**Give CI the whole history.** The boundary is computed by reading each commit's own tree, so
+the check needs real objects to read. In a shallow clone — `actions/checkout` defaults to
+depth 1 — those objects are not there, and a check that grades nothing would look
+exactly like a branch that is legitimately pre-boundary: green, and meaningless. So on an
+`NNN-*` branch the check refuses to guess. It fails, and names the condition it met: a shallow
+clone, an integration branch it cannot diff against — absent, or present but sharing no
+commit with your branch — or a parent commit this clone cannot read. A
+Lite branch (`fix/`, `chore/`, `docs/`) is unaffected — the check returns before it consults
+history at all. The kit's `.github/workflows/ritual-checks.yml` ships with `fetch-depth: 0`;
+if you wrote your own workflow, or fetch shallowly on a build agent, set it there too. That is
+still the fix. What it buys you is a red build instead of a green one that graded nothing.
+
+<!-- digest: The amendment check binds forward only — nothing committed before it arrived is graded. -->
+<!-- digest: The amendment check needs full history — fetch-depth 0 in CI, or it fails naming the shallow clone. -->
+
 ## 3. Other surgical files
 
 Not every surgical report is a constitution amendment. `docs/sdlc/gate-command.md`,
@@ -267,7 +464,7 @@ edit: reviewed, committed, no different from hand-written project documentation.
 
 `pwsh -File scripts/verify-kit.ps1` audits your project's kit integrity any time (structure
 essentials, unfilled slots in project-owned files, constitution ratification, declared-tier
-rulebooks + gate proof, `.kit-version`). It runs automatically at the end of `init-kit.ps1`
+rulebooks + gate proof, declared code repositories, `.kit-version`). It runs automatically at the end of `init-kit.ps1`
 and of every `update-kit.ps1` apply, and as part of the `ritual-checks` CI in adopted
 projects. It is read-only: it reports, you repair.
 
@@ -296,12 +493,67 @@ hand:
 `topology` is `single` or `multi`; `tiers` are the menu tiers (backend, frontend, mobile,
 database, integration) **or any custom tier** (lowercase name — worker, cli, …; custom
 tiers are first-class, `docs/rulebooks/README.md`) — every declared tier must have its
-instantiated `docs/rulebooks/<tier>-rules.md`; `kitVersionAtInit` is informational — the kit's constitution
+instantiated `docs/rulebooks/<tier>-rules.md`; `codeRepos` is the multi-repo-only list of
+nested code repositories the machine scope check reaches into
+(`scripts/scope-check-repos.ps1`) — plain directory names, one level under this repository,
+never paths; `developers` names the people who work on the project, and is what selects
+the Critical lane's evidence rule (below); `kitVersionAtInit` is informational — the kit's constitution
 version at init time, or `copy` (the doctor never validates it); `gateProof` is your
 attestation that the gate has been green at least once (adoption step 3) — record the
 exact command (never with secrets in it), the exit code, the date, and who ran it. No
 tool writes proof entries for you, and `init-kit.ps1` never overwrites an existing
 record — your attestation survives a re-init.
+
+**Multi-repo projects adopted before feature 012** add `codeRepos` by hand — one line, no
+migration tool. Put it after `topology`, keeping the record valid JSON:
+
+```json
+  "topology": "multi",
+  "codeRepos": ["your-api", "your-web"],
+```
+
+Until it is there, the doctor WARNs and `scripts/scope-check-repos.ps1` reports `n/a`: the
+code phase commits in those repositories are graded by a reviewer's eye, not by a machine
+(GAP-016). An empty array counts as "not there" — same WARN, same silence. A single-repo project omits the field entirely — its code lives in this
+repository, where `scripts/scope-check.ps1` already reaches it.
+
+**Declaring `developers` (feature 013)** — one line, and it changes exactly one thing:
+which evidence a **Critical** feature must produce for independent approval
+(`docs/sdlc/critical-delivery.md` item 5).
+
+```json
+  "developers": ["ada", "grace"],
+```
+
+| What the record says | What a Critical feature must produce |
+|---|---|
+| nothing (the default) | `second-model-review.md` + the 24-hour cooling-off — the solo substitute |
+| one name | the same; one developer *is* the solo case |
+| two or more names | a committed `specs/NNN-name/human-pr-review.md` with a filled `## Review Provenance` block — Reviewer, Owner (not the same person), and the verbatim attestation line the template carries — and **no** cooling-off |
+
+Read the table in the direction that matters: **declaring nothing changes nothing.** Every
+project adopted before this feature keeps the behaviour it has today, forever, without
+touching its record. The field only ever moves a project *off* the substitute, and only when
+it says two or more people are here — because the substitute is what a solo developer does
+*instead of* independent review, and a second person is not a substitute for anything.
+
+Declare it when your project genuinely has two or more people who review each other's work.
+Do not declare it to make a check pass: a team declaration on a one-person project removes
+the cooling-off period and asks a reviewer line you will end up filling with your own name,
+which the check rejects — correctly.
+
+The count is taken **after** blank *and non-string* entries are dropped and duplicates
+collapsed case-insensitively — so `["Ada","ada"]` is one developer and stays solo,
+`["ada","grace"," "]` is two and is team, and `["ada",5,"grace"]` is also two, because the
+number is discarded rather than counted. A value that is not an array at all, or a file whose
+root is not a JSON object, is ignored entirely and the project falls back to solo.
+
+Every one of those fallbacks is safe — they all land on the stricter arm — but they are
+**silent** in the check itself, so the doctor reports each as a FAIL *and* prints the mode
+the record actually produces — on every one of those paths, including the not-an-array case.
+The doctor and the check read the record through the same function
+(`scripts/adoption-lib.ps1`), so the mode it prints is the mode you will be held to. Without both halves, a project could believe it declared a team for
+months while being checked as solo.
 
 <!-- digest: kit-adoption.json is project-owned: every declared tier needs an instantiated rulebook; gateProof is your attestation. -->
 

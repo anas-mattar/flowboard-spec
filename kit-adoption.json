@@ -3,6 +3,7 @@
   "projectName": "FlowBoard",
   "topology": "multi",
   "tiers": ["backend", "frontend", "database"],
+  "codeRepos": ["flowboard-api", "flowboard-web"],
   "initDate": "2026-08-27",
   "kitVersionAtInit": "copy",
   "gateProof": [

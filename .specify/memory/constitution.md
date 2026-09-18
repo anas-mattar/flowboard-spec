@@ -1,7 +1,34 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 2.1.0 → 2.2.0 (FlowBoard, 2026-09-09)
+Version change: 2.2.0 → 2.3.0 (FlowBoard, 2026-09-18)
+Bump rationale: MINOR — Principle I gains the upstream kit's **Amendment authority** clause
+  (kit constitution 0.7.0, feature 014; roadmap GAP-019), re-expressed here per
+  adoption/updating.md §2. Once a feature's spec.md or plan.md has been approved, any later
+  change to that feature's spec.md, plan.md, tasks.md or contracts/ MUST record who approved
+  it — the amended section carries an **Amendment approved by**: <name>, <YYYY-MM-DD> line and
+  the amendment commit names the same approver — and an implementing agent MUST NOT approve
+  its own amendment. One exemption, stated in the rule rather than left to whatever grades it:
+  a tasks.md change that alters nothing but task completion state — a checkbox moving in
+  either direction — is progress, not amendment; everywhere else the test is the document's
+  text, never the intent behind it. The clause states plainly what a machine can verify (a
+  record exists, is well-formed, and agrees with its commit) and the three things it cannot:
+  that the named person agreed, the self-approval prohibition (held by review alone), and
+  approval itself, which is proxied by a document's first appearance because this project has
+  no approval token. The machine half — scripts/enforcement-pack.ps1's
+  Invoke-AmendmentAuthorityCheck — arrived verbatim in the same flow-down and is inert on
+  every branch that amends nothing after approval, so no existing feature changes behaviour.
+  Nothing is redefined and no principle is removed: I's workflow, its Micro arm, IX's human
+  review and every other principle are unchanged. Swept in the same change: CLAUDE.md (strict
+  rule), docs/sdlc/review-process.md (the human-reviewer check — whether the named approver
+  really agreed), docs/sdlc/repository-strategy.md (the multi-repo twin of the clause); the
+  kit's verbatim mirrors (enforcement-pack.ps1, definition-of-done gates 5 and 6,
+  branch-strategy, tasks-template, both review templates) arrived via update-kit in the same
+  flow-down. Human adoption: the project owner's review and approval of this flow-down change
+  (updating.md §2 step 6).
+
+Prior version history:
+  2.1.0 → 2.2.0 (FlowBoard, 2026-09-09)
 Bump rationale: MINOR — Principles I and X materially expanded with the upstream kit's
   Micro delivery lane (kit constitution 0.6.0, feature 009), re-expressed here per
   adoption/updating.md §2. FlowBoard's delivery levels become Lite < Micro < Standard <
@@ -131,6 +158,36 @@ principle with an approved **single-page mini-spec** — its `spec.md`, authored
 `.specify/templates/micro-spec-template.md` — alone: steps (2) and (3) are skipped, and no
 `plan.md` or `tasks.md` exists while the feature remains Micro. Every other step is
 unchanged. Absent a Micro declaration, the full workflow above applies.
+
+**Amendment authority**: once a feature's `spec.md` or `plan.md` has been approved, any
+later change to that feature's `spec.md`, `plan.md`, `tasks.md` or `contracts/` — a new
+package, a changed value, an added phase, a widened Territory, a reinterpreted contract
+clause — MUST record who approved it. The amended section carries an
+`**Amendment approved by**: <name>, <YYYY-MM-DD>` line, and the amendment commit names the
+same approver. **An implementing agent MUST NOT approve its own amendment.** Amending
+before implementing satisfies the sequence; it does not satisfy this rule.
+
+**Progress is not amendment**: a change to `tasks.md` that alters nothing but task completion
+state — a checkbox moving in **either** direction — records progress against work already
+approved and requires no approver. Un-ticking is progress too: it records that work proved
+incomplete, and changes nothing about what was agreed. Every other change to an approved
+document is an amendment, including any task whose **text** changes — re-worded, re-scoped,
+or annotated. The test is the text, not the intent behind it. This exemption is part of the
+rule rather than a detail of whatever grades it: without it the rule would demand an approval
+for finishing a task, and a rule that is absurd in its commonest case is one people route
+around.
+
+**What can be verified, and what cannot**: `scripts/enforcement-pack.ps1` grades that a record
+exists, is well-formed, and names the same approver as the commit carrying it. Three things it
+cannot. It cannot verify that the named person agreed — on a solo project the approver will be
+the same human who drove the session. It does not enforce the self-approval prohibition: no
+link is recorded between a commit and the session that produced its diff, so **that half of
+this rule is held by review alone**. And it does not observe approval — a document counts as
+approved once it exists, because this project has no separate approval token, which is why a
+document's first appearance owes no record. What the rule buys is that an amendment is
+*visible in the diff and gradeable*, not that consent is proven: a determined implementer can
+still write a name. The record is a written claim a reviewer can falsify — the strength of the
+Reviewer Provenance block, not of an authentication.
 
 **Rationale**: Documented intent prevents rework, makes review meaningful, and ties every code
 change to an approved requirement. The Micro arm keeps all of that — intent is still written
@@ -315,4 +372,4 @@ evaluated before Phase 0 research and re-evaluated after Phase 1 design. Any vio
 justified in the plan's Complexity Tracking section or the work MUST stop and be reported. Use
 `CLAUDE.md` and the `docs/` guidance files for runtime development guidance.
 
-**Version**: 2.2.0 | **Ratified**: 2026-08-27 | **Last Amended**: 2026-09-09
+**Version**: 2.3.0 | **Ratified**: 2026-08-27 | **Last Amended**: 2026-09-18

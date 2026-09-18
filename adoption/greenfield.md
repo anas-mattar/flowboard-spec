@@ -25,8 +25,8 @@ exist and exits non-zero on a partial install.
 
 Copy the kit, then fill every `{{SLOT}}` and `TODO(...)` in `.specify/memory/constitution.md`:
 project name, PK standard, audit fields, repository names (or delete principle III for
-single-repo). Write the domain-invariants pack (`modules/finance/finance-invariants.md` is the
-model) and point principle V at it. Bump to v1.0.0 with today's ratification date. Keep it
+single-repo). Write the domain-invariants pack (**modules/finance/finance-invariants.md** is the
+model — bold because you replace or delete it; `modules/**` is surgical) and point principle V at it. Bump to v1.0.0 with today's ratification date. Keep it
 under ~20 principles — a constitution that says everything governs nothing.
 
 ## 2. Fill CLAUDE.md
@@ -45,7 +45,13 @@ Machine assist: `pwsh -File scripts/init-kit.ps1` does the mechanical part of st
 instantiates the selected tier rulebooks, wires the Task-Scoped Reading rows, fills
 `{{PROJECT_NAME}}` and the repository slots, and writes **kit-adoption.json** (the durable
 record of your name/topology/tier choices — the adoption doctor's source of truth,
-owner-editable if tiers change later) — then prints the judgment slots that remain yours
+owner-editable if tiers change later). **Two or more developers? Pass
+`-Developers ada,grace` now** — a comma-separated list, which the initializer splits, so it
+works under `pwsh -File` where PowerShell would otherwise hand the whole string over as one
+name. Or hand-edit the record later: that array decides whether a **Critical** feature owes an
+independent human review or the solo substitute (`docs/sdlc/critical-delivery.md` item 5). Left
+undeclared it stays solo, which is the stricter arm — so declaring nothing is safe, and
+declaring a team you do not have is not. Then it prints the judgment slots that remain yours
 and finishes by running `scripts/verify-kit.ps1`, whose red verdict at that moment is your
 remaining to-do list, not a failure. It never writes rulebook content or ratifies the
 constitution.
@@ -83,6 +89,13 @@ the first commit:
   nested repo. Run `git status` and `git rev-parse --show-toplevel` right after scaffolding and
   confirm new files appear as untracked additions at the expected parent-repo root, not inside
   a stray nested `.git`.
+- **Scaffolder writes its own agent files**: some scaffolding CLIs (e.g. `create-next-app`)
+  now generate `CLAUDE.md` / `AGENTS.md` inside the code repository, and some regenerate a
+  marked block in them on every dev-server run. In the nested layout that puts a second,
+  tool-authored agent file between the agent and the governance tree above it. Rewrite both
+  to point at the parent repository's law, and keep your content OUTSIDE any regenerated
+  marker block so it survives — deleting the block only re-creates it as an uncommitted
+  change.
 - **Strict-build flag fails on a transitive vulnerability**: if proving the gate trips a
   strict-build flag on a dependency the scaffold pulled in transitively, triage per
   `docs/sdlc/gate-command.md` ("Strict-build flags vs transitive-dependency
@@ -94,6 +107,21 @@ Run the full ritual on something harmless: `/speckit.specify` a scaffold feature
 task it, implement one phase, have the user run the gate, review, merge. This rehearses every
 gear of the framework (branch → spec → phase → gate → diff → reviews → merge) while the
 stakes are zero, and leaves the team knowing what "Done" feels like.
+
+Rehearse the **amendment** ritual here too, because 001 is where it is free: the moment you
+change an approved `spec.md`, `plan.md`, `tasks.md` or `contracts/`, the amended section carries
+`**Amendment approved by**: <name>, <YYYY-MM-DD>` and the commit message names the same person —
+and the agent implementing the change is never the one who approves it (constitution I,
+Amendment authority; `scripts/enforcement-pack.ps1` grades it). A team that meets this rule at
+feature 001 meets it as a habit; one that meets it at feature 004 meets it as a failing check on
+a branch it has already written.
+
+Two edits are deliberately *not* amendments, and 001 is where that is worth learning: approving
+a `spec.md` or `plan.md` in the first place — the `**Status**: Draft` → `**Status**: Approved`
+flip the templates ask for, alone in its commit — and ticking a task box. Everything else in
+`spec.md`, `plan.md`, `tasks.md` and `contracts/` is. Evidence of what a phase actually found
+belongs in `notes.md`, which is ungraded precisely so that recording it never costs an
+approval (`docs/sdlc/branch-strategy.md`).
 
 The scaffold feature's `plan.md` MUST record the selected architecture ADR-style — options
 considered, the decision, and its consequences (layering, dependency direction, persistence
@@ -130,14 +158,24 @@ owns it.
 From the first week:
 
 - **Ritual checks in CI**: the kit ships `.github/workflows/ritual-checks.yml`, which runs
-  `scripts/ritual-checks.ps1` (doc-lint + enforcement-pack + scope-check + digests +
-  roadmap-claims + the adoption doctor in adopted projects) on every push to a governed
-  branch. **Finishing adoption includes wiring `ritual-checks` as a required status
+  `scripts/ritual-checks.ps1` (doc-lint + enforcement-pack + scope-check + scope-repos +
+  digests + roadmap-claims + the adoption doctor in adopted projects) on every push to a
+  governed branch. **Finishing adoption includes wiring `ritual-checks` as a required status
   check** (`docs/sdlc/branch-protection.md`); until then, or on a CI host other than GitHub
   Actions, run the same single command locally or from your CI:
   `pwsh -File scripts/ritual-checks.ps1` — the wrapper and CI produce identical verdicts by
   construction. Drift between docs and reality is the disease that kills rule-based
   frameworks; a check that runs only by discipline eventually doesn't run.
+- **Multi-repo: give gate 4 reach into the code.** Declare the nested code repositories in
+  **kit-adoption.json**'s `codeRepos` array (`init-kit.ps1` writes it for a `multi`
+  topology) and copy **.github/workflows/code-repo-scope-check.yml.template** into each code
+  repository, filling its two slots. Skip this and the scope check governs only the
+  governance repository, leaving every code phase commit's territory reviewer-verified prose
+  (`docs/sdlc/repository-strategy.md`, "Territory across repositories").
+- **Check the `developers` array is right** (step 1 writes it). It decides which independence
+  evidence a **Critical** feature owes. What the team check proves is bounded — two names in
+  one file, written by the same team; it makes an omission falsifiable, it does not verify the
+  review happened. See **adoption/updating.md** for the full table.
 - **CI gate as second witness**: run the gate on every push. The owner-held certifying
   gate (user-run — or plan-declared `ci-held`, where the CI run itself becomes the
   approved evidence; `docs/sdlc/gate-command.md`) remains the trust ritual; CI catches

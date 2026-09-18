@@ -39,6 +39,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 try { [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new() } catch {}
+. (Join-Path $PSScriptRoot 'adoption-lib.ps1')
 
 $findings = [System.Collections.Generic.List[object]]::new()
 function Add-Finding {
@@ -221,12 +222,66 @@ try {
                     $tierFail = $true
                 }
             }
+            # codeRepos (012): the nested code repositories gate 4 reaches through
+            # scripts/scope-check-repos.ps1. Optional — but a multi-repo adoption that
+            # declares none has no machine scope check over its code (GAP-016), which is
+            # exactly the silence this field exists to break.
+            $repoFail = $false
+            $declaredRepos = @($record.codeRepos) | Where-Object { $_ }
+            if ($null -ne $record.codeRepos -and $record.codeRepos -isnot [Array]) {
+                Add-Finding FAIL 'record' "kit-adoption.json codeRepos is not an array" 'declare it as a JSON array of directory names, e.g. ["your-api", "your-web"] (adoption/updating.md)'
+                $repoFail = $true
+                $declaredRepos = @()
+            }
+            if ($declaredRepos.Count -gt 0) {
+                foreach ($cr in $declaredRepos) {
+                    if ("$cr" -notmatch '^(?!\.+$)[A-Za-z0-9._-]+$') {
+                        Add-Finding FAIL 'record' "declared codeRepos entry '$cr' is not a plain directory name (no paths, no '..', no drive letters)" 'each entry names a code repository directly under this repository (docs/sdlc/repository-strategy.md, Nested Layout)'
+                        $repoFail = $true
+                        continue
+                    }
+                    $crPath = Join-Path $Root "$cr"
+                    if (-not (Test-Path $crPath)) {
+                        Add-Finding WARN 'record' "declared codeRepos entry '$cr' is not present here" 'clone it beside this repository (the nested layout), or remove it from kit-adoption.json — a governance-only checkout is a legitimate reason to see this'
+                    }
+                }
+            } elseif ($record.topology -eq 'multi' -and -not $repoFail) {
+                Add-Finding WARN 'record' 'multi-repo adoption declares no codeRepos (absent, empty, or all entries unusable)' 'declare the nested code repositories so the machine scope check reaches the code (scripts/scope-check-repos.ps1; adoption/updating.md) — without it, code phase commits are reviewer-verified only'
+            }
+
+            # developers (013): who the project's developers are, which selects the
+            # Critical lane's evidence mode in scripts/enforcement-pack.ps1.
+            #
+            # Read through the SAME function the check uses (scripts/adoption-lib.ps1), not
+            # a second copy of the rules. The copies drifted inside feature 013 — the
+            # root-object guard landed in the enforcing one only — and the divergence was
+            # found by a reviewer reading a comment asserting they matched. A comment is not
+            # a mechanism; one function is.
+            #
+            # Absence is NOT a finding. Every adoption predating 013 declares nothing and is
+            # treated as solo, the stricter arm. A malformed value IS a finding, because the
+            # check falls back silently and the project would otherwise never learn its
+            # declaration is being ignored — so the mode is always stated alongside.
+            # Gated on the library's own Declared rather than a second raw-text test of our
+            # own. A private notion of "does this record declare developers" is precisely the
+            # duplicated interpretation this library exists to remove, and one had grown here
+            # (013 phase 5 review, NEW-6 / NEW-D) — including the last unguarded read in the
+            # new code.
+            $devMode = Get-DeveloperMode -Root $Root
+            if ($devMode.Declared) {
+                foreach ($problem in $devMode.Problems) {
+                    Add-Finding FAIL 'record' $problem.Message $problem.Fix
+                }
+                Add-Finding ok 'record' "$($devMode.Count) developer(s) declared — Critical features use the $($devMode.Mode) evidence rule (docs/sdlc/critical-delivery.md item 5)" ''
+            }
+
             $proofOk = @($record.gateProof) | Where-Object { $_.exitCode -eq 0 }
             if (-not $proofOk) {
                 Add-Finding FAIL 'record' 'no gate proof with exit code 0 recorded in kit-adoption.json' 'prove the gate green and record command/exitCode/date/recordedBy (adoption step 3 — "a gate that has never been green is not a gate")'
             }
-            if (-not $tierFail -and $proofOk -and $record.projectName -and $record.schemaVersion -eq 1 -and $record.topology -in @('single', 'multi')) {
-                Add-Finding ok 'record' "adoption record valid — tiers: $(@($record.tiers) -join ', '); gate proven" ''
+            if (-not $tierFail -and -not $repoFail -and $proofOk -and $record.projectName -and $record.schemaVersion -eq 1 -and $record.topology -in @('single', 'multi')) {
+                $reposNote = $declaredRepos.Count -gt 0 ? "; codeRepos: $($declaredRepos -join ', ')" : ''
+                Add-Finding ok 'record' "adoption record valid — tiers: $(@($record.tiers) -join ', ')$reposNote; gate proven" ''
             }
         }
     }
