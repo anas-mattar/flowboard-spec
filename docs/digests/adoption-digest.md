@@ -14,6 +14,8 @@
 - Approving a document is not amending it: a lone Draft-to-Approved status flip owes no approver record. (`adoption/updating.md`)
 - The amendment check binds forward only — nothing committed before it arrived is graded. (`adoption/updating.md`)
 - The amendment check needs full history — fetch-depth 0 in CI, or it fails naming the shallow clone. (`adoption/updating.md`)
+- A green ritual-checks run now means the members formed an opinion - UNGRADED says one did not. (`adoption/updating.md`)
+- UNGRADED changes the verdict and never the exit code; nothing in CI behaves differently. (`adoption/updating.md`)
 - Surgical files carry project-filled content: re-apply by hand only what applies — an ordinary governance edit. (`adoption/updating.md`)
 - verify-kit.ps1 is the adoption doctor: read-only, runs at init end, update end, and in adopted-project CI. (`adoption/updating.md`)
 - kit-adoption.json is project-owned: every declared tier needs an instantiated rulebook; gateProof is your attestation. (`adoption/updating.md`)

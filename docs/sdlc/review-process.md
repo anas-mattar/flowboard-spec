@@ -53,8 +53,26 @@ pwsh -File scripts/scope-check-repos.ps1   # multi-repo only; n/a elsewhere
    In a multi-repo project the second command grades this phase's commits in the nested
    code repositories (`docs/sdlc/repository-strategy.md`, "Territory across repositories");
    neither verdict may be FAIL — `n/a`, `not applicable` and `WARN` are the cross-repo
-   check's lawful non-blocking verdicts, and a phase that touches no code repository
-   legitimately produces one. Whole-run verdicts, here and in CI, come from
+   check's lawful non-blocking verdicts. The check asks whether each code repository has a
+   branch named after the **feature**, not whether this phase touched it. A feature with no
+   branch in any code repository gets `not applicable` on each repository's line and then a
+   run-level `UNGRADED`, because nothing was graded anywhere. So does every
+   governance-repository CI run, where the code repositories are not checked out. That is
+   expected, and it is an `UNGRADED` like any other: the review records the reason in
+   writing, as the next paragraph requires. For a phase that touches no code repository, on a
+   feature that does have code branches, the command above grades each such branch's tip: a real `PASS` for an
+   earlier phase when the tip is that phase's commit, or `not applicable` when the tip carries no
+   `phase N` token. And one repository going ungraded — an `UNGRADED` line, or only skipped
+   commits — does not change the run-level verdict while another repository was graded, so
+   read the per-repository lines.
+
+   **`UNGRADED` is not a pass.** It exits 0, so it will not stop you, and it means the
+   check RAN AND COMPARED NOTHING: no diff base, a commit range with no commits in it, a
+   clone without the history it needs. A reviewer who accepts a phase on an
+   `UNGRADED` verdict has accepted it on no evidence from that check. So: an `UNGRADED` member
+   is not a pass, and **a review that accepts one says in writing why** — which check, what
+   it could not read, and why the phase is safe to approve without it. If the cause is a
+   shallow CI checkout, the answer is `fetch-depth: 0`, not a sentence in the review. Whole-run verdicts, here and in CI, come from
    `pwsh -File scripts/ritual-checks.ps1` (doc-lint + enforcement-pack + scope-check +
    scope-repos + digests + roadmap-claims, plus the adoption doctor).
 4. On `FAIL`, remediate and redo the phase commit: revert the undeclared change — or, if

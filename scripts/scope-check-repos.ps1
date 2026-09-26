@@ -26,9 +26,17 @@
         declaration widened afterwards is invisible to an earlier commit's verdict, which
         is the cross-repository analogue of the in-repo parent-read rule.
 
-    Verdicts and exit codes:
-      PASS / not applicable / n/a / WARN -> 0
+    Verdicts and exit codes. The vocabulary itself is defined once, in
+    scripts/ritual-checks.ps1, which is also what reads this script's RUN-LEVEL line:
+      PASS (a commit graded clean) / n/a / UNGRADED / WARN   -> 0
       FAIL (any undeclared path, or a malformed declaration) -> 1
+
+    The run-level line says 'n/a (...)' when the branch, the lane, or an absent codeRepos
+    array puts this check out of scope, and 'UNGRADED ...' when it applies but nothing was
+    graded in the declared repositories - detached HEAD, no merge base, an empty range
+    (feature 015, FR-010; GAP-027). Until that feature this script called an ungraded run
+    n/a, which blurred the two claims US3 acceptance scenario 3 keeps apart. The per-repo
+    and per-commit detail lines above the run-level line are not read by the wrapper.
     Overall exit is 1 iff at least one repository FAILs. Read-only: never writes, fetches
     or checks out.
 
@@ -250,6 +258,23 @@ function Invoke-RepoScopeCheck {
             Write-Line "${RepoName}: FAIL phase $phaseN commit ${sha7}: the phase $phaseN **Territory** in $($tip.Source) POST-DATES this commit ($when) — a declaration only governs code committed after it lands; re-commit the phase on top of the declaration (or declare the territory first, then re-commit)"
             return 'FAIL'
         }
+        # T019a, the near-miss: a '**Territory**' line with no colon on it declared nothing and
+        # said nothing. Reported here too, so the two graders agree about a malformed marker as
+        # well as about a well-formed one.
+        if ($territory.NearMiss.Count -gt 0) {
+            foreach ($nm in $territory.NearMiss) {
+                Write-Line "${RepoName}: FAIL phase $phaseN commit ${sha7}: $source line $nm begins '**Territory**' but has no ':' on that line — an annotation that wraps declares nothing the parser can see; keep the marker and its colon on one line"
+            }
+            return 'FAIL'
+        }
+        # FR-015, the same rule scope-check.ps1 applies to this repository's own commits: the
+        # compatibility WARN covers a history that predates the convention, not a phase that
+        # skipped it while its siblings declared. Standard lane only - the Micro lane above has
+        # already FAILed an absent block, and $tasksBlob belongs to that branch.
+        if ($tasksBlob -and (Test-AnyTerritoryDeclared -TasksLines @($tasksBlob))) {
+            Write-Line "${RepoName}: FAIL phase $phaseN commit ${sha7}: no territory declared for phase $phaseN in $source, but another phase in that file declares one — declare this phase's **Territory** (the compatibility WARN covers only a tasks.md that declares none at all)"
+            return 'FAIL'
+        }
         Write-Line "${RepoName}: WARN phase $phaseN commit ${sha7}: no territory declared for phase $phaseN in $source, at this commit's date or since (non-blocking — a history predating the declaration)"
         return 'SKIP'
     }
@@ -300,19 +325,19 @@ if (-not $Branch) {
     exit 1
 }
 if ($Branch -eq 'HEAD') {
-    Write-Line 'WARN detached HEAD — pass -Branch <NNN-name> to classify the lane (CI wrappers must do this explicitly)'
+    Write-Line 'UNGRADED detached HEAD — pass -Branch <NNN-name> to classify the lane (CI wrappers must do this explicitly)'
     exit 0
 }
 if ($Branch -match '^(fix|chore|docs)/') {
-    Write-Line "not applicable ($($matches[1])/ lane — enforcement-pack's Lite-lane checks apply instead)"
+    Write-Line "n/a ($($matches[1])/ lane — enforcement-pack's Lite-lane checks apply instead)"
     exit 0
 }
 if ($Branch -in @('main', 'master')) {
-    Write-Line "not applicable ('$Branch' is the trunk)"
+    Write-Line "n/a ('$Branch' is the trunk)"
     exit 0
 }
 if ($Branch -notmatch '^\d{3}-') {
-    Write-Line "not applicable ('$Branch' is not a numbered feature branch)"
+    Write-Line "n/a ('$Branch' is not a numbered feature branch)"
     exit 0
 }
 
@@ -359,12 +384,12 @@ foreach ($repoName in $toGrade) {
             }
         }
         if (-not $base) {
-            Write-Line "${repoName}: WARN could not resolve a merge base with a trunk ($($candidates -join ', ')) — NOTHING WAS GRADED in this repository; pass -BaseRef <ref> naming its trunk"
+            Write-Line "${repoName}: UNGRADED could not resolve a merge base with a trunk ($($candidates -join ', ')) — NOTHING WAS GRADED in this repository; pass -BaseRef <ref> naming its trunk"
             continue
         }
         $commits = @((git -C $repoPath rev-list --reverse --no-merges "$base..$Branch" 2>$null) | Where-Object { $_ })
         if ($commits.Count -eq 0) {
-            Write-Line "${repoName}: PASS (no commits since merge base)"
+            Write-Line "${repoName}: UNGRADED (no commits since merge base — no commit was examined)"
             continue
         }
     } else {
@@ -382,8 +407,11 @@ foreach ($repoName in $toGrade) {
     }
 }
 
-# An n/a-shaped line so scripts/ritual-checks.ps1 lifts the reason into its summary instead
-# of printing a bare OK for a run that graded nothing (phase 1 review, F6).
-if ($graded -eq 0) { Write-Line "n/a (nothing was graded in the declared code repositories for '$Branch' — the reason is on the line(s) above)" }
+# The run-level verdict for a run that graded nothing (phase 1 review, F6; feature 015
+# FR-010). Shaped as n/a until phase 5, which is the closest of the five words then
+# available and still the wrong one: a declared code repository DOES apply - that is what
+# declaring it means - so this is UNGRADED, and US3 acceptance scenario 3 says the two
+# claims must not be blurred.
+if ($graded -eq 0) { Write-Line "UNGRADED (nothing was graded in the declared code repositories for '$Branch' — the reason is on the line(s) above)" }
 if ($failed) { exit 1 }
 exit 0

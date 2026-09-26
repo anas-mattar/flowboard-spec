@@ -139,6 +139,14 @@ if (Test-Path (Join-Path $Root '.kit-version')) {
             $manifestErrors += "conflict ($($winningClasses -join ' vs ')): $file"
             continue
         }
+        # A class this doesn't recognise counted as classified before, so a typo bought
+        # silence instead of a verdict (feature 015 phase 1). The four legal classes:
+        # verbatim and surgical flow down, generated is rebuilt per project, kit-only never
+        # leaves this repository.
+        if ($winningClasses[0] -notin @('verbatim', 'surgical', 'generated', 'kit-only')) {
+            $manifestErrors += "unrecognised class '$($winningClasses[0])': $file"
+            continue
+        }
         $manifestClassifiedCount++
     }
 } else {
@@ -240,6 +248,14 @@ if ($broken.Count -gt 0) {
     foreach ($b in $broken) { Write-Host ("  {0}:{1}  {2}" -f $b.File, $b.Line, $b.Ref) }
 }
 
-if ($missingKit.Count -gt 0 -or $manifestErrors.Count -gt 0 -or $broken.Count -gt 0 -or ($FailOnSlots -and $slotCount -gt 0)) { exit 1 }
+if ($missingKit.Count -gt 0 -or $manifestErrors.Count -gt 0 -or $broken.Count -gt 0 -or ($FailOnSlots -and $slotCount -gt 0)) {
+    # A verdict line in the shared vocabulary. Until feature 015 phase 5 this script was the
+    # only member that exited 1 having printed no verdict word at all: the ERROR: blocks above
+    # are the detail, and a reader looking for the answer found the last line was a detail too.
+    $errCount = $missingKit.Count + $manifestErrors.Count + $broken.Count +
+        (($FailOnSlots -and $slotCount -gt 0) ? $slotCount : 0)
+    Write-Host "doc-lint: FAIL ($errCount issue(s) — see the ERROR block(s) above)"
+    exit 1
+}
 Write-Host 'doc-lint: OK — kit complete, every referenced path resolves'
 exit 0

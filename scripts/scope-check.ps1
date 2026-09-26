@@ -11,7 +11,7 @@
     repositories' grader — feature 012). One implementation, so the two cannot drift.
 
     Lane classification:
-      - fix/*, chore/*, docs/* branches: not applicable (exit 0) — the Lite lane's defense
+      - fix/*, chore/*, docs/* branches: n/a (exit 0) — the Lite lane's defense
         is enforcement-pack's prohibited-category and abuse-guard checks.
       - NNN-* branches: every phase commit is checked against the **Territory** list under
         its phase heading in specs/NNN-name/tasks.md.
@@ -42,9 +42,17 @@
     (specs/NNN-name/**) is always implicitly in territory. Renames touch both paths;
     deletes touch the deleted path. Territory entries must be backtick-wrapped list items.
 
-    Verdicts and exit codes (data-model.md):
-      PASS / not-applicable / WARN  -> exit 0
-      FAIL (any undeclared path)    -> exit 1
+    Verdicts and exit codes (data-model.md). The vocabulary itself is defined once, in
+    scripts/ritual-checks.ps1, which is also what reads this script's RUN-LEVEL line:
+      PASS (a commit graded clean) / n/a / UNGRADED / WARN  -> exit 0
+      FAIL (any undeclared path)                            -> exit 1
+
+    The run-level line says 'n/a (...)' when the branch or lane puts this check out of
+    scope, and 'UNGRADED ...' when it applies but no commit was graded - detached HEAD, no
+    merge base, an empty range, or every commit on the branch skipped (feature 015, FR-010;
+    GAP-027). The per-commit lines above it - 'PASS phase N commit ...' and
+    'not applicable (commit ... is a merge commit)' - are detail, and the wrapper reads
+    none of them.
 
 .EXAMPLE
     pwsh -File scripts/scope-check.ps1                    # check HEAD
@@ -180,6 +188,7 @@ function Invoke-ScopeCheck {
         $strays = @($paths | Where-Object { -not (Test-InTerritory -Path $_ -Globs $globs) })
         if ($strays.Count -eq 0) {
             Write-Host "scope-check: PASS phase $phaseN commit $sha7 ($($paths.Count) file(s), Micro territory from spec.md)"
+            $script:gradedCommits++
             return $true
         }
         foreach ($s in $strays) {
@@ -222,7 +231,22 @@ function Invoke-ScopeCheck {
         Write-Host "scope-check: FAIL phase $phaseN commit ${sha7}: **Territory** declared for phase $phaseN in $tasksRel but the entry list is empty (declare the paths, or remove the marker)"
         return $false
     }
+    if (-not $territory.Found -and $territory.NearMiss.Count -gt 0) {
+        # T019a: a line that starts like a declaration and breaks the grammar FAILs rather than
+        # vanishing — the same choice build-digests.ps1 makes for a malformed digest marker.
+        foreach ($nm in $territory.NearMiss) {
+            Write-Host "scope-check: FAIL phase $phaseN commit ${sha7}: $tasksRel line $nm begins '**Territory**' but has no ':' on that line — an annotation that wraps declares nothing the parser can see; keep the marker and its colon on one line"
+        }
+        return $false
+    }
     if (-not $territory.Found) {
+        # FR-015: the compatibility WARN covers a tasks.md that predates the convention, not a
+        # phase that skipped it. If a sibling phase declares, this one is an omission — and a
+        # WARN here means the commit is graded against nothing at all.
+        if (Test-AnyTerritoryDeclared -TasksLines @($tasksBlob)) {
+            Write-Host "scope-check: FAIL phase $phaseN commit ${sha7}: no territory declared for phase $phaseN in $tasksRel, but another phase in that file declares one — declare this phase's **Territory** (the pre-006 compatibility WARN covers only a tasks.md that declares none at all)"
+            return $false
+        }
         Write-Host "scope-check: WARN commit ${sha7}: no territory declared for phase $phaseN in $tasksRel (declare territory in tasks.md — non-blocking, pre-006 compatibility)"
         return $true
     }
@@ -233,6 +257,7 @@ function Invoke-ScopeCheck {
 
     if ($strays.Count -eq 0) {
         Write-Host "scope-check: PASS phase $phaseN commit $sha7 ($($paths.Count) file(s))"
+        $script:gradedCommits++
         return $true
     }
     foreach ($s in $strays) {
@@ -250,32 +275,38 @@ if (-not $Branch) {
     exit 1
 }
 if ($Branch -eq 'HEAD') {
-    Write-Host "scope-check: WARN detached HEAD — pass -Branch <NNN-name> to classify the lane (CI wrappers must do this explicitly)"
+    Write-Host "scope-check: UNGRADED detached HEAD — pass -Branch <NNN-name> to classify the lane (CI wrappers must do this explicitly)"
     exit 0
 }
 if ($Branch -match '^(fix|chore|docs)/') {
-    Write-Host "scope-check: not applicable ($($matches[1])/ lane — enforcement-pack's Lite-lane checks apply instead)"
+    Write-Host "scope-check: n/a ($($matches[1])/ lane — enforcement-pack's Lite-lane checks apply instead)"
     exit 0
 }
 if ($Branch -in @('main', 'master')) {
-    Write-Host "scope-check: not applicable ('$Branch' is the trunk)"
+    Write-Host "scope-check: n/a ('$Branch' is the trunk)"
     exit 0
 }
 if ($Branch -notmatch '^\d{3}-') {
-    Write-Host "scope-check: not applicable ('$Branch' is not a numbered feature branch)"
+    Write-Host "scope-check: n/a ('$Branch' is not a numbered feature branch)"
     exit 0
 }
 
 $ok = $true
+# Commits this run actually graded. Only PASS increments it: a FAIL exits 1 below and never
+# reaches the ungraded branch, while every other return from Invoke-ScopeCheck is a skip -
+# a merge commit, no 'phase N' token, a pre-006 tree with no tasks.md. A run of nothing but
+# skips exits 0 having compared nothing, and must not be summarised with the word a graded
+# pass prints (feature 015 FR-010). Counted the way scope-check-repos.ps1 has since 012.
+$script:gradedCommits = 0
 if ($All) {
     $base = Get-DiffBase
     if (-not $base) {
-        Write-Host 'scope-check: WARN could not resolve a merge base with main — nothing checked'
+        Write-Host 'scope-check: UNGRADED could not resolve a merge base with main — nothing checked'
         exit 0
     }
     $commits = @((git rev-list --reverse --no-merges "$base..HEAD" 2>$null) | Where-Object { $_ })
     if ($commits.Count -eq 0) {
-        Write-Host 'scope-check: PASS (no commits since merge base)'
+        Write-Host 'scope-check: UNGRADED (no commits since merge base — no commit was examined)'
         exit 0
     }
     foreach ($c in $commits) {
@@ -286,6 +317,12 @@ if ($All) {
 }
 
 if (-not $ok) { exit 1 }
+if ($script:gradedCommits -eq 0) {
+    # Nothing failed and nothing was graded either. Exit 0 is unchanged (feature 015 D6,
+    # FR-011); the word is not (FR-010). The per-commit lines above name each skip.
+    Write-Host "scope-check: UNGRADED no commit on '$Branch' was graded — the reason is on the line(s) above"
+    exit 0
+}
 exit 0
 
 } finally {

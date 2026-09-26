@@ -54,6 +54,10 @@ param(
 $ErrorActionPreference = 'Stop'
 $Root = (Resolve-Path $Root).Path
 
+# Shared with enforcement-pack.ps1: what Markdown renders as code is not a comment
+# marker (GAP-025). One implementation, so the two readers cannot drift.
+. (Join-Path $PSScriptRoot 'markdown-lib.ps1')
+
 $MaxDigestContentLines = 40
 $MaxDigestLineLength   = 120
 
@@ -120,8 +124,16 @@ function Get-DocMarkers {
             # Fall through to the comment-state update so an unclosed '<!-- digest:'
             # still opens a comment block and the rest of the file parses sanely.
         }
-        $lastOpen = $line.LastIndexOf('<!--')
-        if ($lastOpen -ge 0 -and $line.IndexOf('-->', $lastOpen) -lt 0) { $inComment = $true }
+        # GAP-025: a '<!--' inside an inline code span is literal text, not an opener. One line
+        # of prose showing the marker syntax used to open a comment that ran to the end of the
+        # document, and every marker after it vanished with no message — the generator wrote a
+        # digest missing real rules and reported OK. Disarmed for the STATE UPDATE only: the
+        # grammar checks above read $rawLine, and inside a comment Markdown renders nothing, so
+        # a backticked '-->' there really does close it (which is why the $inComment branch is
+        # left alone).
+        $scan = Convert-CodeSpanMarkers -Line $line
+        $lastOpen = $scan.LastIndexOf('<!--')
+        if ($lastOpen -ge 0 -and $scan.IndexOf('-->', $lastOpen) -lt 0) { $inComment = $true }
     }
     $docCache[$RelPath] = $markers
     return $markers
