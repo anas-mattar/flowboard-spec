@@ -152,6 +152,21 @@ $classified = @(foreach ($f in $shipped) {
     $c = Resolve-Class $f
     if ($c) { [PSCustomObject]@{ Path = $f; Class = $c } }
 })
+# The four classes, named here rather than assumed. 'generated' and 'kit-only' are both
+# skipped by this script, but for different reasons: a generated file is rebuilt by the
+# adopting project from its OWN law, while a kit-only file has no meaning outside this
+# repository at all (feature 015, plan D3 — the harness's workflow would otherwise match the
+# '.github/**' verbatim glob and land in every adopted project). An unrecognised class is a
+# manifest typo, and a typo that silently skipped a file is how a verbatim update stops
+# arriving without anyone noticing — so it fails here instead.
+$knownClasses = @('verbatim', 'surgical', 'generated', 'kit-only')
+$unknown = @($classified | Where-Object { $_.Class -notin $knownClasses })
+if ($unknown.Count -gt 0) {
+    Write-Fail ("kit-manifest.json declares $($unknown.Count) file(s) with an unrecognised class: " +
+        (($unknown | ForEach-Object { "$($_.Path) ('$($_.Class)')" }) -join ', ') +
+        ". Legal classes: $($knownClasses -join ', ').")
+}
+
 $verbatimFiles = @($classified | Where-Object { $_.Class -eq 'verbatim' })
 $surgicalFiles = @($classified | Where-Object { $_.Class -eq 'surgical' })
 

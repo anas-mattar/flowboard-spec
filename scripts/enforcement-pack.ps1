@@ -72,6 +72,26 @@
                          docs/sdlc/critical-delivery.md item 4). An absent line means
                          'none' — plans from before the clause remain valid.
 
+    THE UNGRADED STATE (feature 015, FR-009/FR-022). A check in this pack can RUN AND FORM NO
+    OPINION: there is no integration branch to diff against (a shallow clone is the usual
+    cause), or the commit range it was handed holds no commits. That is not a pass. It is not
+    a failure either - but AmendmentAuthority, the one check that must never be silent about an
+    amendment, FAILS rather than going ungraded on a missing base, on a shallow clone, and on
+    commits it cannot read. Such a check adds a line to
+    $ungraded, every one of those lines is printed as 'UNGRADED: <what>', and the run ends on
+    'enforcement-pack: UNGRADED (N check(s) formed no opinion)' instead of 'OK'.
+
+    It is a VERDICT change and not an exit-code change: the run still exits 0, deliberately and
+    on the record (feature 015 plan D6, FR-011), because feature 014's FR-009 forbids a new hard
+    failure on the Lite lane and that constraint stands. What changes is that nobody can read
+    such a run as clean. Whether UNGRADED should ever block is a later feature's question, with
+    its own evidence; it is not answered here by the back door.
+
+    A run can be both FAIL and ungraded. The UNGRADED lines are printed before the verdict and
+    independently of it, the way warnings are, because a reader needs to know that the failure
+    count is not the whole story. The word for the whole vocabulary — OK, FAIL, WARN, N/A,
+    UNGRADED, PENDING — is defined once, in scripts/ritual-checks.ps1.
+
     See specs/002-enforcement-pack/research.md for the rationale behind every default below.
 
 .EXAMPLE
@@ -101,6 +121,12 @@ $ErrorActionPreference = 'Stop'
 try { [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new() } catch {}
 $Root = (Resolve-Path $Root).Path
 . (Join-Path $PSScriptRoot 'adoption-lib.ps1')
+# Territory parsing comes from the same file scope-check.ps1 uses (feature 015, T020a).
+# It used to be a copy here, and phase 2 widened one and not the other: a decorated marker
+# left the Micro file cap, the duplicate check and the glob check all passing vacuously
+# while scope-check enforced the very same block. Nothing in this file may parse that
+# marker again.
+. (Join-Path $PSScriptRoot 'scope-lib.ps1')
 Push-Location $Root
 try {
 
@@ -124,6 +150,10 @@ $Config = @{
 
 $failures = @()
 $warnings = @()
+# The third accumulator, and the one this feature exists to add. A member appends here when it
+# RAN AND FORMED NO OPINION - not a pass, not a warning, and not 'does not apply'. See the
+# verdict vocabulary in scripts/ritual-checks.ps1. It never changes the exit code (plan D6).
+$ungraded = @()
 
 function Get-CurrentBranch {
     param([string]$Override)
@@ -505,22 +535,36 @@ function Invoke-MicroLaneCheck {
         $script:failures += "MicroLane: $dir/spec.md declares '**Gate Batching**' — a Micro feature is exactly one phase; there is nothing to batch (constitution X, Micro lane); delete the line, or $promote"
     }
 
-    # Territory cap (M5). Same block grammar scope-check parses; entries must be literal
-    # file paths — one glob or subtree entry would defeat the file cap outright.
-    $tEntries = @()
-    $tMarkers = 0
-    $collecting = $false; $started = $false
-    foreach ($line in (Get-VisiblePlanLines -PlanPath $specPath)) {
-        if ($line -match '^\*\*Territory\*\*:') { $tMarkers++; $collecting = $true; $started = $false; continue }
-        if (-not $collecting) { continue }
-        if ($line -match '^\s*$') { if ($started) { $collecting = $false }; continue }
-        if ($line -match '^\s*[-*]\s+`([^`]+)`\s*$') { $started = $true; $tEntries += $matches[1].Trim(); continue }
-        $collecting = $false
+    # Territory cap (M5). The block is parsed by scope-lib's Get-Territory — the SAME function
+    # scope-check.ps1 uses — because this was a copy of that grammar until T020a, and a copy of a
+    # parser is a parser that drifts: phase 2 widened the original to accept a decorated marker
+    # and left this one strict, so a Micro spec could break the file cap while reporting OK.
+    # Entries must still be literal file paths; one glob or subtree entry defeats the cap outright.
+    $territory = Get-Territory -TasksLines (Get-VisiblePlanLines -PlanPath $specPath) -Global
+    $tEntries = @($territory.Entries)
+    $tMarkers = $territory.MarkerCount
+    if ($territory.NearMiss.Count -gt 0) {
+        # A line that starts like a declaration and breaks the grammar FAILs rather than vanishing
+        # (feature 015, T019a in scope-check and T020a here — the two graders say the same thing
+        # about the same malformed line).
+        foreach ($nm in $territory.NearMiss) {
+            $script:failures += "MicroLane: $dir/spec.md line $nm begins '**Territory**' but has no ':' on that line — an annotation that wraps declares nothing the parser can see; keep the marker and its colon on one line"
+        }
     }
     if ($tMarkers -gt 1) {
         # scope-check FAILs duplicates too — kept aligned so the two scripts never diverge
-        # on the same spec (phase 2 review, F7).
+        # on the same spec (phase 2 review, F7). They now share the parser, so they cannot.
         $script:failures += "MicroLane: $dir/spec.md carries $tMarkers **Territory** markers — a Micro feature declares exactly one feature-global block; merge them, or $promote"
+    }
+    foreach ($bad in @($territory.Invalid)) {
+        # Get-Territory routes an absolute or '..' entry to Invalid, NOT to Entries. Sharing the
+        # parser in T020a therefore did something the task did not intend: an escaping entry
+        # stopped counting toward the file cap and was reported by nobody, while scope-check.ps1
+        # — the same function, the same block — FAILs it. That is the divergence T020a exists to
+        # remove, reappearing one field over, so the caller reads the field rather than the task
+        # being called done. Reporting is enough: no spec carrying one can reach the cap check
+        # green, so the under-count cannot be spent.
+        $script:failures += "MicroLane: territory entry '$bad' in $dir/spec.md is not repo-relative — Micro territory entries must be repo-relative paths with no '..'; scope-check.ps1 FAILs the same entry in the same block; fix the entry, or $promote"
     }
     if ($tEntries.Count -gt $Config.MicroTerritoryMaxFiles) {
         $script:failures += "MicroLane: $dir/spec.md declares $($tEntries.Count) territory entries — a Micro feature's Territory covers at most $($Config.MicroTerritoryMaxFiles) files (constitution X, Micro lane); shrink the territory, or $promote"
@@ -538,7 +582,10 @@ function Invoke-MicroLaneCheck {
     # is the phase's TOTAL across every commit carrying its token, so splitting a change
     # over remediation commits cannot defeat it (phase 2 review, F1 — owner-resolved
     # 2026-09-09; constitution X wording matches).
-    if (-not $Base) { return }
+    if (-not $Base) {
+        $script:ungraded += "MicroLane: no diff base, so the phase walk enforcing 'exactly one phase' and the line bound compared nothing on '$Branch'"
+        return
+    }
     $phaseNums = @{}
     $phaseTotal = 0
     $phaseCommitCount = 0
@@ -572,7 +619,15 @@ function Invoke-MicroLaneCheck {
 # are grandfathered automatically (006 research D4). Templates are exempt.
 function Invoke-ReviewProvenanceCheck {
     param([string]$Branch, [string]$Base)
-    if (-not $Base) { return }
+    # GAP-027, and the reason this feature has a phase 5. This used to be a bare `return`: the
+    # machine half of gate 5 stopped before listing a single candidate, and the run still printed
+    # OK. An AI review with no provenance section rode through on a depth-1 clone, the ordinary
+    # actions/checkout shape. It still does not FAIL - FR-011 forbids a new hard failure on the
+    # Lite lane - but the verdict can no longer be read as a graded pass.
+    if (-not $Base) {
+        $script:ungraded += "ReviewProvenance: no diff base, so no review file on '$Branch' was inspected - the machine half of DoD gate 5 formed no opinion. Fetch the full history ('fetch-depth: 0' on actions/checkout)"
+        return
+    }
     # Runs on every recognized lane (self-scoping via the diff filter) so a review file
     # cannot be smuggled in through fix/chore/docs branches (phase 2 review, F7).
     # AR filter: rename TARGETS are inspected like additions — moving a grandfathered
@@ -620,7 +675,10 @@ function Invoke-ReviewProvenanceCheck {
 function Invoke-PhaseSizeWarningCheck {
     param([string]$Branch, [string]$Base)
     if ($Branch -notmatch '^\d{3}-') { return }
-    if (-not $Base) { return }
+    if (-not $Base) {
+        $script:ungraded += "PhaseSizeWarning: no diff base, so no commit on '$Branch' was measured against the phase-size guideline"
+        return
+    }
     $commits = (git rev-list "$Base..HEAD" 2>$null) | Where-Object { $_ }
     foreach ($commit in $commits) {
         $numstat = git show --numstat --format='' $commit 2>$null
@@ -796,79 +854,11 @@ function Get-BlobLines {
     return $lines
 }
 
-# Disarm comment markers in one string. Both substitutions preserve length, which is what
-# lets Convert-CodeSpanMarkers patch a line in place by offset.
-function Disable-CommentMarkers {
-    param([string]$Text)
-    return ($Text -replace '<!--', '<!@@') -replace '-->', '@@>'
-}
-
-# Disarm comment markers inside the inline code spans of ONE line. CommonMark pairs a run of
-# N backticks with the next run of EXACTLY N, and a backslash-escaped backtick is literal and
-# delimits nothing (K1's second trigger). A run with no partner on the line opens no span:
-# an unrecognised span leaves its markers armed, which HIDES text rather than revealing it —
-# the safe direction for a check whose job is to refuse an invisible record.
-function Convert-CodeSpanMarkers {
-    param([string]$Line)
-    # Nothing to disarm, or nothing to disarm it with: the overwhelming majority of lines, and
-    # the reason this is a string scan rather than a character walk (a per-character loop over
-    # every line of every graded blob cost ~9x the whole check's runtime — SC-006).
-    if ($Line -notmatch '`') { return $Line }
-    if ($Line -notmatch '<!--' -and $Line -notmatch '-->') { return $Line }
-    # Backtick runs, skipping any run a backslash escapes — '\`' is a literal backtick to
-    # CommonMark and delimits nothing (K1's second trigger).
-    $runs = @([regex]::Matches($Line, '(?<!\\)`+') | ForEach-Object { @{ Start = $_.Index; Len = $_.Length } })
-    if ($runs.Count -lt 2) { return $Line }
-    $result = $Line
-    $r = 0
-    while ($r -lt $runs.Count - 1) {
-        $open = $runs[$r]
-        $closeIdx = -1
-        for ($k = $r + 1; $k -lt $runs.Count; $k++) {
-            if ($runs[$k].Len -eq $open.Len) { $closeIdx = $k; break }
-        }
-        if ($closeIdx -lt 0) { $r++; continue }
-        $from = $open.Start + $open.Len
-        $len  = $runs[$closeIdx].Start - $from
-        if ($len -gt 0) {
-            $result = $result.Substring(0, $from) +
-                      (Disable-CommentMarkers -Text $result.Substring($from, $len)) +
-                      $result.Substring($from + $len)
-        }
-        $r = $closeIdx + 1
-    }
-    return $result
-}
-
-# True for each line that Markdown renders as CODE rather than as content: the lines of a
-# fenced block, fences included. A fence OPENS on a line whose first non-space run (at most
-# three spaces of indent) is three or more backticks or tildes, and CLOSES on a later line
-# whose run is the same character and at least as long — CommonMark's rule, line by line.
-# An unclosed fence runs to the end of the document, exactly as a renderer treats it.
-function Get-FencedLineMap {
-    param([string[]]$Lines)
-    $map = New-Object 'bool[]' $Lines.Count
-    # A document with no fence run at all has no fenced lines, and most do not.
-    if (($Lines -join "`n") -notmatch '(?m)^ {0,3}(`{3,}|~{3,})') { return $map }
-    $fenceChar = ''
-    $fenceLen = 0
-    for ($i = 0; $i -lt $Lines.Count; $i++) {
-        $m = [regex]::Match($Lines[$i], '^ {0,3}(`{3,}|~{3,})')
-        if ($fenceLen -gt 0) {
-            $map[$i] = $true
-            if ($m.Success -and $m.Groups[1].Value[0] -eq $fenceChar -and $m.Groups[1].Value.Length -ge $fenceLen) {
-                $fenceChar = ''; $fenceLen = 0
-            }
-            continue
-        }
-        if ($m.Success) {
-            $fenceChar = $m.Groups[1].Value[0]
-            $fenceLen = $m.Groups[1].Value.Length
-            $map[$i] = $true
-        }
-    }
-    return $map
-}
+# The Markdown-visibility helpers moved to scripts/markdown-lib.ps1 (feature 015, phase 2):
+# build-digests.ps1 needed the same rule for GAP-025, and a copy would have to relearn
+# every fix this one took. Disable-CommentMarkers, Convert-CodeSpanMarkers and
+# Get-FencedLineMap arrive from there, unchanged.
+. (Join-Path $PSScriptRoot 'markdown-lib.ps1')
 
 # Visible lines of a text blob — HTML comments stripped, same rule as Get-VisiblePlanLines
 # (008 phase-2 F1). Commented-out text is not law and is not a record (H1).
@@ -1103,7 +1093,10 @@ function Invoke-AmendmentAuthorityCheck {
     # (review B1); rev-list reads commit objects and cannot be written to from a message.
     $commits = @(git rev-list --reverse $range 2>$null | ForEach-Object { "$_".Trim() } | Where-Object { $_ })
     if ($commits.Count -eq 0) {
-        Write-Host "AmendmentAuthority: no commits in $range — nothing to grade"
+        # An empty range is a check that ran and graded nothing - GAP-027's shape, and until the
+        # phase 6 review (F6) it ended the run on OK. It is named, not failed: a branch with no
+        # commits of its own yet is lawful, it is only not evidence (FR-010, plan D6).
+        $script:ungraded += "AmendmentAuthority: no commits in $range — nothing to grade, so no amendment on '$Branch' was checked for its approval record"
         return
     }
     # A commit git lists but the batch did not parse is a parse failure, not a commit to skip.
@@ -1265,6 +1258,13 @@ if ($Branch -in @('main', 'master')) {
     Invoke-AmendmentAuthorityCheck -Branch $Branch -Base $diffBase -IgnoreAmendmentBoundary:$IgnoreAmendmentBoundary -ReplayBase $ReplayBase -ReplayTip $ReplayTip
     Invoke-PhaseSizeWarningCheck -Branch $Branch -Base $diffBase
 } elseif ($Branch -match '^(fix|chore)/') {
+    # The one member here that does not DECLINE on a null base - it grades, and grades an empty
+    # list, which passes for the same reason an empty accusation is never proved. The comment
+    # above says it plainly: a baseless 'fix/' branch touching anything at all went green. A
+    # vacuous grade reaches the same wrong verdict as a skipped one, so it is named the same way.
+    if (-not $diffBase) {
+        $ungraded += "LiteAndAbuse: no diff base, so the prohibited-category and file-count guards graded an EMPTY file list on '$Branch' - every prohibited change this lane forbids would have passed"
+    }
     Invoke-LiteAndAbuseCheck -Branch $Branch -ChangedFiles $changedFiles
     Invoke-ReviewProvenanceCheck -Branch $Branch -Base $diffBase
 } elseif ($Branch -match '^docs/') {
@@ -1275,10 +1275,22 @@ if ($Branch -in @('main', 'master')) {
 }
 
 foreach ($w in $warnings) { Write-Host "WARNING: $w" }
+# Listed before the verdict and independently of it, the way warnings are: a run can both fail
+# and have graded nothing, and the reader needs to know that the FAIL count is not the whole
+# story. What the verdict word does is stop 'OK' being printed over the top of it.
+foreach ($u in $ungraded) { Write-Host "UNGRADED: $u" }
 if ($failures.Count -gt 0) {
     Write-Host "enforcement-pack: FAIL ($($failures.Count) issue(s)):"
     foreach ($f in $failures) { Write-Host "  - $f" }
     exit 1
+}
+if ($ungraded.Count -gt 0) {
+    # Exit 0, deliberately and on the record (plan D6, FR-011). Feature 014's FR-009 forbids a
+    # new hard failure on the Lite lane, and that constraint stands. What changes is that no one
+    # can read this run as clean. Whether UNGRADED should ever block is a later feature's
+    # question with its own evidence; it is not answered here by the back door.
+    Write-Host "enforcement-pack: UNGRADED ($($ungraded.Count) check(s) formed no opinion)"
+    exit 0
 }
 Write-Host 'enforcement-pack: OK'
 exit 0

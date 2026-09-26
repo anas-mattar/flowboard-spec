@@ -430,12 +430,75 @@ exactly like a branch that is legitimately pre-boundary: green, and meaningless.
 clone, an integration branch it cannot diff against — absent, or present but sharing no
 commit with your branch — or a parent commit this clone cannot read. A
 Lite branch (`fix/`, `chore/`, `docs/`) is unaffected — the check returns before it consults
-history at all. The kit's `.github/workflows/ritual-checks.yml` ships with `fetch-depth: 0`;
+history at all. **From kit feature 015 that sentence needs one word added**: a Lite branch with
+no diff base is unaffected in its EXIT CODE and no longer in its verdict. The prohibited-category
+and file-count guards graded an empty file list, which passed for the same reason an empty
+accusation is never proved, and the run said `OK`; it now says `UNGRADED`, exits 0 exactly as
+before, and names what was not compared. See the 015 flow-down note below. The kit's `.github/workflows/ritual-checks.yml` ships with `fetch-depth: 0`;
 if you wrote your own workflow, or fetch shallowly on a build agent, set it there too. That is
 still the fix. What it buys you is a red build instead of a green one that graded nothing.
 
 <!-- digest: The amendment check binds forward only — nothing committed before it arrived is graded. -->
 <!-- digest: The amendment check needs full history — fetch-depth 0 in CI, or it fails naming the shallow clone. -->
+
+### Flow-down note: the 2026-09-21 verdict vocabulary and the ungraded state (kit feature 015 — no constitution amendment)
+
+**What a green run meant before.** `ritual-checks.ps1` printed `OK` against a member in two
+quite different situations: the member compared what it claims to compare and found nothing,
+**or** the member ran and compared nothing at all. A depth-1 clone with no reachable base, a
+commit range with no commits in it, a trunk not named `main`, a branch every one of whose commits was
+skipped — each of those produced the same word as a clean grading. A run that graded nothing
+was indistinguishable from a run that graded everything and liked it. That was recorded as
+GAP-027 and it is what feature 015 closes.
+
+**What a green run means now.** `OK` means the member formed an opinion and the opinion is
+clean. A member that ran and formed **no** opinion says `UNGRADED`, and the run ends on
+`ritual-checks: RESULT UNGRADED (N of M member(s) formed no opinion; nothing failed)`.
+
+**What you will newly see.** Three things, and none of them is a new failure:
+
+1. **`UNGRADED` where you used to see `OK`.** The table under "What to do about it" lists
+   the common states. Several of them occur with full history, on a perfectly healthy
+   repository, because there is genuinely nothing to grade yet.
+2. **`n/a` where you used to see `OK`.** The two scope checks already declined on the trunk, on
+   a `fix|chore|docs` branch and on an unnumbered branch, but they spelled it `not applicable`
+   — and the wrapper lifts `n/a`, so those correct declines were rendered as `OK`. Measured on
+   an adopted project, a trunk run moves two member lines from `OK` to
+   `n/a ('main' is the trunk)`. `RESULT OK` and exit 0 are unchanged.
+3. **A verdict line from `doc-lint`.** It used to exit 1 having printed `ERROR:` blocks and no
+   verdict word at all. It now ends on `doc-lint: FAIL (N issue(s) — see the ERROR block(s)
+   above)`.
+
+**What does NOT change.** Exit codes — every one of them, on every member, in both
+directions. `UNGRADED` is a verdict change and never an exit-code change (015 plan D6, FR-011),
+so no branch protection, badge, or `if: failure()` step behaves differently. Member names are
+unchanged, `ritual-checks.ps1` remains the single entry point, and the Lite lane gains no new
+hard failure.
+
+**What to do about it.** Nothing, mechanically. But an `UNGRADED` member is worth reading,
+because it is telling you that a check you believe is protecting you did not run against
+anything. **The authority on why is the member's own output, not this table:** every
+`UNGRADED` line either names its reason or points at the line above it that does. The table
+is a guide to the states you are most likely to meet. It is not a complete list, and when a
+line you see is not in it, the line is right and the table is short.
+
+| State | Member and what it prints | Full history fixes it? | What to do |
+|---|---|---|---|
+| Detached `HEAD` and no `-Branch` passed | `scope-check` and `scope-repos`: `UNGRADED detached HEAD — pass -Branch …` | No | Pass `-Branch <NNN-name>` (a CI wrapper on a `pull_request` checkout must). |
+| No merge base with `main` / `origin/main` | `scope-check -All`: `could not resolve a merge base with main`; `enforcement-pack`: a `WARNING` naming no integration branch, and `UNGRADED:` lines — ReviewProvenance and PhaseSizeWarning on `NNN-*` (plus MicroLane on a feature declared Micro); LiteAndAbuse and ReviewProvenance on `fix/` and `chore/`; ReviewProvenance on `docs/` | **Only if the cause is a shallow clone** | Shallow clone: `fetch-depth: 0` on `actions/checkout`, and the word becomes a real verdict. A trunk not named `main`: no fetch setting helps, and these members take no parameter naming the trunk — they look for `main` and `origin/main` only. Name the trunk `main` (`docs/sdlc/branch-strategy.md`), or create a `main` ref at it before the run (for example `git branch main origin/develop`). On an `NNN-*` branch the amendment check FAILS here rather than going quiet, so that run is `FAIL`, not `UNGRADED`. |
+| An `NNN-*` branch with no commits since the merge base — just created, or already merged | `scope-check -All`: `no commits since merge base`; `enforcement-pack`: `AmendmentAuthority: no commits in …` | No | Nothing: there is nothing to grade. The amendment line goes with the branch's first commit; `scope-check`'s goes with its first graded phase commit (next row). |
+| An `NNN-*` branch whose commits are all skipped: spec/plan/tasks commits with no `phase N` token, merge commits, or phase commits graded only by a pre-006 `WARN` (a `tasks.md` that declares no Territory at all, or no `tasks.md` at the commit or its parent) | `scope-check -All`: `no commit on '<branch>' was graded — the reason is on the line(s) above` | No | Every feature branch is here until phase 1 is committed; the word goes with the first phase commit graded against a declared Territory. A pre-006 history stays here until it declares one. |
+| `scope-check` **without** `-All` (the form run by hand after a phase commit) on a HEAD that is not a phase commit | `scope-check`: `no commit on '<branch>' was graded …`, even when earlier phase commits on the branch pass | No | Without `-All` the check grades HEAD only. Run it right after the phase commit, or pass `-All` (what `ritual-checks` and CI run) to grade every phase commit on the branch. |
+| Multi-repo: nothing graded in any declared code repository | `scope-repos`: `UNGRADED (nothing was graded in the declared code repositories …)`, after one line per repository naming why — not present in this checkout (every governance-repository CI run), present but not a git repository, not a repository of its own, no branch named after the **feature** there, no trunk found, no commits, or no phase commits | No, except a shallow code-repository clone | Governance CI, and a feature that has no branch in any code repository: expected — each code repository's own CI grades it, and the review says so in writing (`docs/sdlc/review-process.md`, step 3). A code repository whose trunk is not `main`/`master`: run `scope-check-repos.ps1 -All -Repo <repo> -BaseRef <trunk>` directly, since `ritual-checks` does not pass `-BaseRef` through. Both of the other flags matter: without `-All` the script ignores `-BaseRef`, and without `-Repo` it applies that one trunk name to every declared repository. |
+| Multi-repo: one code repository graded, another not | `scope-repos`: on the ungraded repository's line only — `<repo>: UNGRADED …`, or, when every commit it offers was skipped, just `not applicable` or `WARN` lines and no `UNGRADED` at all. **The run-level verdict does not say `UNGRADED` here**: it prints only when nothing at all was graded, so `ritual-checks` shows `scope-repos` as `OK` | Depends on the repository's reason | Read the per-repository lines, not the summary. The summary hiding a partly ungraded run is a known gap, recorded for the owner in the notes of kit feature 015 (in the kit repository, not in an adopted project). |
+
+The code-repository check asks whether a repository has a branch named after the **feature**,
+not whether the current phase touched it. So a docs-only phase that follows a code phase shows
+the earlier phase's `PASS` for that repository. That `PASS` is real, but it grades the earlier
+phase.
+
+<!-- digest: A green ritual-checks run now means the members formed an opinion - UNGRADED says one did not. -->
+<!-- digest: UNGRADED changes the verdict and never the exit code; nothing in CI behaves differently. -->
 
 ## 3. Other surgical files
 
