@@ -500,6 +500,48 @@ phase.
 <!-- digest: A green ritual-checks run now means the members formed an opinion - UNGRADED says one did not. -->
 <!-- digest: UNGRADED changes the verdict and never the exit code; nothing in CI behaves differently. -->
 
+### Flow-down note: the 2026-10-03 multi-line code spans and the skipped-marker report (kit feature 016 — no constitution amendment)
+
+**What changes.** Four files flow down verbatim: three scripts, `scripts/markdown-lib.ps1`,
+`scripts/build-digests.ps1` and `scripts/enforcement-pack.ps1`, and this document, which
+carries this note. No law document, template or surgical file changes, so there is nothing to
+mirror by hand.
+
+1. **A span wrapping within a paragraph now hides nothing.** The shared reader used to treat
+   a code span as ending at the line it began on. A `<!--` inside a span that wraps onto the
+   next line therefore opened a comment the reader never closed, and every digest marker after
+   it was silently dropped. A renderer shows that span as code. The generator now agrees: the
+   marker is harvested. The fix applies to digest generation only; the amendment check keeps
+   its per-line reading.
+2. **A skipped digest marker now fails the run (DIGEST-020).** If a line shaped like a digest
+   marker sits inside a comment opened earlier in the file, `build-digests.ps1` prints
+   `skipped digest marker: <path>:<line>` and exits 1. Before, the loss was silent. The
+   message is distinct from the malformed-marker one. **The remedy** is one of two edits in
+   your own document: delete a marker that was commented out on purpose, or close the comment
+   above it.
+3. **One disagreement is reported, not fixed.** An unpaired `<!--` in prose still opens a
+   comment in the kit's reading, where a renderer shows plain text. The kit does not change how
+   it reads that shape, because the amendment check relies on it. What changed is that the
+   resulting loss of a marker on its own line is no longer silent: it is item 2. A marker
+   after a `-->` on the same line is not a standalone marker and is still not reported.
+
+**What was measured (SC-005, FR-011).** The update was dry-run against FitForge, FlowBoard and
+ExpenseTracker: no surgical file and no conflict. In a scratch copy of each with the **three
+scripts** applied, the digests were regenerated and `ritual-checks.ps1` run. **Every digest is
+byte-identical to the one committed, and every verdict is unchanged** (`RESULT OK` before and
+after). The skipped-marker report found zero hits in the kit and in all three projects. So the
+scripts change nothing you see; the new failure appears only if you later write a marker inside
+an open comment. **This document is the one exception**: it is the only source of the adoption
+digest and the note adds one digest marker, so the adoption digest gains exactly one line.
+
+**What to do about it.** Apply the update, then run `scripts/build-digests.ps1` and commit the
+result with the flow-down: expect the adoption digest to gain one line and the other four
+digests to be unchanged. Without it, the digest freshness check fails. If
+`build-digests.ps1` now names a skipped marker in your project, it was already being lost
+before this update; fix it as described in item 2.
+
+<!-- digest: A skipped digest marker now fails the run by file and line: delete it or close the comment above it. -->
+
 ## 3. Other surgical files
 
 Not every surgical report is a constitution amendment. `docs/sdlc/gate-command.md`,

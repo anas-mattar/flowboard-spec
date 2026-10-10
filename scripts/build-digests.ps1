@@ -86,9 +86,14 @@ function Get-DocMarkers {
     $inComment = $false
     $fenceClose = $null
     $lineNo = 0
-    foreach ($rawLine in [IO.File]::ReadAllLines($abs)) {
+    # The scan lines are computed once for the whole document and indexed below (016 D5): the
+    # rule needs the lines after each opener to tell whether it can be a comment (016 D10, D11).
+    $rawLines = [IO.File]::ReadAllLines($abs)
+    $scanLines = Convert-CodeSpanMarkers -Lines $rawLines
+    foreach ($rawLine in $rawLines) {
         $lineNo++
         $line = $rawLine
+        $scan = $scanLines[$lineNo - 1]
         if ($fenceClose) {
             # Inside a fenced code block nothing counts (review F3): a literal marker
             # example in documentation prose must never be harvested into a digest.
@@ -96,12 +101,20 @@ function Get-DocMarkers {
             continue
         }
         if ($inComment) {
+            # A marker passed over because a comment opened earlier is still open fails the
+            # run, by file and line (016 D8, FR-009): the comment model can disagree with a
+            # renderer, so such a skip is never silent. A marker commented out on purpose is
+            # deleted instead. The message is distinct from the malformed-marker one.
+            if ($rawLine -match '^\s*<!--\s*digest\b') {
+                $script:issues += "skipped digest marker: ${RelPath}:${lineNo} — it sits inside a comment opened earlier in the file"
+            }
             $close = $line.IndexOf('-->')
             if ($close -lt 0) { continue }
             $inComment = $false
             # The remainder after the close may reopen a comment; a digest marker in it
             # is not a standalone line and therefore never counts.
             $line = $line.Substring($close + 3)
+            $scan = $scan.Substring($close + 3)
         } elseif ($rawLine -match '^\s{0,3}(`{3,}|~{3,})') {
             $f = $Matches[1]
             $fenceClose = '^\s{0,3}' + [regex]::Escape($f.Substring(0, 1)) + '{' + $f.Length + ',}\s*$'
@@ -127,11 +140,15 @@ function Get-DocMarkers {
         # GAP-025: a '<!--' inside an inline code span is literal text, not an opener. One line
         # of prose showing the marker syntax used to open a comment that ran to the end of the
         # document, and every marker after it vanished with no message — the generator wrote a
-        # digest missing real rules and reported OK. Disarmed for the STATE UPDATE only: the
-        # grammar checks above read $rawLine, and inside a comment Markdown renders nothing, so
-        # a backticked '-->' there really does close it (which is why the $inComment branch is
-        # left alone).
-        $scan = Convert-CodeSpanMarkers -Line $line
+        # digest missing real rules and reported OK. 015's fix read spans per line, so a span
+        # that wrapped onto the next line of its paragraph did the same thing (GAP-028); $scan
+        # also has each opener disarmed that the shared model finds cannot open a comment (016
+        # D10, D11; this generator only, since the amendment check keeps per-line pairing).
+        # Not modelled: a '<!--' opened mid-line in prose that runs on into later lines, and a
+        # '-->' inside a span that wraps. Disarmed for the STATE UPDATE only:
+        # the grammar checks above read $rawLine, and inside a comment Markdown renders
+        # nothing, so a backticked '-->' there really does close it (which is why the
+        # $inComment branch reads the raw line for its close).
         $lastOpen = $scan.LastIndexOf('<!--')
         if ($lastOpen -ge 0 -and $scan.IndexOf('-->', $lastOpen) -lt 0) { $inComment = $true }
     }
